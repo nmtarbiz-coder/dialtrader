@@ -10,8 +10,8 @@
      STEP 1: PASTE YOUR TWO SUPABASE VALUES BELOW
      ════════════════════════════════════════════════════ -->
 <script>
-  const SUPABASE_URL  = 'PASTE_YOUR_PROJECT_URL_HERE';   // e.g. https://abcxyz.supabase.co
-  const SUPABASE_ANON = 'PASTE_YOUR_ANON_KEY_HERE';      // starts with eyJ...
+  const SUPABASE_URL  = 'https://kstbnvcozplquymqecck.supabase.co';   // e.g. https://abcxyz.supabase.co
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdGJudmNvenBscXV5bXFlY2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzY5ODYsImV4cCI6MjA4NzQ1Mjk4Nn0.RqcYRWvz4O-V1L5NAne8mP-nHKff8V451nAzle3CLWU';      // starts with eyJ...
 </script>
 <!-- ════════════════════════════════════════════════════ -->
 
@@ -389,21 +389,41 @@ header {
 .search-input:focus { border-color: var(--gold); }
 .filter-select { background: var(--surface); border: 1px solid var(--border); color: var(--text2); padding: 0.5rem 0.75rem; font-family: 'Courier Prime', monospace; font-size: 0.72rem; outline: none; cursor: pointer; }
 
-/* WATCH CARDS */
-.watch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
-.watch-card { background: var(--surface); padding: 1.5rem; cursor: pointer; transition: background 0.15s; position: relative; animation: fadeIn 0.3s ease both; }
-.watch-card:hover { background: var(--surface2); }
-.watch-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.85rem; }
-.watch-brand { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.3rem; }
-.watch-model { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; line-height: 1.3; color: var(--text); margin-bottom: 0.3rem; }
-.watch-ref { font-size: 0.78rem; color: var(--text2); letter-spacing: 0.06em; margin-bottom: 0.85rem; }
-.watch-financials { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-.fin-label { font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2); margin-bottom: 0.3rem; }
-.fin-value { font-size: 1rem; color: var(--text); }
-.fin-value.gold { color: var(--gold); }
-.fin-value.green { color: var(--green); }
-.fin-value.red { color: var(--red); }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); margin-top: 4px; flex-shrink: 0; }
+/* INVENTORY ROWS — Option D */
+.inv-rows { border: 1px solid var(--border); background: var(--border); display: flex; flex-direction: column; gap: 1px; }
+.inv-row-header {
+  display: grid;
+  grid-template-columns: 2.8fr 1fr 1fr 1fr 0.8fr 1fr;
+  padding: 0.5rem 1.25rem;
+  background: var(--bg);
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.inv-row-header span {
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2);
+}
+.inv-row {
+  display: grid;
+  grid-template-columns: 2.8fr 1fr 1fr 1fr 0.8fr 1fr;
+  align-items: center;
+  padding: 0.9rem 1.25rem;
+  background: var(--surface);
+  gap: 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  animation: fadeIn 0.3s ease both;
+}
+.inv-row:hover { background: var(--surface2); }
+.inv-row:nth-child(even) { background: var(--surface2); }
+.inv-row:nth-child(even):hover { background: #222; }
+.inv-row-brand { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.25rem; }
+.inv-row-model { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; line-height: 1.25; color: var(--text); margin-bottom: 0.2rem; }
+.inv-row-sub { font-size: 0.7rem; color: var(--text2); }
+.inv-row-val { font-size: 0.9rem; color: var(--text); }
+.inv-row-val.gold { color: var(--gold); }
+.inv-row-val.green { color: var(--green); }
+.inv-row-val.red { color: var(--red); }
+.inv-row-val.muted { color: var(--text2); font-size: 0.82rem; }
 
 /* SOLD TABLE */
 .sold-table { width: 100%; border-collapse: collapse; }
@@ -588,7 +608,16 @@ header {
       <option value="days-desc">Most Days Held</option>
     </select>
   </div>
-  <div class="watch-grid" id="inventory-grid"></div>
+  <div class="inv-rows" id="inventory-grid">
+    <div class="inv-row-header">
+      <span>Watch</span>
+      <span>Cost Basis</span>
+      <span>Listed At</span>
+      <span>Potential Profit</span>
+      <span>Days Held</span>
+      <span>Platform</span>
+    </div>
+  </div>
   <div id="inv-empty" class="empty-state" style="display:none"><h3>No watches in inventory</h3><p>Add your first watch using the button above.</p></div>
 </div>
 
@@ -1147,34 +1176,32 @@ function renderInventory() {
 
   const grid = document.getElementById('inventory-grid');
   const empty = document.getElementById('inv-empty');
-  if (!filtered.length) { grid.innerHTML=''; empty.style.display='block'; return; }
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="inv-row-header"><span>Watch</span><span>Cost Basis</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>`;
+    empty.style.display='block'; return;
+  }
   empty.style.display='none';
 
-  grid.innerHTML = filtered.map((w,i) => {
+  grid.innerHTML = `<div class="inv-row-header">
+    <span>Watch</span><span>Cost Basis</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span>
+  </div>` + filtered.map((w,i) => {
     const basis=(+w.purchase_price||0)+(+w.tax||0)+(+w.shipping_in||0)+(+w.other_fees||0);
     const d=w.purchase_date?daysHeld(w.purchase_date):null;
     const profit=w.listed_price?(w.listed_price-basis):null;
-    const chips=[w.dial_color,w.bezel_color,w.bracelet_type,w.case_material,w.condition].filter(Boolean).slice(0,4);
-    const hasContact=w.buy_name||w.sell_name;
-    return `<div class="watch-card" onclick="editWatch('${w.id}')" style="animation-delay:${i*0.04}s">
-      <div class="watch-card-top"><div>
-        <div class="watch-brand">${w.brand}${w.year?' · '+w.year:''}</div>
-        <div class="watch-model">${w.model}</div>
-        <div class="watch-ref">${w.ref||'—'}${w.case_size?' · '+w.case_size:''}</div>
-      </div><div class="status-dot"></div></div>
-      ${chips.length?`<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.75rem">${chips.map(c=>`<span style="font-size:0.58rem;letter-spacing:0.06em;background:var(--surface2);color:var(--text2);padding:0.15rem 0.5rem;border:1px solid var(--border)">${c}</span>`).join('')}</div>`:''}
-      ${w.platform?`<div style="font-size:0.6rem;letter-spacing:0.1em;color:var(--text2);margin-bottom:0.75rem;text-transform:uppercase">${w.platform}</div>`:''}
-      <div class="watch-financials">
-        <div class="fin-item"><div class="fin-label">Cost Basis</div><div class="fin-value gold">${fmt(basis)}</div></div>
-        <div class="fin-item"><div class="fin-label">Listed At</div><div class="fin-value">${w.listed_price?fmt(w.listed_price):'—'}</div></div>
-        <div class="fin-item"><div class="fin-label">Potential Profit</div><div class="fin-value ${profit>0?'green':profit<0?'red':''}">${profit!==null?(profit>=0?'+':'')+fmt(profit):'—'}</div></div>
-        <div class="fin-item"><div class="fin-label">Days Held</div><div class="fin-value ${d>60?'red':d>30?'gold':''}">${d!==null?d+'d':'—'}</div></div>
+    const pillClass = d > 60 ? 'warn' : d > 30 ? '' : 'ok';
+    const details = [w.ref, w.dial_color, w.bracelet_type, w.case_size].filter(Boolean).join(' · ');
+    const contacts = [w.buy_name?'📥 '+w.buy_name:'', w.sell_name?'📤 '+w.sell_name:''].filter(Boolean).join('  ');
+    return `<div class="inv-row" onclick="editWatch('${w.id}')" style="animation-delay:${i*0.03}s">
+      <div>
+        <div class="inv-row-brand">${w.brand}${w.year?' · '+w.year:''}</div>
+        <div class="inv-row-model">${w.model}</div>
+        <div class="inv-row-sub">${details||'—'}${contacts?' &nbsp;·&nbsp; '+contacts:''}</div>
       </div>
-      ${hasContact?`<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;gap:1rem">
-        ${w.buy_name?`<div style="font-size:0.62rem;color:var(--text2)">📥 ${w.buy_name}</div>`:''}
-        ${w.sell_name?`<div style="font-size:0.62rem;color:var(--text2)">📤 ${w.sell_name}</div>`:''}
-      </div>`:''}
-      ${w.notes?`<div style="font-size:0.65rem;color:var(--text2);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);line-height:1.5">${w.notes}</div>`:''}
+      <div class="inv-row-val gold">${fmt(basis)}</div>
+      <div class="inv-row-val muted">${w.listed_price?fmt(w.listed_price):'—'}</div>
+      <div class="inv-row-val ${profit>0?'green':profit<0?'red':'muted'}">${profit!==null?(profit>=0?'+':'')+fmt(profit):'—'}</div>
+      <div><span class="days-pill ${pillClass}">${d!==null?d+'d':'—'}</span></div>
+      <div class="inv-row-val muted">${w.platform||'—'}</div>
     </div>`;
   }).join('');
 }
