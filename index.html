@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DialTrader — Watch Trading Desk</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- ════════════════════════════════════════════════════
+     STEP 1: PASTE YOUR TWO SUPABASE VALUES BELOW
+     ════════════════════════════════════════════════════ -->
+<script>
+  const SUPABASE_URL  = 'https://kstbnvcozplquymqecck.supabase.co';   // e.g. https://abcxyz.supabase.co
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdGJudmNvenBscXV5bXFlY2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzY5ODYsImV4cCI6MjA4NzQ1Mjk4Nn0.RqcYRWvz4O-V1L5NAne8mP-nHKff8V451nAzle3CLWU';      // starts with eyJ...
+</script>
+<!-- ════════════════════════════════════════════════════ -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0E0E0E;
+  --surface: #161616;
+  --surface2: #1E1E1E;
+  --border: #2A2A2A;
+  --border2: #333;
+  --text: #E8E2D6;
+  --text2: #9A9288;
+  --gold: #C9A84C;
+  --gold2: #E8C97A;
+  --gold-dim: rgba(201,168,76,0.12);
+  --green: #4CAF7D;
+  --green-dim: rgba(76,175,125,0.1);
+  --red: #C44F4F;
+  --red-dim: rgba(196,79,79,0.1);
+  --blue: #5B8DB8;
+}
+
+body {
+  font-family: 'Courier Prime', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.4;
+}
+
+/* ─── AUTH SCREEN ────────────────────────────── */
+#auth-screen {
+  display: none;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+}
+#auth-screen.visible { display: flex; }
+
+.auth-box {
+  width: 400px;
+  max-width: 95vw;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 2.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.auth-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.auth-tagline {
+  text-align: center;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 2rem;
+}
+
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+.auth-tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.6rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+.auth-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.auth-form { display: none; }
+.auth-form.active { display: block; }
+
+.auth-label {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 0.4rem;
+}
+.auth-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.7rem 0.85rem;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.82rem;
+  outline: none;
+  margin-bottom: 1rem;
+  transition: border-color 0.15s;
+}
+.auth-input:focus { border-color: var(--gold); }
+
+.auth-btn {
+  width: 100%;
+  background: var(--gold);
+  color: #0E0E0E;
+  border: none;
+  padding: 0.75rem;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 0.5rem;
+}
+.auth-btn:hover { background: var(--gold2); }
+.auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.auth-error {
+  font-size: 0.7rem;
+  color: var(--red);
+  margin-top: 0.75rem;
+  text-align: center;
+  min-height: 1.2rem;
+}
+.auth-success {
+  font-size: 0.7rem;
+  color: var(--green);
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+/* ─── APP SCREEN ─────────────────────────────── */
+#app-screen { display: none; }
+#app-screen.visible { display: block; }
+
+/* ─── LOADING ────────────────────────────────── */
+#loading-screen {
+  display: none;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+#loading-screen.visible { display: flex; }
+
+.loading-logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 300;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.loading-spinner {
+  width: 24px; height: 24px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── HEADER ─────────────────────────────────── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 300;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.logo em { font-style: italic; color: var(--text); }
+
+.header-nav { display: flex; gap: 0; }
+
+.nav-tab {
+  padding: 0 1.25rem;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+.user-badge {
+  font-size: 0.65rem;
+  color: var(--text2);
+  letter-spacing: 0.06em;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: #0E0E0E;
+  border: none;
+  padding: 0.45rem 1.1rem;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-gold:hover { background: var(--gold2); }
+
+.btn-outline {
+  background: none;
+  color: var(--text2);
+  border: 1px solid var(--border2);
+  padding: 0.45rem 1rem;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-outline:hover { color: var(--text); border-color: var(--text2); }
+
+.btn-danger {
+  background: none;
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 0.5rem 1rem;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-danger:hover { background: var(--red-dim); }
+
+/* ─── LAYOUT ─────────────────────────────────── */
+.page { display: none; padding: 2rem; max-width: 1400px; margin: 0 auto; }
+.page.active { display: block; }
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+/* ─── DASHBOARD ──────────────────────────────── */
+.dash-hero {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-bottom: 2rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.hero-stat {
+  background: var(--surface);
+  padding: 1.75rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-stat::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.hero-stat.loaded::after { transform: scaleX(1); }
+.hero-label { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text2); margin-bottom: 0.75rem; }
+.hero-value { font-family: 'Cormorant Garamond', serif; font-size: 2.6rem; font-weight: 300; line-height: 1; color: var(--text); margin-bottom: 0.4rem; }
+.hero-value.green { color: var(--green); }
+.hero-value.gold { color: var(--gold); }
+.hero-value.red { color: var(--red); }
+.hero-sub { font-size: 0.65rem; color: var(--text2); }
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+  animation: fadeIn 0.5s 0.1s ease both;
+}
+
+.panel { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; }
+.panel-title {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.mini-table { width: 100%; border-collapse: collapse; }
+.mini-table th { font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); text-align: left; padding: 0 0.75rem 0.75rem; border-bottom: 1px solid var(--border); }
+.mini-table td { padding: 0.75rem; font-size: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.mini-table tr:last-child td { border-bottom: none; }
+.mini-table tr:hover td { background: var(--surface2); }
+
+.brand-badge { font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); background: var(--gold-dim); padding: 0.15rem 0.5rem; display: inline-block; }
+.days-pill { font-size: 0.65rem; padding: 0.15rem 0.5rem; background: var(--surface2); color: var(--text2); }
+.days-pill.warn { background: rgba(196,79,79,0.15); color: var(--red); }
+.days-pill.ok { background: var(--green-dim); color: var(--green); }
+
+.brand-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+.brand-name { font-size: 0.72rem; min-width: 80px; color: var(--text2); }
+.brand-bar-wrap { flex: 1; height: 4px; background: var(--border); }
+.brand-bar { height: 100%; background: var(--gold); transition: width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.brand-profit { font-size: 0.7rem; color: var(--green); min-width: 70px; text-align: right; }
+
+/* ─── PAGES ──────────────────────────────────── */
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1.5rem; }
+.page-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 0.05em; color: var(--text); }
+.page-title span { color: var(--gold); font-style: italic; }
+
+.filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap; }
+.search-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 0.85rem; font-family: 'Courier Prime', monospace; font-size: 0.75rem; outline: none; width: 260px; transition: border-color 0.15s; }
+.search-input::placeholder { color: var(--text2); }
+.search-input:focus { border-color: var(--gold); }
+.filter-select { background: var(--surface); border: 1px solid var(--border); color: var(--text2); padding: 0.5rem 0.75rem; font-family: 'Courier Prime', monospace; font-size: 0.72rem; outline: none; cursor: pointer; }
+
+/* WATCH CARDS */
+.watch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.watch-card { background: var(--surface); padding: 1.25rem; cursor: pointer; transition: background 0.15s; position: relative; animation: fadeIn 0.3s ease both; }
+.watch-card:hover { background: var(--surface2); }
+.watch-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; }
+.watch-brand { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); }
+.watch-model { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 400; line-height: 1.3; color: var(--text); margin-bottom: 0.25rem; }
+.watch-ref { font-size: 0.65rem; color: var(--text2); letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+.watch-financials { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.fin-label { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text2); margin-bottom: 0.2rem; }
+.fin-value { font-size: 0.85rem; color: var(--text); }
+.fin-value.gold { color: var(--gold); }
+.fin-value.green { color: var(--green); }
+.fin-value.red { color: var(--red); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); margin-top: 3px; }
+
+/* SOLD TABLE */
+.sold-table { width: 100%; border-collapse: collapse; }
+.sold-table th { font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; }
+.sold-table th:hover { color: var(--gold); }
+.sold-table td { padding: 0.8rem 0.75rem; font-size: 0.74rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.sold-table tr:hover td { background: var(--surface2); }
+.profit-badge { display: inline-block; padding: 0.15rem 0.5rem; font-size: 0.68rem; font-weight: 700; }
+.profit-badge.pos { background: var(--green-dim); color: var(--green); }
+.profit-badge.neg { background: var(--red-dim); color: var(--red); }
+
+/* ─── MODAL ──────────────────────────────────── */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 500; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border2); width: 580px; max-width: 100%; max-height: 90vh; overflow-y: auto; animation: fadeIn 0.2s ease; }
+.modal-header { padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 300; letter-spacing: 0.05em; }
+.modal-close { background: none; border: none; color: var(--text2); font-size: 1.2rem; cursor: pointer; line-height: 1; padding: 0.25rem; }
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 1.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+.modal-actions { display: flex; gap: 0.5rem; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { margin-bottom: 0; }
+.form-group.full { grid-column: 1 / -1; }
+.form-label { display: block; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text2); margin-bottom: 0.4rem; }
+.form-input, .form-select, .form-textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 0.6rem 0.75rem; font-family: 'Courier Prime', monospace; font-size: 0.78rem; outline: none; transition: border-color 0.15s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
+.form-textarea { resize: vertical; min-height: 70px; }
+.form-select option { background: var(--surface); }
+
+/* MODAL TABS */
+.modal-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; gap: 0; overflow-x: auto; }
+.modal-tab { padding: 0.6rem 1rem; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; white-space: nowrap; }
+.modal-tab:hover { color: var(--text); }
+.modal-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+.modal-tab-panel { display: none; }
+.modal-tab-panel.active { display: block; }
+
+/* Color swatches */
+.color-row { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.color-chip { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.1s, transform 0.1s; position: relative; flex-shrink: 0; }
+.color-chip:hover { transform: scale(1.15); }
+.color-chip.selected { border-color: var(--gold) !important; }
+
+.contact-card { background: var(--bg); border: 1px solid var(--border); padding: 1rem; margin-bottom: 0.75rem; }
+.contact-card-title { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem; }
+
+/* Import */
+.import-zone { border: 2px dashed var(--border2); padding: 3rem; text-align: center; transition: border-color 0.2s; cursor: pointer; margin-bottom: 1rem; }
+.import-zone:hover, .import-zone.drag { border-color: var(--gold); }
+.import-zone-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.4; }
+.import-zone-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--text2); margin-bottom: 0.5rem; }
+.import-zone-sub { font-size: 0.72rem; color: var(--text2); line-height: 1.6; }
+
+.import-instructions { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; }
+.import-instructions h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 1rem; font-weight: 400; }
+.import-instructions ol { list-style: none; counter-reset: steps; }
+.import-instructions ol li { counter-increment: steps; font-size: 0.75rem; color: var(--text2); line-height: 1.7; padding-left: 1.5rem; position: relative; }
+.import-instructions ol li::before { content: counter(steps); position: absolute; left: 0; color: var(--gold); font-weight: 700; }
+.import-instructions code { background: var(--bg); padding: 0.1rem 0.4rem; color: var(--gold); font-size: 0.72rem; }
+
+.section-divider { font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text2); margin: 0.75rem 0; display: flex; align-items: center; gap: 0.75rem; }
+.section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* Toast */
+.toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--surface2); border: 1px solid var(--gold); color: var(--text); padding: 0.75rem 1.25rem; font-size: 0.75rem; z-index: 9000; display: none; animation: fadeIn 0.2s ease; max-width: 320px; }
+.toast.show { display: block; }
+
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text2); }
+.empty-state h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 300; margin-bottom: 0.5rem; color: var(--text); }
+.empty-state p { font-size: 0.75rem; }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ LOADING ══════════════════════ -->
+<div id="loading-screen" class="visible">
+  <div class="loading-logo">DialTrader</div>
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- ═══════════════ AUTH SCREEN ══════════════════ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">DialTrader</div>
+    <div class="auth-tagline">Watch Trading Desk</div>
+
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Sign In</div>
+      <div class="auth-tab" onclick="switchAuthTab('signup')">Create Account</div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="auth-form active" id="auth-login">
+      <label class="auth-label">Email</label>
+      <input class="auth-input" id="login-email" type="email" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()">
+      <label class="auth-label">Password</label>
+      <input class="auth-input" id="login-password" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="auth-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+      <div class="auth-error" id="login-error"></div>
+      <div style="text-align:center;margin-top:1rem">
+        <span style="font-size:0.65rem;color:var(--text2);cursor:pointer;text-decoration:underline" onclick="doForgotPassword()">Forgot password?</span>
+      </div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div class="auth-form" id="auth-signup">
+      <label class="auth-label">Email</label>
+      <input class="auth-input" id="signup-email" type="email" placeholder="you@example.com">
+      <label class="auth-label">Password</label>
+      <input class="auth-input" id="signup-password" type="password" placeholder="Min. 8 characters">
+      <label class="auth-label">Confirm Password</label>
+      <input class="auth-input" id="signup-confirm" type="password" placeholder="Repeat password" onkeydown="if(event.key==='Enter')doSignup()">
+      <button class="auth-btn" id="signup-btn" onclick="doSignup()">Create Account</button>
+      <div class="auth-error" id="signup-error"></div>
+      <div class="auth-success" id="signup-success"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ APP SCREEN ════════════════════ -->
+<div id="app-screen">
+
+<header>
+  <div class="logo">Dial<em>Trader</em></div>
+  <nav class="header-nav">
+    <div class="nav-tab active" onclick="showPage('dashboard')">Dashboard</div>
+    <div class="nav-tab" onclick="showPage('inventory')">Inventory</div>
+    <div class="nav-tab" onclick="showPage('sold')">Sold</div>
+    <div class="nav-tab" onclick="showPage('import')">Import</div>
+  </nav>
+  <div class="header-right">
+    <div class="user-badge" id="user-badge"></div>
+    <button class="btn-outline" onclick="openModal()">+ Add Watch</button>
+    <button class="btn-outline" onclick="doSignOut()" style="color:var(--red);border-color:var(--red)">Sign Out</button>
+  </div>
+</header>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div style="padding-bottom:0.5rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border)">
+    <div style="font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text2);margin-bottom:0.25rem" id="dash-date"></div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:300;color:var(--text)">Trading Desk <span style="color:var(--gold);font-style:italic">Overview</span></div>
+  </div>
+  <div class="dash-hero">
+    <div class="hero-stat" id="hs1"><div class="hero-label">Capital in Inventory</div><div class="hero-value gold" id="stat-capital">—</div><div class="hero-sub" id="stat-capital-sub">loading...</div></div>
+    <div class="hero-stat" id="hs2"><div class="hero-label">Total Realized Profit</div><div class="hero-value green" id="stat-profit">—</div><div class="hero-sub" id="stat-profit-sub">loading...</div></div>
+    <div class="hero-stat" id="hs3"><div class="hero-label">Active Listings</div><div class="hero-value" id="stat-active">—</div><div class="hero-sub" id="stat-active-sub">loading...</div></div>
+    <div class="hero-stat" id="hs4"><div class="hero-label">Avg ROI per Trade</div><div class="hero-value gold" id="stat-roi">—</div><div class="hero-sub">on completed sales</div></div>
+  </div>
+  <div class="dash-grid">
+    <div class="panel">
+      <div class="panel-title">Active Inventory — Capital Exposure</div>
+      <table class="mini-table"><thead><tr><th>Watch</th><th>Cost Basis</th><th>Break Even</th><th>Days Held</th></tr></thead><tbody id="dash-inv-body"></tbody></table>
+    </div>
+    <div>
+      <div class="panel" style="margin-bottom:1rem"><div class="panel-title">Profit by Brand</div><div id="brand-breakdown"></div></div>
+      <div class="panel"><div class="panel-title">Recent Sales</div><div id="recent-sales"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- INVENTORY -->
+<div class="page" id="page-inventory">
+  <div class="page-header">
+    <div><div class="page-title">Active <span>Inventory</span></div><div style="font-size:0.7rem;color:var(--text2);margin-top:0.25rem" id="inv-subtitle"></div></div>
+    <button class="btn-gold" onclick="openModal()">+ Add Watch</button>
+  </div>
+  <div class="filter-bar">
+    <input class="search-input" type="text" placeholder="Search brand, model, reference..." id="inv-search" oninput="renderInventory()">
+    <select class="filter-select" id="inv-sort" onchange="renderInventory()">
+      <option value="date-desc">Newest First</option>
+      <option value="date-asc">Oldest First</option>
+      <option value="cost-desc">Highest Cost</option>
+      <option value="cost-asc">Lowest Cost</option>
+      <option value="days-desc">Most Days Held</option>
+    </select>
+  </div>
+  <div class="watch-grid" id="inventory-grid"></div>
+  <div id="inv-empty" class="empty-state" style="display:none"><h3>No watches in inventory</h3><p>Add your first watch using the button above.</p></div>
+</div>
+
+<!-- SOLD -->
+<div class="page" id="page-sold">
+  <div class="page-header">
+    <div><div class="page-title">Sold <span>History</span></div><div style="font-size:0.7rem;color:var(--text2);margin-top:0.25rem" id="sold-subtitle"></div></div>
+  </div>
+  <div class="filter-bar">
+    <input class="search-input" type="text" placeholder="Search sold watches..." id="sold-search" oninput="renderSold()">
+    <select class="filter-select" id="sold-sort" onchange="renderSold()">
+      <option value="profit-desc">Highest Profit</option>
+      <option value="profit-asc">Lowest Profit</option>
+      <option value="roi-desc">Best ROI %</option>
+      <option value="date-desc">Most Recent</option>
+    </select>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);overflow:auto">
+    <table class="sold-table">
+      <thead><tr>
+        <th>Brand / Model</th><th>Reference</th><th>Cost Basis</th><th>Sold Price</th><th>Platform</th>
+        <th onclick="setSoldSort('profit-desc')">Net Profit ↕</th>
+        <th onclick="setSoldSort('roi-desc')">ROI % ↕</th>
+        <th>Hold Days</th><th>P/Day</th>
+      </tr></thead>
+      <tbody id="sold-body"></tbody>
+    </table>
+  </div>
+  <div id="sold-empty" class="empty-state" style="display:none"><h3>No sold watches yet</h3><p>Mark a watch as sold from the Inventory page.</p></div>
+</div>
+
+<!-- IMPORT -->
+<div class="page" id="page-import">
+  <div class="page-header" style="margin-bottom:1.5rem"><div class="page-title">Import from <span>Google Sheets</span></div></div>
+  <div class="import-instructions">
+    <h3>How to Import Your Google Sheet</h3>
+    <ol>
+      <li>Open your Google Sheet</li>
+      <li>Go to <code>File → Download → Comma Separated Values (.csv)</code> — separately for each tab</li>
+      <li>Drop the CSV files below — Active Inventory first, then Sold</li>
+    </ol>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+    <div>
+      <div class="section-divider">Active Inventory CSV</div>
+      <div class="import-zone" id="drop-active" onclick="document.getElementById('file-active').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event,'active')">
+        <div class="import-zone-icon">📂</div>
+        <div class="import-zone-title">Drop CSV here</div>
+        <div class="import-zone-sub">Brand, Model, Reference, Purchase Date,<br>Purchase Price, Sales Tax, Shipping In, Other Fees,<br>Listed Price, Platform, Notes</div>
+      </div>
+      <input type="file" id="file-active" accept=".csv" style="display:none" onchange="handleFileInput(event,'active')">
+    </div>
+    <div>
+      <div class="section-divider">Sold Inventory CSV</div>
+      <div class="import-zone" id="drop-sold" onclick="document.getElementById('file-sold').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event,'sold')">
+        <div class="import-zone-icon">📂</div>
+        <div class="import-zone-title">Drop CSV here</div>
+        <div class="import-zone-sub">Brand, Model, Reference, Purchase Date, Sale Date,<br>Purchase Price, Sales Tax, Shipping In, Other Fees,<br>Sold Price, Platform Fee, Payment Fee, Shipping Out</div>
+      </div>
+      <input type="file" id="file-sold" accept=".csv" style="display:none" onchange="handleFileInput(event,'sold')">
+    </div>
+  </div>
+  <div style="text-align:center">
+    <button class="btn-outline" onclick="downloadTemplate('active')">⬇ Download Active Template</button>
+    &nbsp;
+    <button class="btn-outline" onclick="downloadTemplate('sold')">⬇ Download Sold Template</button>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Add Watch to Inventory</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <div class="modal-tab active" onclick="switchTab('basics')">Basics & Financials</div>
+        <div class="modal-tab" onclick="switchTab('details')">Watch Details</div>
+        <div class="modal-tab" onclick="switchTab('contacts')">Contacts</div>
+        <div class="modal-tab" id="tab-sell-btn" onclick="switchTab('sell')" style="display:none">Mark as Sold</div>
+      </div>
+
+      <!-- TAB: BASICS -->
+      <div class="modal-tab-panel active" id="tab-basics">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Brand *</label><input class="form-input" id="f-brand" placeholder="e.g. Rolex"></div>
+          <div class="form-group"><label class="form-label">Reference No.</label><input class="form-input" id="f-ref" placeholder="e.g. 124300"></div>
+          <div class="form-group full"><label class="form-label">Model *</label><input class="form-input" id="f-model" placeholder="e.g. Oyster Perpetual 41mm Blue Dial"></div>
+          <div class="form-group"><label class="form-label">Purchase Date</label><input class="form-input" type="date" id="f-purchase-date"></div>
+          <div class="form-group"><label class="form-label">Purchase Price ($) *</label><input class="form-input" type="number" id="f-purchase-price" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Sales Tax ($)</label><input class="form-input" type="number" id="f-tax" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Shipping In ($)</label><input class="form-input" type="number" id="f-shipping-in" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Other Fees ($)</label><input class="form-input" type="number" id="f-other-fees" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Listed Price ($)</label><input class="form-input" type="number" id="f-listed-price" placeholder="0.00"></div>
+          <div class="form-group">
+            <label class="form-label">Buy Platform</label>
+            <select class="form-select" id="f-platform">
+              <option value="">— Select —</option>
+              <option>Chrono24</option><option>eBay</option><option>Facebook Marketplace</option>
+              <option>Facebook Groups</option><option>Grailzee</option><option>Reddit</option>
+              <option>Direct / Private</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-notes" placeholder="Condition, box & papers, any quirks..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- TAB: WATCH DETAILS -->
+      <div class="modal-tab-panel" id="tab-details">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Case Size</label><input class="form-input" id="f-case-size" placeholder="e.g. 41mm"></div>
+          <div class="form-group">
+            <label class="form-label">Case Material</label>
+            <select class="form-select" id="f-case-material">
+              <option value="">— Select —</option>
+              <option>Stainless Steel</option><option>Yellow Gold</option><option>White Gold</option>
+              <option>Rose Gold</option><option>Two-Tone (SS/Gold)</option><option>Titanium</option>
+              <option>Ceramic</option><option>Platinum</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Movement</label>
+            <select class="form-select" id="f-movement">
+              <option value="">— Select —</option>
+              <option>Automatic</option><option>Manual Wind</option><option>Quartz</option>
+              <option>Spring Drive</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="f-year" placeholder="e.g. 2023"></div>
+          <div class="form-group">
+            <label class="form-label">Condition</label>
+            <select class="form-select" id="f-condition">
+              <option value="">— Select —</option>
+              <option>New / Unworn</option><option>Mint (Excellent)</option><option>Very Good</option>
+              <option>Good</option><option>Fair</option><option>Parts / Project</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Box & Papers</label>
+            <select class="form-select" id="f-box-papers">
+              <option value="">— Select —</option>
+              <option>Full Set (Box + Papers)</option><option>Box Only</option>
+              <option>Papers Only</option><option>No Box, No Papers</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:1rem">
+          <label class="form-label">Dial Color</label>
+          <div class="color-row" id="dial-colors"></div>
+          <input class="form-input" id="f-dial-color" placeholder="e.g. Sunburst Blue, Champagne..." style="margin-top:0.5rem">
+        </div>
+        <div style="margin-top:1rem">
+          <label class="form-label">Bezel Color / Type</label>
+          <div class="color-row" id="bezel-colors"></div>
+          <input class="form-input" id="f-bezel-color" placeholder="e.g. Black Ceramic, Fluted Gold..." style="margin-top:0.5rem">
+        </div>
+        <div style="margin-top:1rem">
+          <label class="form-label">Bracelet / Strap</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.5rem">
+            <div>
+              <label class="form-label">Type</label>
+              <select class="form-select" id="f-bracelet-type">
+                <option value="">— Select —</option>
+                <option>Oyster Bracelet</option><option>Jubilee Bracelet</option><option>President Bracelet</option>
+                <option>Integrated Bracelet</option><option>Leather Strap</option><option>Rubber / Silicone Strap</option>
+                <option>NATO Strap</option><option>Fabric / Canvas Strap</option><option>Titanium Bracelet</option><option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Color / Material</label>
+              <input class="form-input" id="f-bracelet-color" placeholder="e.g. Black, Brown, Steel...">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: CONTACTS -->
+      <div class="modal-tab-panel" id="tab-contacts">
+        <div class="contact-card">
+          <div class="contact-card-title">▸ Purchased From</div>
+          <div class="form-grid">
+            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="f-buy-name" placeholder="Full name or business"></div>
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="f-buy-phone" type="tel" placeholder="(555) 000-0000"></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-buy-email" type="email" placeholder="seller@email.com"></div>
+            <div class="form-group full"><label class="form-label">Location / Notes</label><input class="form-input" id="f-buy-location" placeholder="City, state or notes about seller"></div>
+          </div>
+        </div>
+        <div class="contact-card">
+          <div class="contact-card-title">▸ Sold To</div>
+          <div style="font-size:0.68rem;color:var(--text2);margin-bottom:0.75rem">Pre-fill for a reserved buyer, or complete when you mark the watch sold.</div>
+          <div class="form-grid">
+            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="f-sell-name" placeholder="Full name or business"></div>
+            <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="f-sell-phone" type="tel" placeholder="(555) 000-0000"></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-sell-email" type="email" placeholder="buyer@email.com"></div>
+            <div class="form-group full"><label class="form-label">Location / Notes</label><input class="form-input" id="f-sell-location" placeholder="City, state or notes about buyer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: MARK AS SOLD -->
+      <div class="modal-tab-panel" id="tab-sell">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">Sale Date</label><input class="form-input" type="date" id="f-sale-date"></div>
+          <div class="form-group"><label class="form-label">Sold Price ($)</label><input class="form-input" type="number" id="f-sold-price" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Platform Fee ($)</label><input class="form-input" type="number" id="f-platform-fee" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Payment Fee ($)</label><input class="form-input" type="number" id="f-payment-fee" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Shipping Out ($)</label><input class="form-input" type="number" id="f-shipping-out" placeholder="0.00"></div>
+          <div class="form-group">
+            <label class="form-label">Sale Platform</label>
+            <select class="form-select" id="f-sale-platform">
+              <option value="">— Select —</option>
+              <option>Chrono24</option><option>eBay</option><option>Facebook Marketplace</option>
+              <option>Facebook Groups</option><option>Grailzee</option><option>Reddit</option>
+              <option>Direct / Private</option><option>Other</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:1rem;padding:1rem;background:var(--bg);border:1px solid var(--border)">
+          <div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text2);margin-bottom:0.5rem">Estimated Profit</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300" id="sell-profit-preview">—</div>
+        </div>
+        <div style="margin-top:1rem">
+          <button class="btn-gold" onclick="markAsSold()" style="width:100%;padding:0.75rem;font-size:0.8rem">Confirm Sale & Move to Sold History</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-danger" id="btn-delete" style="display:none" onclick="deleteWatch()">Delete Watch</button>
+      <div class="modal-actions">
+        <button class="btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn-gold" id="btn-save" onclick="saveWatch()">Save Watch</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end app-screen -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  SUPABASE INIT
+// ══════════════════════════════════════════════════
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+let currentUser = null;
+let inventory = [];
+let soldWatches = [];
+let editingId = null;
+
+// ══════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════
+
+async function initAuth() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    await showApp();
+  } else {
+    showAuthScreen();
+  }
+
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) {
+      currentUser = session.user;
+      await showApp();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      inventory = [];
+      soldWatches = [];
+      showAuthScreen();
+    }
+  });
+}
+
+function showAuthScreen() {
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('app-screen').classList.remove('visible');
+  document.getElementById('auth-screen').classList.add('visible');
+}
+
+async function showApp() {
+  document.getElementById('auth-screen').classList.remove('visible');
+  document.getElementById('loading-screen').classList.add('visible');
+  document.getElementById('app-screen').classList.remove('visible');
+
+  document.getElementById('user-badge').textContent = currentUser.email;
+  await loadAllData();
+
+  document.getElementById('loading-screen').classList.remove('visible');
+  document.getElementById('app-screen').classList.add('visible');
+  renderDashboard();
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.querySelector(`.auth-tab[onclick="switchAuthTab('${tab}')"]`).classList.add('active');
+  document.getElementById('auth-' + tab).classList.add('active');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Please enter email and password.'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign In';
+  if (error) errEl.textContent = error.message;
+}
+
+async function doSignup() {
+  const email = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const confirm = document.getElementById('signup-confirm').value;
+  const btn = document.getElementById('signup-btn');
+  const errEl = document.getElementById('signup-error');
+  const succEl = document.getElementById('signup-success');
+  errEl.textContent = ''; succEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Please fill in all fields.'; return; }
+  if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; return; }
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  const { error } = await db.auth.signUp({ email, password });
+  btn.disabled = false; btn.textContent = 'Create Account';
+  if (error) { errEl.textContent = error.message; }
+  else { succEl.textContent = 'Account created! Check your email to confirm, then sign in.'; }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { document.getElementById('login-error').textContent = 'Enter your email above first.'; return; }
+  const { error } = await db.auth.resetPasswordForEmail(email);
+  if (error) document.getElementById('login-error').textContent = error.message;
+  else document.getElementById('login-error').style.color = 'var(--green)', document.getElementById('login-error').textContent = 'Password reset email sent!';
+}
+
+async function doSignOut() {
+  await db.auth.signOut();
+}
+
+// ══════════════════════════════════════════════════
+//  DATA LAYER — SUPABASE
+// ══════════════════════════════════════════════════
+
+async function loadAllData() {
+  const [invRes, soldRes] = await Promise.all([
+    db.from('inventory').select('*').order('created_at', { ascending: false }),
+    db.from('sold_inventory').select('*').order('created_at', { ascending: false })
+  ]);
+  inventory = invRes.data || [];
+  soldWatches = soldRes.data || [];
+}
+
+function dbToLocal(row) {
+  // Map snake_case DB columns to camelCase app fields
+  return {
+    id: row.id,
+    brand: row.brand || '',
+    model: row.model || '',
+    ref: row.ref || '',
+    year: row.year || '',
+    purchaseDate: row.purchase_date || '',
+    purchasePrice: row.purchase_price || 0,
+    tax: row.tax || 0,
+    shippingIn: row.shipping_in || 0,
+    otherFees: row.other_fees || 0,
+    listedPrice: row.listed_price || null,
+    platform: row.platform || '',
+    notes: row.notes || '',
+    caseSize: row.case_size || '',
+    caseMaterial: row.case_material || '',
+    movement: row.movement || '',
+    condition: row.condition || '',
+    boxPapers: row.box_papers || '',
+    dialColor: row.dial_color || '',
+    bezelColor: row.bezel_color || '',
+    braceletType: row.bracelet_type || '',
+    braceletColor: row.bracelet_color || '',
+    buyName: row.buy_name || '',
+    buyPhone: row.buy_phone || '',
+    buyEmail: row.buy_email || '',
+    buyLocation: row.buy_location || '',
+    sellName: row.sell_name || '',
+    sellPhone: row.sell_phone || '',
+    sellEmail: row.sell_email || '',
+    sellLocation: row.sell_location || '',
+  };
+}
+
+function localToDb(w) {
+  return {
+    user_id: currentUser.id,
+    brand: w.brand,
+    model: w.model,
+    ref: w.ref || null,
+    year: w.year || null,
+    purchase_date: w.purchaseDate || null,
+    purchase_price: w.purchasePrice || 0,
+    tax: w.tax || 0,
+    shipping_in: w.shippingIn || 0,
+    other_fees: w.otherFees || 0,
+    listed_price: w.listedPrice || null,
+    platform: w.platform || null,
+    notes: w.notes || null,
+    case_size: w.caseSize || null,
+    case_material: w.caseMaterial || null,
+    movement: w.movement || null,
+    condition: w.condition || null,
+    box_papers: w.boxPapers || null,
+    dial_color: w.dialColor || null,
+    bezel_color: w.bezelColor || null,
+    bracelet_type: w.braceletType || null,
+    bracelet_color: w.braceletColor || null,
+    buy_name: w.buyName || null,
+    buy_phone: w.buyPhone || null,
+    buy_email: w.buyEmail || null,
+    buy_location: w.buyLocation || null,
+    sell_name: w.sellName || null,
+    sell_phone: w.sellPhone || null,
+    sell_email: w.sellEmail || null,
+    sell_location: w.sellLocation || null,
+  };
+}
+
+// ══════════════════════════════════════════════════
+//  CALCULATIONS
+// ══════════════════════════════════════════════════
+
+function costBasis(w) { return (+w.purchasePrice||0) + (+w.tax||0) + (+w.shippingIn||0) + (+w.otherFees||0); }
+function netProfit(s) {
+  const basis = costBasis(s);
+  const net = (+s.soldPrice||0) - (+s.platformFee||0) - (+s.paymentFee||0) - (+s.shippingOut||0);
+  return net - basis;
+}
+function soldNetProfit(s) {
+  const basis = (+s.purchase_price||0)+(+s.tax||0)+(+s.shipping_in||0)+(+s.other_fees||0);
+  const net = (+s.sold_price||0)-(+s.platform_fee||0)-(+s.payment_fee||0)-(+s.shipping_out||0);
+  return net - basis;
+}
+function soldROI(s) {
+  const basis = (+s.purchase_price||0)+(+s.tax||0)+(+s.shipping_in||0)+(+s.other_fees||0);
+  if (!basis) return 0;
+  return (soldNetProfit(s) / basis) * 100;
+}
+function soldCostBasis(s) { return (+s.purchase_price||0)+(+s.tax||0)+(+s.shipping_in||0)+(+s.other_fees||0); }
+function daysHeld(purchaseDate, saleDate) {
+  if (!purchaseDate) return null;
+  const end = saleDate ? new Date(saleDate) : new Date();
+  return Math.round((end - new Date(purchaseDate)) / 86400000);
+}
+function fmt(n, d=0) {
+  if (n===null||n===undefined||isNaN(n)) return '—';
+  return '$'+Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+function fmtPct(n) { if(n===null||isNaN(n)) return '—'; return n.toFixed(1)+'%'; }
+
+// ══════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════
+
+function renderDashboard() {
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const capital = inventory.reduce((sum,w) => sum + ((+w.purchase_price||0)+(+w.tax||0)+(+w.shipping_in||0)+(+w.other_fees||0)), 0);
+  document.getElementById('stat-capital').textContent = fmt(capital);
+  document.getElementById('stat-capital-sub').textContent = `across ${inventory.length} active watch${inventory.length!==1?'es':''}`;
+
+  const totalProfit = soldWatches.reduce((sum,s) => sum + soldNetProfit(s), 0);
+  const profitEl = document.getElementById('stat-profit');
+  profitEl.textContent = fmt(totalProfit);
+  profitEl.className = 'hero-value '+(totalProfit>=0?'green':'red');
+  document.getElementById('stat-profit-sub').textContent = `from ${soldWatches.length} sold watch${soldWatches.length!==1?'es':''}`;
+
+  document.getElementById('stat-active').textContent = inventory.length;
+
+  const rois = soldWatches.map(s => soldROI(s)).filter(r => !isNaN(r) && isFinite(r));
+  const avgRoi = rois.length ? rois.reduce((a,b)=>a+b,0)/rois.length : 0;
+  document.getElementById('stat-roi').textContent = fmtPct(avgRoi);
+
+  setTimeout(() => ['hs1','hs2','hs3','hs4'].forEach(id => document.getElementById(id)?.classList.add('loaded')), 100);
+
+  // Inventory table
+  const sorted = [...inventory].sort((a,b) => soldCostBasis(b) - soldCostBasis(a));
+  document.getElementById('dash-inv-body').innerHTML = sorted.map(w => {
+    const basis = (+w.purchase_price||0)+(+w.tax||0)+(+w.shipping_in||0)+(+w.other_fees||0);
+    const d = w.purchase_date ? daysHeld(w.purchase_date) : null;
+    const pillClass = d > 60 ? 'warn' : d > 30 ? '' : 'ok';
+    return `<tr><td><span class="brand-badge">${w.brand}</span><div style="font-size:0.72rem;color:var(--text2);margin-top:0.3rem">${w.model}</div></td>
+      <td style="color:var(--gold)">${fmt(basis)}</td>
+      <td style="color:var(--text2)">${fmt(basis)}</td>
+      <td>${d!==null?`<span class="days-pill ${pillClass}">${d}d</span>`:'<span class="days-pill">—</span>'}</td></tr>`;
+  }).join('');
+
+  // Brand breakdown
+  const brandMap = {};
+  soldWatches.forEach(s => {
+    const b = (s.brand||'').trim();
+    if (!brandMap[b]) brandMap[b] = 0;
+    brandMap[b] += soldNetProfit(s);
+  });
+  const brands = Object.entries(brandMap).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const maxP = Math.max(...brands.map(b=>Math.abs(b[1])),1);
+  document.getElementById('brand-breakdown').innerHTML = brands.map(([name,profit]) =>
+    `<div class="brand-row"><div class="brand-name">${name}</div><div class="brand-bar-wrap"><div class="brand-bar" style="width:${Math.max(2,(Math.abs(profit)/maxP)*100)}%;background:${profit>=0?'var(--gold)':'var(--red)'}"></div></div><div class="brand-profit" style="color:${profit>=0?'var(--green)':'var(--red)'}">${fmt(profit)}</div></div>`
+  ).join('');
+
+  // Recent sales
+  const recent = [...soldWatches].slice(0,5);
+  document.getElementById('recent-sales').innerHTML = recent.length ? recent.map(s => {
+    const p = soldNetProfit(s);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border)">
+      <div><div style="font-size:0.72rem">${s.brand} ${(s.model||'').substring(0,28)}${(s.model||'').length>28?'...':''}</div><div style="font-size:0.62rem;color:var(--text2)">${s.ref||'—'}</div></div>
+      <div class="profit-badge ${p>=0?'pos':'neg'}">${p>=0?'+':''}${fmt(p)}</div></div>`;
+  }).join('') : '<div style="font-size:0.75rem;color:var(--text2)">No sales yet.</div>';
+}
+
+// ══════════════════════════════════════════════════
+//  INVENTORY
+// ══════════════════════════════════════════════════
+
+function renderInventory() {
+  const search = (document.getElementById('inv-search').value||'').toLowerCase();
+  const sort = document.getElementById('inv-sort').value;
+
+  let filtered = inventory.filter(w => `${w.brand} ${w.model} ${w.ref}`.toLowerCase().includes(search));
+
+  filtered.sort((a,b) => {
+    const ba = (+a.purchase_price||0)+(+a.tax||0)+(+a.shipping_in||0)+(+a.other_fees||0);
+    const bb = (+b.purchase_price||0)+(+b.tax||0)+(+b.shipping_in||0)+(+b.other_fees||0);
+    if (sort==='date-desc') return new Date(b.purchase_date||0)-new Date(a.purchase_date||0);
+    if (sort==='date-asc') return new Date(a.purchase_date||0)-new Date(b.purchase_date||0);
+    if (sort==='cost-desc') return bb-ba;
+    if (sort==='cost-asc') return ba-bb;
+    if (sort==='days-desc') { const da=a.purchase_date?daysHeld(a.purchase_date):-1,db=b.purchase_date?daysHeld(b.purchase_date):-1; return db-da; }
+    return 0;
+  });
+
+  const totalCapital = inventory.reduce((s,w)=>s+((+w.purchase_price||0)+(+w.tax||0)+(+w.shipping_in||0)+(+w.other_fees||0)),0);
+  document.getElementById('inv-subtitle').textContent = `${inventory.length} watches · ${fmt(totalCapital)} total capital`;
+
+  const grid = document.getElementById('inventory-grid');
+  const empty = document.getElementById('inv-empty');
+  if (!filtered.length) { grid.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  grid.innerHTML = filtered.map((w,i) => {
+    const basis=(+w.purchase_price||0)+(+w.tax||0)+(+w.shipping_in||0)+(+w.other_fees||0);
+    const d=w.purchase_date?daysHeld(w.purchase_date):null;
+    const profit=w.listed_price?(w.listed_price-basis):null;
+    const chips=[w.dial_color,w.bezel_color,w.bracelet_type,w.case_material,w.condition].filter(Boolean).slice(0,4);
+    const hasContact=w.buy_name||w.sell_name;
+    return `<div class="watch-card" onclick="editWatch('${w.id}')" style="animation-delay:${i*0.04}s">
+      <div class="watch-card-top"><div>
+        <div class="watch-brand">${w.brand}${w.year?' · '+w.year:''}</div>
+        <div class="watch-model">${w.model}</div>
+        <div class="watch-ref">${w.ref||'—'}${w.case_size?' · '+w.case_size:''}</div>
+      </div><div class="status-dot"></div></div>
+      ${chips.length?`<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.75rem">${chips.map(c=>`<span style="font-size:0.58rem;letter-spacing:0.06em;background:var(--surface2);color:var(--text2);padding:0.15rem 0.5rem;border:1px solid var(--border)">${c}</span>`).join('')}</div>`:''}
+      ${w.platform?`<div style="font-size:0.6rem;letter-spacing:0.1em;color:var(--text2);margin-bottom:0.75rem;text-transform:uppercase">${w.platform}</div>`:''}
+      <div class="watch-financials">
+        <div class="fin-item"><div class="fin-label">Cost Basis</div><div class="fin-value gold">${fmt(basis)}</div></div>
+        <div class="fin-item"><div class="fin-label">Listed At</div><div class="fin-value">${w.listed_price?fmt(w.listed_price):'—'}</div></div>
+        <div class="fin-item"><div class="fin-label">Potential Profit</div><div class="fin-value ${profit>0?'green':profit<0?'red':''}">${profit!==null?(profit>=0?'+':'')+fmt(profit):'—'}</div></div>
+        <div class="fin-item"><div class="fin-label">Days Held</div><div class="fin-value ${d>60?'red':d>30?'gold':''}">${d!==null?d+'d':'—'}</div></div>
+      </div>
+      ${hasContact?`<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);display:flex;gap:1rem">
+        ${w.buy_name?`<div style="font-size:0.62rem;color:var(--text2)">📥 ${w.buy_name}</div>`:''}
+        ${w.sell_name?`<div style="font-size:0.62rem;color:var(--text2)">📤 ${w.sell_name}</div>`:''}
+      </div>`:''}
+      ${w.notes?`<div style="font-size:0.65rem;color:var(--text2);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);line-height:1.5">${w.notes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  SOLD
+// ══════════════════════════════════════════════════
+
+function setSoldSort(val) { document.getElementById('sold-sort').value=val; renderSold(); }
+
+function renderSold() {
+  const search = (document.getElementById('sold-search').value||'').toLowerCase();
+  const sort = document.getElementById('sold-sort').value;
+  let filtered = soldWatches.filter(s=>`${s.brand} ${s.model} ${s.ref}`.toLowerCase().includes(search));
+  filtered.sort((a,b)=>{
+    if(sort==='profit-desc') return soldNetProfit(b)-soldNetProfit(a);
+    if(sort==='profit-asc') return soldNetProfit(a)-soldNetProfit(b);
+    if(sort==='roi-desc') return soldROI(b)-soldROI(a);
+    if(sort==='date-desc') return new Date(b.sale_date||b.purchase_date||0)-new Date(a.sale_date||a.purchase_date||0);
+    return 0;
+  });
+
+  const totalProfit = soldWatches.reduce((sum,s)=>sum+soldNetProfit(s),0);
+  document.getElementById('sold-subtitle').textContent = `${soldWatches.length} watches sold · ${fmt(totalProfit)} total profit`;
+
+  const tbody = document.getElementById('sold-body');
+  const empty = document.getElementById('sold-empty');
+  if (!filtered.length) { tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  tbody.innerHTML = filtered.map(s => {
+    const p=soldNetProfit(s), r=soldROI(s);
+    const d=daysHeld(s.purchase_date,s.sale_date);
+    const ppd=d&&d>0?p/d:null;
+    return `<tr>
+      <td><div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.2rem">${s.brand}</div><div style="font-size:0.76rem">${s.model}</div></td>
+      <td style="color:var(--text2);font-size:0.7rem">${s.ref||'—'}</td>
+      <td>${fmt(soldCostBasis(s))}</td>
+      <td>${fmt(s.sold_price)}</td>
+      <td style="font-size:0.68rem;color:var(--text2)">${s.platform||'—'}</td>
+      <td><span class="profit-badge ${p>=0?'pos':'neg'}">${p>=0?'+':''}${fmt(p)}</span></td>
+      <td style="color:${r>=0?'var(--green)':'var(--red)'}">${fmtPct(r)}</td>
+      <td style="color:var(--text2)">${d!==null?d+'d':'—'}</td>
+      <td style="color:var(--text2);font-size:0.68rem">${ppd!==null?(ppd>=0?'+':'')+fmt(ppd,2):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  COLOR SWATCHES
+// ══════════════════════════════════════════════════
+
+const DIAL_COLORS = [
+  {hex:'#1a1a1a',name:'Black'},{hex:'#2c3e6b',name:'Blue'},{hex:'#1e4d3b',name:'Green'},
+  {hex:'#f5f0e8',name:'White/Cream'},{hex:'#c9a84c',name:'Gold/Champagne'},{hex:'#8b7355',name:'Brown/Chocolate'},
+  {hex:'#7b3f3f',name:'Burgundy/Wine'},{hex:'#9e9e9e',name:'Silver/Grey'},{hex:'#4a7fa5',name:'Slate Blue'},
+  {hex:'#2d5a3d',name:'Olive Green'},{hex:'#d4a5a5',name:'Pink/Rose'},{hex:'#f2f2f2',name:'Panda/White'},
+];
+const BEZEL_COLORS = [
+  {hex:'#1a1a1a',name:'Black'},{hex:'#2c3e6b',name:'Blue'},{hex:'#1e4d3b',name:'Green'},
+  {hex:'#9e9e9e',name:'Steel/Silver'},{hex:'#c9a84c',name:'Gold'},{hex:'#e8c97a',name:'Yellow Gold'},
+  {hex:'#c0c0c0',name:'White Gold'},{hex:'#b87333',name:'Rose Gold'},{hex:'#ff5722',name:'Red/Orange'},
+  {hex:'#f5f0e8',name:'Ceramic White'},{hex:'#3d3d3d',name:'Dark Ceramic'},{hex:'#7b3f3f',name:'Burgundy'},
+];
+
+function buildSwatches(containerId, colors, fieldId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = colors.map(c =>
+    `<div class="color-chip" title="${c.name}" style="background:${c.hex}" onclick="selectColor('${containerId}','${fieldId}','${c.name}',this)"></div>`
+  ).join('');
+}
+function selectColor(containerId, fieldId, name, el) {
+  document.querySelectorAll(`#${containerId} .color-chip`).forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById(fieldId).value = name;
+}
+function highlightSwatch(containerId, name) {
+  document.querySelectorAll(`#${containerId} .color-chip`).forEach(c => { if(c.title===name) c.classList.add('selected'); });
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL TABS
+// ══════════════════════════════════════════════════
+
+function switchTab(name) {
+  document.querySelectorAll('.modal-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.modal-tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.modal-tab').forEach(t=>{if(t.getAttribute('onclick')===`switchTab('${name}')`)t.classList.add('active');});
+  if (name==='sell') updateSellPreview();
+}
+
+function updateSellPreview() {
+  const basis=(parseFloat(document.getElementById('f-purchase-price').value)||0)+(parseFloat(document.getElementById('f-tax').value)||0)+(parseFloat(document.getElementById('f-shipping-in').value)||0)+(parseFloat(document.getElementById('f-other-fees').value)||0);
+  const soldPrice=parseFloat(document.getElementById('f-sold-price').value)||0;
+  const fees=(parseFloat(document.getElementById('f-platform-fee').value)||0)+(parseFloat(document.getElementById('f-payment-fee').value)||0)+(parseFloat(document.getElementById('f-shipping-out').value)||0);
+  const profit=soldPrice-fees-basis;
+  const el=document.getElementById('sell-profit-preview');
+  if(!soldPrice){el.textContent='—';el.style.color='var(--text2)';return;}
+  el.textContent=(profit>=0?'+':'')+fmt(profit);
+  el.style.color=profit>=0?'var(--green)':'var(--red)';
+}
+
+document.addEventListener('input',e=>{
+  if(['f-sold-price','f-platform-fee','f-payment-fee','f-shipping-out'].includes(e.target.id)) updateSellPreview();
+});
+
+// ══════════════════════════════════════════════════
+//  MODAL OPEN / CLOSE
+// ══════════════════════════════════════════════════
+
+function openModal() {
+  editingId=null;
+  document.getElementById('modal-title').textContent='Add Watch to Inventory';
+  document.getElementById('btn-delete').style.display='none';
+  document.getElementById('tab-sell-btn').style.display='none';
+  clearForm();
+  buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
+  buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
+  switchTab('basics');
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('f-brand').focus(),50);
+}
+
+function editWatch(id) {
+  const row = inventory.find(w=>w.id===id);
+  if (!row) return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit Watch';
+  document.getElementById('btn-delete').style.display='inline-block';
+  document.getElementById('tab-sell-btn').style.display='block';
+
+  buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
+  buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
+
+  // Basics
+  document.getElementById('f-brand').value=row.brand||'';
+  document.getElementById('f-model').value=row.model||'';
+  document.getElementById('f-ref').value=row.ref||'';
+  document.getElementById('f-purchase-date').value=row.purchase_date||'';
+  document.getElementById('f-purchase-price').value=row.purchase_price||'';
+  document.getElementById('f-tax').value=row.tax||'';
+  document.getElementById('f-shipping-in').value=row.shipping_in||'';
+  document.getElementById('f-other-fees').value=row.other_fees||'';
+  document.getElementById('f-listed-price').value=row.listed_price||'';
+  document.getElementById('f-platform').value=row.platform||'';
+  document.getElementById('f-notes').value=row.notes||'';
+  // Details
+  document.getElementById('f-case-size').value=row.case_size||'';
+  document.getElementById('f-case-material').value=row.case_material||'';
+  document.getElementById('f-movement').value=row.movement||'';
+  document.getElementById('f-year').value=row.year||'';
+  document.getElementById('f-condition').value=row.condition||'';
+  document.getElementById('f-box-papers').value=row.box_papers||'';
+  document.getElementById('f-dial-color').value=row.dial_color||'';
+  document.getElementById('f-bezel-color').value=row.bezel_color||'';
+  document.getElementById('f-bracelet-type').value=row.bracelet_type||'';
+  document.getElementById('f-bracelet-color').value=row.bracelet_color||'';
+  if(row.dial_color) highlightSwatch('dial-colors',row.dial_color);
+  if(row.bezel_color) highlightSwatch('bezel-colors',row.bezel_color);
+  // Contacts
+  document.getElementById('f-buy-name').value=row.buy_name||'';
+  document.getElementById('f-buy-phone').value=row.buy_phone||'';
+  document.getElementById('f-buy-email').value=row.buy_email||'';
+  document.getElementById('f-buy-location').value=row.buy_location||'';
+  document.getElementById('f-sell-name').value=row.sell_name||'';
+  document.getElementById('f-sell-phone').value=row.sell_phone||'';
+  document.getElementById('f-sell-email').value=row.sell_email||'';
+  document.getElementById('f-sell-location').value=row.sell_location||'';
+
+  switchTab('basics');
+  document.getElementById('modal').classList.add('open');
+}
+
+function clearForm() {
+  ['f-brand','f-model','f-ref','f-purchase-date','f-purchase-price','f-tax','f-shipping-in','f-other-fees',
+   'f-listed-price','f-notes','f-sale-date','f-sold-price','f-platform-fee','f-payment-fee','f-shipping-out',
+   'f-case-size','f-year','f-dial-color','f-bezel-color','f-bracelet-color',
+   'f-buy-name','f-buy-phone','f-buy-email','f-buy-location','f-sell-name','f-sell-phone','f-sell-email','f-sell-location'
+  ].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-platform','f-sale-platform','f-case-material','f-movement','f-condition','f-box-papers','f-bracelet-type'
+  ].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('.color-chip').forEach(c=>c.classList.remove('selected'));
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModalOverlay(e) { if(e.target===document.getElementById('modal'))closeModal(); }
+
+// ══════════════════════════════════════════════════
+//  SAVE / DELETE / MARK SOLD
+// ══════════════════════════════════════════════════
+
+function getFormData() {
+  return {
+    brand: document.getElementById('f-brand').value.trim(),
+    model: document.getElementById('f-model').value.trim(),
+    ref: document.getElementById('f-ref').value.trim(),
+    purchaseDate: document.getElementById('f-purchase-date').value,
+    purchasePrice: parseFloat(document.getElementById('f-purchase-price').value)||0,
+    tax: parseFloat(document.getElementById('f-tax').value)||0,
+    shippingIn: parseFloat(document.getElementById('f-shipping-in').value)||0,
+    otherFees: parseFloat(document.getElementById('f-other-fees').value)||0,
+    listedPrice: parseFloat(document.getElementById('f-listed-price').value)||null,
+    platform: document.getElementById('f-platform').value,
+    notes: document.getElementById('f-notes').value.trim(),
+    caseSize: document.getElementById('f-case-size').value.trim(),
+    caseMaterial: document.getElementById('f-case-material').value,
+    movement: document.getElementById('f-movement').value,
+    year: document.getElementById('f-year').value.trim(),
+    condition: document.getElementById('f-condition').value,
+    boxPapers: document.getElementById('f-box-papers').value,
+    dialColor: document.getElementById('f-dial-color').value.trim(),
+    bezelColor: document.getElementById('f-bezel-color').value.trim(),
+    braceletType: document.getElementById('f-bracelet-type').value,
+    braceletColor: document.getElementById('f-bracelet-color').value.trim(),
+    buyName: document.getElementById('f-buy-name').value.trim(),
+    buyPhone: document.getElementById('f-buy-phone').value.trim(),
+    buyEmail: document.getElementById('f-buy-email').value.trim(),
+    buyLocation: document.getElementById('f-buy-location').value.trim(),
+    sellName: document.getElementById('f-sell-name').value.trim(),
+    sellPhone: document.getElementById('f-sell-phone').value.trim(),
+    sellEmail: document.getElementById('f-sell-email').value.trim(),
+    sellLocation: document.getElementById('f-sell-location').value.trim(),
+  };
+}
+
+async function saveWatch() {
+  const data = getFormData();
+  if (!data.brand || !data.model) { showToast('Brand and Model are required.'); switchTab('basics'); return; }
+
+  const btn = document.getElementById('btn-save');
+  btn.disabled=true; btn.textContent='Saving...';
+
+  const dbRow = localToDb(data);
+
+  let error;
+  if (editingId) {
+    const res = await db.from('inventory').update(dbRow).eq('id', editingId);
+    error = res.error;
+    if (!error) { const idx=inventory.findIndex(w=>w.id===editingId); inventory[idx]={...inventory[idx],...dbRow,id:editingId}; }
+  } else {
+    const res = await db.from('inventory').insert(dbRow).select().single();
+    error = res.error;
+    if (!error) inventory.unshift(res.data);
+  }
+
+  btn.disabled=false; btn.textContent='Save Watch';
+  if (error) { showToast('Error: '+error.message); return; }
+  closeModal();
+  refreshAll();
+  showToast(editingId?'Watch updated.':'Watch added to inventory.');
+}
+
+async function deleteWatch() {
+  if (!editingId) return;
+  if (!confirm('Delete this watch from inventory? This cannot be undone.')) return;
+  const { error } = await db.from('inventory').delete().eq('id', editingId);
+  if (error) { showToast('Error: '+error.message); return; }
+  inventory = inventory.filter(w=>w.id!==editingId);
+  closeModal(); refreshAll(); showToast('Watch deleted.');
+}
+
+async function markAsSold() {
+  if (!editingId) return;
+  const row = inventory.find(w=>w.id===editingId);
+  if (!row) return;
+  const soldPrice = parseFloat(document.getElementById('f-sold-price').value)||0;
+  if (!soldPrice) { showToast('Enter a sold price first.'); return; }
+
+  const soldRow = {
+    user_id: currentUser.id,
+    brand: row.brand, model: row.model, ref: row.ref, year: row.year,
+    purchase_date: row.purchase_date,
+    sale_date: document.getElementById('f-sale-date').value || new Date().toISOString().split('T')[0],
+    purchase_price: row.purchase_price, tax: row.tax, shipping_in: row.shipping_in, other_fees: row.other_fees,
+    sold_price: soldPrice,
+    platform_fee: parseFloat(document.getElementById('f-platform-fee').value)||0,
+    payment_fee: parseFloat(document.getElementById('f-payment-fee').value)||0,
+    shipping_out: parseFloat(document.getElementById('f-shipping-out').value)||0,
+    platform: document.getElementById('f-sale-platform').value || row.platform,
+    notes: row.notes,
+    case_size: row.case_size, case_material: row.case_material, movement: row.movement,
+    condition: row.condition, box_papers: row.box_papers,
+    dial_color: row.dial_color, bezel_color: row.bezel_color, bracelet_type: row.bracelet_type, bracelet_color: row.bracelet_color,
+    buy_name: row.buy_name, buy_phone: row.buy_phone, buy_email: row.buy_email, buy_location: row.buy_location,
+    sell_name: document.getElementById('f-sell-name').value.trim()||row.sell_name,
+    sell_phone: document.getElementById('f-sell-phone').value.trim()||row.sell_phone,
+    sell_email: document.getElementById('f-sell-email').value.trim()||row.sell_email,
+    sell_location: document.getElementById('f-sell-location').value.trim()||row.sell_location,
+  };
+
+  const [insertRes, deleteRes] = await Promise.all([
+    db.from('sold_inventory').insert(soldRow).select().single(),
+    db.from('inventory').delete().eq('id', editingId)
+  ]);
+
+  if (insertRes.error) { showToast('Error: '+insertRes.error.message); return; }
+  soldWatches.unshift(insertRes.data);
+  inventory = inventory.filter(w=>w.id!==editingId);
+
+  const p = soldNetProfit(insertRes.data);
+  closeModal(); refreshAll();
+  showToast(`${row.brand} ${row.model} sold. Profit: ${fmt(p)}`);
+}
+
+// ══════════════════════════════════════════════════
+//  CSV IMPORT
+// ══════════════════════════════════════════════════
+
+function handleDrop(e, type) {
+  e.preventDefault();
+  document.getElementById('drop-'+type).classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) parseCSV(file, type);
+}
+function handleFileInput(e, type) { const file=e.target.files[0]; if(file)parseCSV(file,type); }
+
+async function parseCSV(file, type) {
+  const text = await file.text();
+  const lines = text.split('\n').filter(l=>l.trim());
+  if (lines.length < 2) { showToast('CSV appears empty.'); return; }
+  const headers = lines[0].split(',').map(h=>h.trim().toLowerCase().replace(/\s+/g,'').replace(/[^a-z]/g,''));
+
+  function col(row, ...names) {
+    for (const name of names) {
+      const idx = headers.findIndex(h=>h.includes(name));
+      if (idx!==-1) return (row[idx]||'').trim();
+    }
+    return '';
+  }
+  function num(v) { return parseFloat((v||'').replace(/[$,]/g,''))||0; }
+
+  const rows = lines.slice(1);
+
+  if (type==='active') {
+    const toInsert = rows.map(line => {
+      const row = line.split(',');
+      return {
+        user_id: currentUser.id,
+        brand: col(row,'brand'), model: col(row,'model'), ref: col(row,'reference','ref'),
+        purchase_date: col(row,'purchasedate','date')||null,
+        purchase_price: num(col(row,'purchaseprice','price')),
+        tax: num(col(row,'salestax','tax')), shipping_in: num(col(row,'shippingin')),
+        other_fees: num(col(row,'otherfees')),
+        listed_price: num(col(row,'listedprice','listed'))||null,
+        platform: col(row,'platform'), notes: col(row,'notes'),
+      };
+    }).filter(w=>w.brand||w.model);
+
+    const { data, error } = await db.from('inventory').insert(toInsert).select();
+    if (error) { showToast('Import error: '+error.message); return; }
+    inventory = [...(data||[]), ...inventory];
+    refreshAll();
+    showToast(`Imported ${toInsert.length} watches into inventory.`);
+  } else {
+    const toInsert = rows.map(line => {
+      const row = line.split(',');
+      return {
+        user_id: currentUser.id,
+        brand: col(row,'brand'), model: col(row,'model'), ref: col(row,'reference','ref'),
+        purchase_date: col(row,'purchasedate')||null, sale_date: col(row,'saledate')||null,
+        purchase_price: num(col(row,'purchaseprice','price')),
+        tax: num(col(row,'salestax','tax')), shipping_in: num(col(row,'shippingin')),
+        other_fees: num(col(row,'otherfees')),
+        sold_price: num(col(row,'soldprice','sold')),
+        platform_fee: num(col(row,'platformfee')), payment_fee: num(col(row,'paymentfee')),
+        shipping_out: num(col(row,'shippingout')), platform: col(row,'platform'), notes: col(row,'notes'),
+      };
+    }).filter(s=>s.brand||s.model);
+
+    const { data, error } = await db.from('sold_inventory').insert(toInsert).select();
+    if (error) { showToast('Import error: '+error.message); return; }
+    soldWatches = [...(data||[]), ...soldWatches];
+    refreshAll();
+    showToast(`Imported ${toInsert.length} sold watches.`);
+  }
+}
+
+function downloadTemplate(type) {
+  let csv, name;
+  if (type==='active') {
+    csv='Brand,Model,Reference,Purchase Date,Purchase Price,Sales Tax,Shipping In,Other Fees,Listed Price,Platform,Notes\n';
+    csv+='Rolex,Submariner,126610LN,2024-01-15,10000,0,50,0,12000,Chrono24,Full set\n';
+    name='active_inventory_template.csv';
+  } else {
+    csv='Brand,Model,Reference,Purchase Date,Sale Date,Purchase Price,Sales Tax,Shipping In,Other Fees,Sold Price,Platform Fee,Payment Fee,Shipping Out,Platform,Notes\n';
+    csv+='Rolex,Daytona,116500LN,2023-06-01,2023-09-15,18000,0,50,0,22000,0,0,60,eBay,Quick flip\n';
+    name='sold_inventory_template.csv';
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=name; a.click();
+}
+
+// ══════════════════════════════════════════════════
+//  NAVIGATION & UTILS
+// ══════════════════════════════════════════════════
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>{if(t.textContent.toLowerCase().includes(name==='dashboard'?'dash':name))t.classList.add('active');});
+  if(name==='dashboard')renderDashboard();
+  if(name==='inventory')renderInventory();
+  if(name==='sold')renderSold();
+}
+
+function refreshAll() { renderDashboard(); renderInventory(); renderSold(); }
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ─── BOOT ─────────────────────────────────────────
+initAuth();
+</script>
+</body>
+</html>
