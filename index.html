@@ -1741,7 +1741,6 @@ function renderSoldPhotoGrid() {
 }
 
 function removeSoldPhoto(idx) {
-  if (!soldPendingPhotos[idx].existing) URL.revokeObjectURL(soldPendingPhotos[idx].url);
   soldPendingPhotos.splice(idx, 1);
   renderSoldPhotoGrid();
 }
@@ -1757,16 +1756,15 @@ function initSoldPhotoListeners() {
     if (!files.length) return;
     const remaining = 8 - soldPendingPhotos.length;
     files.slice(0, remaining).forEach(file => {
-      try {
-        const url = URL.createObjectURL(file);
-        soldPendingPhotos.push({ file, url, existing: false });
-      } catch(err) {
-        console.error('createObjectURL failed:', err);
-        showToast('Could not load photo: ' + file.name);
-      }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        soldPendingPhotos.push({ file, url: ev.target.result, existing: false });
+        renderSoldPhotoGrid();
+      };
+      reader.onerror = () => showToast('Could not load photo: ' + file.name);
+      reader.readAsDataURL(file);
     });
     e.target.value = '';
-    renderSoldPhotoGrid();
   });
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--gold)'; });
   zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border2)'; });
@@ -1776,9 +1774,13 @@ function initSoldPhotoListeners() {
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
     const remaining = 8 - soldPendingPhotos.length;
     files.slice(0, remaining).forEach(file => {
-      soldPendingPhotos.push({ file, url: URL.createObjectURL(file), existing: false });
+      const reader = new FileReader();
+      reader.onload = ev => {
+        soldPendingPhotos.push({ file, url: ev.target.result, existing: false });
+        renderSoldPhotoGrid();
+      };
+      reader.readAsDataURL(file);
     });
-    renderSoldPhotoGrid();
   });
 
   // Drag to reorder
@@ -1934,15 +1936,14 @@ function addPhotoFiles(files) {
   const remaining = 8 - pendingPhotos.length;
   if (remaining <= 0) { showToast('Maximum 8 photos per watch.'); return; }
   files.slice(0, remaining).forEach(file => {
-    try {
-      const url = URL.createObjectURL(file);
-      pendingPhotos.push({ file, url, existing: false });
-    } catch(err) {
-      console.error('createObjectURL failed:', err);
-      showToast('Could not load photo: ' + file.name);
-    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      pendingPhotos.push({ file, url: e.target.result, existing: false });
+      renderPhotoGrid();
+    };
+    reader.onerror = () => showToast('Could not load photo: ' + file.name);
+    reader.readAsDataURL(file);
   });
-  renderPhotoGrid();
 }
 
 function renderPhotoGrid() {
@@ -1964,7 +1965,6 @@ function renderPhotoGrid() {
 }
 
 function removePhoto(idx) {
-  if (!pendingPhotos[idx].existing) URL.revokeObjectURL(pendingPhotos[idx].url);
   pendingPhotos.splice(idx, 1);
   renderPhotoGrid();
 }
