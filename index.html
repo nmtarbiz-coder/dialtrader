@@ -142,9 +142,9 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 
 /* INVENTORY */
 .inv-rows{border:1px solid var(--border);background:var(--border);display:flex;flex-direction:column;gap:1px;}
-.inv-row-header{display:grid;grid-template-columns:2.8fr 1fr 1fr 1fr 0.8fr 1fr;padding:0.5rem 1.25rem;background:var(--bg);gap:1rem;border-bottom:1px solid var(--border);}
+.inv-row-header{display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 1fr 0.8fr 1fr;padding:0.5rem 1.25rem;background:var(--bg);gap:1rem;border-bottom:1px solid var(--border);}
 .inv-row-header span{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text2);font-weight:600;}
-.inv-row{display:grid;grid-template-columns:2.8fr 1fr 1fr 1fr 0.8fr 1fr;align-items:center;padding:0.9rem 1.25rem;background:var(--surface);gap:1rem;cursor:pointer;transition:background 0.15s;}
+.inv-row{display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 1fr 0.8fr 1fr;align-items:center;padding:0.9rem 1.25rem;background:var(--surface);gap:1rem;cursor:pointer;transition:background 0.15s;}
 .inv-row:hover{background:#EDE8E0;}
 .inv-row:nth-child(even){background:var(--surface2);}
 .inv-row:nth-child(even):hover{background:#E5E0D8;}
@@ -227,7 +227,25 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .color-row{display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.4rem;}
 .color-chip{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.1s,transform 0.1s;flex-shrink:0;}
 .color-chip:hover{transform:scale(1.15);}.color-chip.selected{border-color:var(--gold)!important;}
-.photo-thumb{position:relative;aspect-ratio:1;overflow:hidden;background:var(--surface2);border:1px solid var(--border);min-height:80px;}
+.platform-checks{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.4rem;}
+.platform-check{display:flex;align-items:center;gap:0.3rem;background:var(--surface2);border:1px solid var(--border);padding:0.25rem 0.6rem;cursor:pointer;font-size:0.7rem;transition:all 0.12s;user-select:none;}
+.platform-check:hover{border-color:var(--gold);}
+.platform-check.selected{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:600;}
+.platform-check input{display:none;}
+/* Tax Report */
+.tax-year-block{background:var(--surface);border:1px solid var(--border);margin-bottom:1.5rem;}
+.tax-year-header{background:var(--charcoal);color:#fff;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
+.tax-year-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:400;}
+.tax-year-net{font-family:'Playfair Display',serif;font-size:1.5rem;}
+.tax-year-net.pos{color:#7fca9f;}.tax-year-net.neg{color:#e8897a;}
+.tax-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);}
+.tax-summary-cell{background:var(--surface);padding:1rem 1.5rem;}
+.tax-summary-label{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text2);margin-bottom:0.35rem;font-weight:600;}
+.tax-summary-val{font-family:'Playfair Display',serif;font-size:1.3rem;}
+.tax-transactions{padding:1.5rem;}
+.tax-transactions table{width:100%;border-collapse:collapse;font-size:0.74rem;}
+.tax-transactions th{font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);text-align:left;}
+.tax-transactions td{padding:0.65rem 0.75rem;border-bottom:1px solid var(--border);}
 .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .photo-thumb .photo-remove{position:absolute;top:3px;right:3px;background:rgba(0,0,0,0.6);color:#fff;border:none;width:20px;height:20px;border-radius:50%;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .photo-thumb .photo-main-badge{position:absolute;bottom:3px;left:3px;background:var(--gold);color:#fff;font-size:0.5rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.1rem 0.3rem;}
@@ -346,6 +364,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="nav-item" onclick="showPage('invoices')"><span class="nav-icon">📄</span>Invoices<span class="nav-badge" id="nav-invoice-count">0</span></div>
     <div class="sidebar-section-label">Tools</div>
     <div class="nav-item" onclick="showPage('import')"><span class="nav-icon">📥</span>Import / Export</div>
+    <div class="nav-item" onclick="showPage('tax')"><span class="nav-icon">💰</span>Tax Report</div>
     <div class="sidebar-footer">
       <div class="sidebar-user" id="sidebar-user"></div>
       <div class="sidebar-signout" onclick="doSignOut()">Sign Out</div>
@@ -393,7 +412,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
         </select>
       </div>
       <div class="inv-rows" id="inventory-grid">
-        <div class="inv-row-header"><span>Watch</span><span>Cost Basis</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>
+        <div class="inv-row-header"><span>Watch</span><span>Cost Basis</span><span>MSRP</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>
       </div>
       <div id="inv-empty" class="empty-state" style="display:none"><h3>No watches in inventory</h3><p>Click "+ Add Watch" to get started.</p></div>
     </div>
@@ -416,7 +435,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
             <th>Brand / Model</th><th>Ref / Serial</th><th>Cost Basis</th><th>Sold Price</th><th>Platform</th>
             <th onclick="setSoldSort('profit-desc')" style="cursor:pointer">Net Profit ↕</th>
             <th onclick="setSoldSort('roi-desc')" style="cursor:pointer">ROI ↕</th>
-            <th>Hold Days</th><th>P/Day</th><th>Photos</th>
+            <th>Hold Days</th><th>P/Day</th><th>Photos</th><th></th>
           </tr></thead>
           <tbody id="sold-body"></tbody>
         </table>
@@ -496,6 +515,19 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     </div>
 
   </div><!-- end main-content -->
+
+    <!-- TAX REPORT -->
+    <div class="page" id="page-tax" style="display:none">
+      <div class="page-header">
+        <div><div class="page-title">Tax <span>Report</span></div><div class="page-subtitle">P&amp;L summary by tax year — export for your accountant</div></div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <select class="filter-select" id="tax-year-filter" onchange="renderTaxReport()"><option value="all">All Years</option></select>
+          <button class="btn-outline" onclick="exportTaxCSV()">⬆ Export CSV</button>
+          <button class="btn-gold" onclick="window.print()">🖨 Print Report</button>
+        </div>
+      </div>
+      <div id="tax-report-content"></div>
+    </div>
 </div><!-- end app-screen -->
 
 <!-- WATCH MODAL -->
@@ -523,8 +555,19 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
           <div class="form-group"><label class="form-label">Shipping In ($)</label><input class="form-input" id="f-shipping-in" type="number" placeholder="0.00"></div>
           <div class="form-group"><label class="form-label">Other Fees ($)</label><input class="form-input" id="f-other-fees" type="number" placeholder="0.00"></div>
           <div class="form-group"><label class="form-label">Listed Price ($)</label><input class="form-input" id="f-listed-price" type="number" placeholder="0.00"></div>
-          <div class="form-group"><label class="form-label">Platform</label>
-            <select class="form-select" id="f-platform"><option value="">— Select —</option><option>eBay</option><option>Chrono24</option><option>WatchBox</option><option>Facebook Marketplace</option><option>Instagram</option><option>Direct / Private</option><option>Other</option></select>
+          <div class="form-group"><label class="form-label">MSRP ($)</label><input class="form-input" id="f-msrp" type="number" placeholder="Retail / market value"></div>
+          <div class="form-group full"><label class="form-label">Platform(s) Listed On</label>
+            <div class="platform-checks" id="f-platform-checks">
+              <label class="platform-check" onclick="togglePlatform(this,'eBay')"><input type="checkbox" value="eBay">eBay</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Chrono24')"><input type="checkbox" value="Chrono24">Chrono24</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Grailzee')"><input type="checkbox" value="Grailzee">Grailzee</label>
+              <label class="platform-check" onclick="togglePlatform(this,'WatchBox')"><input type="checkbox" value="WatchBox">WatchBox</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Facebook Marketplace')"><input type="checkbox" value="Facebook Marketplace">Facebook</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Instagram')"><input type="checkbox" value="Instagram">Instagram</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Direct / Private')"><input type="checkbox" value="Direct / Private">Direct</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Bob\'s Watches')"><input type="checkbox" value="Bob's Watches">Bob's Watches</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Other')"><input type="checkbox" value="Other">Other</label>
+            </div>
           </div>
           <div class="form-group full"><label class="form-label">Link to Contact</label><select class="form-select" id="f-contact-link"><option value="">— None —</option></select></div>
           <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-notes" placeholder="Additional notes..."></textarea></div>
@@ -590,8 +633,18 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
           <div class="form-group"><label class="form-label">Platform Fee ($)</label><input class="form-input" id="f-platform-fee" type="number" placeholder="0.00" oninput="updateSellPnL()"></div>
           <div class="form-group"><label class="form-label">Payment Fee ($)</label><input class="form-input" id="f-payment-fee" type="number" placeholder="0.00" oninput="updateSellPnL()"></div>
           <div class="form-group"><label class="form-label">Shipping Out ($)</label><input class="form-input" id="f-shipping-out" type="number" placeholder="0.00" oninput="updateSellPnL()"></div>
-          <div class="form-group"><label class="form-label">Sale Platform</label>
-            <select class="form-select" id="f-sale-platform"><option value="">— Same as listed —</option><option>eBay</option><option>Chrono24</option><option>WatchBox</option><option>Facebook Marketplace</option><option>Instagram</option><option>Direct / Private</option><option>Other</option></select>
+          <div class="form-group full"><label class="form-label">Sale Platform</label>
+            <div class="platform-checks" id="f-sale-platform-checks">
+              <label class="platform-check" onclick="togglePlatform(this,'eBay','sale')"><input type="checkbox" value="eBay">eBay</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Chrono24','sale')"><input type="checkbox" value="Chrono24">Chrono24</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Grailzee','sale')"><input type="checkbox" value="Grailzee">Grailzee</label>
+              <label class="platform-check" onclick="togglePlatform(this,'WatchBox','sale')"><input type="checkbox" value="WatchBox">WatchBox</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Facebook Marketplace','sale')"><input type="checkbox" value="Facebook Marketplace">Facebook</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Instagram','sale')"><input type="checkbox" value="Instagram">Instagram</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Direct / Private','sale')"><input type="checkbox" value="Direct / Private">Direct</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Bob\'s Watches','sale')"><input type="checkbox" value="Bob's Watches">Bob's Watches</label>
+              <label class="platform-check" onclick="togglePlatform(this,'Other','sale')"><input type="checkbox" value="Other">Other</label>
+            </div>
           </div>
           <div class="form-group full"><label class="form-label">Sold To (Name)</label><input class="form-input" id="f-sell-name-sell" placeholder="Buyer name"></div>
           <div class="form-group"><label class="form-label">Buyer Phone</label><input class="form-input" id="f-sell-phone-sell" type="tel"></div>
@@ -781,15 +834,16 @@ function updateNavBadges(){document.getElementById('nav-inv-count').textContent=
 
 // ── NAV ───────────────────────────────────────────
 function showPage(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
+  const pg=document.getElementById('page-'+name);if(pg){pg.style.display='block';pg.classList.add('active');}
   const navEl=document.querySelector(`.nav-item[onclick="showPage('${name}')"]`);if(navEl)navEl.classList.add('active');
   if(name==='dashboard')renderDashboard();
   if(name==='inventory')renderInventory();
   if(name==='sold')renderSold();
   if(name==='contacts')renderContacts();
   if(name==='invoices')renderInvoices();
+  if(name==='tax')renderTaxReport();
 }
 
 // ── HELPERS ───────────────────────────────────────
@@ -844,7 +898,7 @@ function renderInventory(){
   const cap=inventory.reduce((s,w)=>s+costBasis(w),0);
   document.getElementById('inv-subtitle').textContent=`${inventory.length} watches · ${fmt(cap)} capital`;
   const grid=document.getElementById('inventory-grid'),empty=document.getElementById('inv-empty');
-  const hdr=`<div class="inv-row-header"><span>Watch</span><span>Cost Basis</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>`;
+  const hdr=`<div class="inv-row-header"><span>Watch</span><span>Cost Basis</span><span>MSRP</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>`;
   if(!f.length){grid.innerHTML=hdr;empty.style.display='block';return;}
   empty.style.display='none';
   grid.innerHTML=hdr+f.map(w=>{
@@ -852,13 +906,15 @@ function renderInventory(){
     const profit=w.listed_price?w.listed_price-b:null;
     const pillCls=d>60?'warn':d>30?'':'ok';
     const sub=[w.ref,w.serial?'SN:'+w.serial:'',w.dial_color,w.case_size].filter(Boolean).join(' · ');
+    const plat=Array.isArray(w.platform)?w.platform.join(', '):(w.platform||'—');
     return`<div class="inv-row" onclick="editWatch('${w.id}')">
       <div><div class="inv-row-brand">${w.brand||''}${w.year?' · '+w.year:''}</div><div class="inv-row-model">${w.model||''}</div><div class="inv-row-sub">${sub||'—'}</div></div>
       <div class="inv-row-val gold">${fmt(b)}</div>
+      <div class="inv-row-val muted">${w.msrp?fmt(w.msrp):'—'}</div>
       <div class="inv-row-val">${w.listed_price?fmt(w.listed_price):'—'}</div>
       <div class="inv-row-val ${profit!=null?(profit>=0?'green':'red'):'muted'}">${profit!=null?fmt(profit):'—'}</div>
       <div class="inv-row-val"><span class="days-pill ${pillCls}">${d!==null?d+'d':'—'}</span></div>
-      <div class="inv-row-val muted">${w.platform||'—'}</div>
+      <div class="inv-row-val muted">${plat}</div>
     </div>`;
   }).join('');
 }
@@ -887,12 +943,13 @@ function renderSold(){
       <td><div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.2rem">${s.brand||''}</div><div style="font-size:0.76rem">${s.model||''}</div></td>
       <td style="color:var(--text2);font-size:0.7rem">${[s.ref,s.serial?'SN:'+s.serial:''].filter(Boolean).join(' · ')||'—'}</td>
       <td>${fmt(soldCostBasis(s))}</td><td>${fmt(s.sold_price)}</td>
-      <td style="font-size:0.68rem;color:var(--text2)">${s.platform||'—'}</td>
+      <td style="font-size:0.68rem;color:var(--text2)">${Array.isArray(s.platform)?s.platform.join(', '):(s.platform||'—')}</td>
       <td><span class="profit-badge ${p>=0?'pos':'neg'}">${p>=0?'+':''}${fmt(p)}</span></td>
       <td style="color:${r>=0?'var(--green)':'var(--red)'}">${fmtPct(r)}</td>
       <td style="color:var(--text2)">${d!==null?d+'d':'—'}</td>
       <td style="color:var(--text2);font-size:0.68rem">${ppd!==null?(ppd>=0?'+':'')+fmt(ppd,2):'—'}</td>
       <td style="font-size:0.7rem">${hp?'📷'+s.photo_urls.length:'<span style="color:var(--text2)">+photo</span>'}</td>
+      <td><button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.6rem" onclick="event.stopPropagation();unsellWatch('${s.id}')" title="Move back to inventory">↩ Unsell</button></td>
     </tr>`;
   }).join('');
 }
@@ -1299,7 +1356,7 @@ function editWatch(id){
     'f-brand':w.brand,'f-model':w.model,'f-ref':w.ref,'f-serial':w.serial,
     'f-year':w.year,'f-purchase-date':w.purchase_date,'f-purchase-price':w.purchase_price,
     'f-tax':w.tax,'f-shipping-in':w.shipping_in,'f-other-fees':w.other_fees,
-    'f-listed-price':w.listed_price,'f-notes':w.notes,'f-case-size':w.case_size,
+    'f-listed-price':w.listed_price,'f-msrp':w.msrp,'f-notes':w.notes,'f-case-size':w.case_size,
     'f-dial-color':w.dial_color,'f-bezel-color':w.bezel_color,'f-bracelet-color':w.bracelet_color,
     'f-buy-name':w.buy_name,'f-buy-phone':w.buy_phone,'f-buy-email':w.buy_email,'f-buy-location':w.buy_location,
     'f-sell-name':w.sell_name,'f-sell-phone':w.sell_phone,'f-sell-email':w.sell_email,'f-sell-location':w.sell_location,
@@ -1307,6 +1364,8 @@ function editWatch(id){
   const selects={'f-platform':w.platform,'f-condition':w.condition,'f-box-papers':w.box_papers,'f-case-material':w.case_material,'f-movement':w.movement,'f-bracelet-type':w.bracelet_type,'f-contact-link':w.contact_id||''};
   Object.entries(fields).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
   Object.entries(selects).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
+  setPlatforms('f-platform-checks',w.platform||[]);
+  clearPlatforms('f-sale-platform-checks');
   if(w.dial_color)highlightSwatch('dial-colors',w.dial_color);
   if(w.bezel_color)highlightSwatch('bezel-colors',w.bezel_color);
   document.getElementById('f-sale-date').value=new Date().toISOString().split('T')[0];
@@ -1314,8 +1373,9 @@ function editWatch(id){
   document.getElementById('modal').classList.add('open');
 }
 function clearWatchForm(){
-  ['f-brand','f-model','f-ref','f-serial','f-year','f-purchase-date','f-purchase-price','f-tax','f-shipping-in','f-other-fees','f-listed-price','f-notes','f-case-size','f-dial-color','f-bezel-color','f-bracelet-color','f-buy-name','f-buy-phone','f-buy-email','f-buy-location','f-sell-name','f-sell-phone','f-sell-email','f-sell-location','f-sell-name-sell','f-sell-phone-sell','f-sell-email-sell','f-sold-price','f-platform-fee','f-payment-fee','f-shipping-out','f-sale-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['f-platform','f-condition','f-box-papers','f-case-material','f-movement','f-bracelet-type','f-sale-platform','f-contact-link'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-brand','f-model','f-ref','f-serial','f-year','f-purchase-date','f-purchase-price','f-tax','f-shipping-in','f-other-fees','f-listed-price','f-msrp','f-notes','f-case-size','f-dial-color','f-bezel-color','f-bracelet-color','f-buy-name','f-buy-phone','f-buy-email','f-buy-location','f-sell-name','f-sell-phone','f-sell-email','f-sell-location','f-sell-name-sell','f-sell-phone-sell','f-sell-email-sell','f-sold-price','f-platform-fee','f-payment-fee','f-shipping-out','f-sale-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-condition','f-box-papers','f-case-material','f-movement','f-bracelet-type','f-contact-link'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  clearPlatforms('f-platform-checks');clearPlatforms('f-sale-platform-checks');
   document.querySelectorAll('.color-chip').forEach(c=>c.classList.remove('selected'));
   document.getElementById('sell-pnl').textContent='Enter sold price above to see projected profit.';
   document.getElementById('sell-pnl').style.color='var(--text2)';
@@ -1334,6 +1394,16 @@ function updateSellPnL(){
   el.innerHTML=`<span style="color:${profit>=0?'var(--green)':'var(--red)'}">Profit: ${fmt(profit)} (${fmtPct(roi)})</span> <span style="color:var(--text2);font-size:0.72rem">· Cost basis: ${fmt(b)}</span>`;
 }
 
+function getPlatforms(groupId){return Array.from(document.querySelectorAll(`#${groupId} .platform-check.selected`)).map(el=>el.querySelector('input').value);}
+function togglePlatform(el,val,group){el.classList.toggle('selected');}
+function setPlatforms(groupId,values){
+  const arr=Array.isArray(values)?values:(values?values.split(',').map(s=>s.trim()):[]);
+  document.querySelectorAll(`#${groupId} .platform-check`).forEach(el=>{
+    el.classList.toggle('selected',arr.includes(el.querySelector('input').value));
+  });
+}
+function clearPlatforms(groupId){document.querySelectorAll(`#${groupId} .platform-check`).forEach(el=>el.classList.remove('selected'));}
+
 function getFormData(){
   const g=id=>document.getElementById(id);
   return{
@@ -1344,7 +1414,9 @@ function getFormData(){
     tax:parseFloat(g('f-tax').value)||0,shippingIn:parseFloat(g('f-shipping-in').value)||0,
     otherFees:parseFloat(g('f-other-fees').value)||0,
     listedPrice:parseFloat(g('f-listed-price').value)||null,
-    platform:g('f-platform').value,notes:g('f-notes').value.trim(),
+    msrp:parseFloat(g('f-msrp').value)||null,
+    platform:getPlatforms('f-platform-checks'),
+    notes:g('f-notes').value.trim(),
     contactId:g('f-contact-link').value||null,
     caseSize:g('f-case-size').value.trim(),caseMaterial:g('f-case-material').value,
     movement:g('f-movement').value,condition:g('f-condition').value,boxPapers:g('f-box-papers').value,
@@ -1361,8 +1433,10 @@ function localToDb(d){
     user_id:currentUser.id,brand:d.brand,model:d.model,ref:d.ref||null,serial:d.serial||null,
     year:d.year||null,purchase_date:d.purchaseDate||null,purchase_price:d.purchasePrice||0,
     tax:d.tax||0,shipping_in:d.shippingIn||0,other_fees:d.otherFees||0,
-    listed_price:d.listedPrice||null,platform:d.platform||null,notes:d.notes||null,
-    contact_id:d.contactId||null,case_size:d.caseSize||null,case_material:d.caseMaterial||null,
+    listed_price:d.listedPrice||null,msrp:d.msrp||null,
+    platform:d.platform&&d.platform.length?d.platform:null,
+    notes:d.notes||null,contact_id:d.contactId||null,
+    case_size:d.caseSize||null,case_material:d.caseMaterial||null,
     movement:d.movement||null,condition:d.condition||null,box_papers:d.boxPapers||null,
     dial_color:d.dialColor||null,bezel_color:d.bezelColor||null,
     bracelet_type:d.braceletType||null,bracelet_color:d.braceletColor||null,
@@ -1432,7 +1506,7 @@ async function markAsSold(){
     platform_fee:parseFloat(document.getElementById('f-platform-fee').value)||0,
     payment_fee:parseFloat(document.getElementById('f-payment-fee').value)||0,
     shipping_out:parseFloat(document.getElementById('f-shipping-out').value)||0,
-    platform:document.getElementById('f-sale-platform').value||row.platform,
+    platform:getPlatforms('f-sale-platform-checks').length?getPlatforms('f-sale-platform-checks'):row.platform,
     notes:row.notes,condition:row.condition,box_papers:row.box_papers,
     case_size:row.case_size,case_material:row.case_material,movement:row.movement,
     dial_color:row.dial_color,bezel_color:row.bezel_color,bracelet_type:row.bracelet_type,bracelet_color:row.bracelet_color,
@@ -1685,6 +1759,112 @@ function exportInventoryCSV(){
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download=`dialtrader-inventory-${new Date().toISOString().split('T')[0]}.csv`;a.click();
+}
+
+// ── UNSELL ────────────────────────────────────────
+async function unsellWatch(id){
+  const s=soldWatches.find(w=>w.id===id);if(!s)return;
+  if(!confirm(`Move "${s.brand} ${s.model}" back to inventory? All sale data will be cleared.`))return;
+  const invRow={
+    user_id:currentUser.id,brand:s.brand,model:s.model,ref:s.ref,serial:s.serial,year:s.year,
+    purchase_date:s.purchase_date,purchase_price:s.purchase_price,tax:s.tax,
+    shipping_in:s.shipping_in,other_fees:s.other_fees,
+    listed_price:null,msrp:s.msrp||null,platform:s.platform||null,
+    notes:s.notes,condition:s.condition,box_papers:s.box_papers,
+    case_size:s.case_size,case_material:s.case_material,movement:s.movement,
+    dial_color:s.dial_color,bezel_color:s.bezel_color,bracelet_type:s.bracelet_type,bracelet_color:s.bracelet_color,
+    buy_name:s.buy_name,buy_phone:s.buy_phone,buy_email:s.buy_email,buy_location:s.buy_location,
+    sell_name:null,sell_phone:null,sell_email:null,sell_location:null,
+    contact_id:s.contact_id||null,
+    photo_urls:s.photo_urls||[],
+  };
+  const[ins,del]=await Promise.all([
+    db.from('inventory').insert(invRow).select().single(),
+    db.from('sold_inventory').delete().eq('id',id)
+  ]);
+  if(ins.error){showToast('Error: '+ins.error.message);return;}
+  inventory.unshift(ins.data);
+  soldWatches=soldWatches.filter(w=>w.id!==id);
+  refreshAll();showToast(`${s.brand} ${s.model} moved back to inventory.`);
+}
+
+// ── TAX REPORT ────────────────────────────────────
+function renderTaxReport(){
+  if(!soldWatches.length){
+    document.getElementById('tax-report-content').innerHTML='<div class="empty-state"><h3>No sold watches yet</h3><p>Tax report will appear here once you have sold watches.</p></div>';
+    return;
+  }
+  // Populate year filter
+  const years=[...new Set(soldWatches.map(s=>s.sale_date?new Date(s.sale_date).getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
+  const sel=document.getElementById('tax-year-filter');
+  const cur=sel.value;
+  sel.innerHTML='<option value="all">All Years</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  if(cur)sel.value=cur;
+
+  const filterYear=sel.value;
+  const filtered=filterYear==='all'?soldWatches:soldWatches.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()==filterYear);
+  const yearsToShow=filterYear==='all'?years:[parseInt(filterYear)];
+
+  const html=yearsToShow.map(year=>{
+    const yw=filtered.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()===year);
+    if(!yw.length)return'';
+    const grossSales=yw.reduce((s,w)=>s+(+w.sold_price||0),0);
+    const totalCOGS=yw.reduce((s,w)=>s+soldCostBasis(w),0);
+    const totalFees=yw.reduce((s,w)=>s+(+w.platform_fee||0)+(+w.payment_fee||0)+(+w.shipping_out||0),0);
+    const netProfit=yw.reduce((s,w)=>s+soldNetProfit(w),0);
+    return`<div class="tax-year-block">
+      <div class="tax-year-header">
+        <div class="tax-year-title">${year} Tax Year</div>
+        <div class="tax-year-net ${netProfit>=0?'pos':'neg'}">${fmt(netProfit)}</div>
+      </div>
+      <div class="tax-summary-grid">
+        <div class="tax-summary-cell"><div class="tax-summary-label">Gross Sales</div><div class="tax-summary-val">${fmt(grossSales)}</div></div>
+        <div class="tax-summary-cell"><div class="tax-summary-label">Cost of Goods Sold</div><div class="tax-summary-val">${fmt(totalCOGS)}</div></div>
+        <div class="tax-summary-cell"><div class="tax-summary-label">Platform &amp; Sell Fees</div><div class="tax-summary-val">${fmt(totalFees)}</div></div>
+        <div class="tax-summary-cell"><div class="tax-summary-label">Net Profit</div><div class="tax-summary-val" style="color:${netProfit>=0?'var(--green)':'var(--red)'}">${fmt(netProfit)}</div></div>
+      </div>
+      <div class="tax-transactions">
+        <table>
+          <thead><tr><th>Sale Date</th><th>Watch</th><th>Ref / Serial</th><th>Cost Basis</th><th>Sold Price</th><th>Fees</th><th>Net Profit</th><th>ROI</th><th>Platform</th></tr></thead>
+          <tbody>
+            ${yw.map(s=>{
+              const p=soldNetProfit(s),r=soldROI(s);
+              const fees=(+s.platform_fee||0)+(+s.payment_fee||0)+(+s.shipping_out||0);
+              const plat=Array.isArray(s.platform)?s.platform.join(', '):(s.platform||'—');
+              return`<tr>
+                <td style="white-space:nowrap">${s.sale_date||'—'}</td>
+                <td><strong>${s.brand}</strong> ${s.model}</td>
+                <td style="color:var(--text2)">${[s.ref,s.serial?'SN:'+s.serial:''].filter(Boolean).join(' · ')||'—'}</td>
+                <td>${fmt(soldCostBasis(s))}</td>
+                <td>${fmt(s.sold_price)}</td>
+                <td style="color:var(--text2)">${fmt(fees)}</td>
+                <td style="color:${p>=0?'var(--green)':'var(--red)'}"><strong>${p>=0?'+':''}${fmt(p)}</strong></td>
+                <td style="color:${r>=0?'var(--green)':'var(--red)'}">${fmtPct(r)}</td>
+                <td style="font-size:0.68rem;color:var(--text2)">${plat}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('tax-report-content').innerHTML=html||'<div class="empty-state"><p>No data for selected year.</p></div>';
+}
+
+function exportTaxCSV(){
+  const filterYear=document.getElementById('tax-year-filter').value;
+  const f=filterYear==='all'?soldWatches:soldWatches.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()==filterYear);
+  if(!f.length){showToast('No data to export.');return;}
+  const headers=['sale_date','brand','model','ref','serial','purchase_date','cost_basis','sold_price','platform_fee','payment_fee','shipping_out','net_profit','roi_pct','platform'];
+  const rows=f.map(s=>{
+    const p=soldNetProfit(s),r=soldROI(s);
+    const plat=Array.isArray(s.platform)?s.platform.join('|'):(s.platform||'');
+    return[s.sale_date||'',s.brand||'',s.model||'',s.ref||'',s.serial||'',s.purchase_date||'',soldCostBasis(s).toFixed(2),(+s.sold_price||0).toFixed(2),(+s.platform_fee||0).toFixed(2),(+s.payment_fee||0).toFixed(2),(+s.shipping_out||0).toFixed(2),p.toFixed(2),r.toFixed(2),plat].map(v=>`"${v}"`).join(',');
+  });
+  const csv=[headers.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`dialtrader-tax-${filterYear}-${new Date().toISOString().split('T')[0]}.csv`;a.click();
 }
 
 // ── BOOT ──────────────────────────────────────────
