@@ -411,11 +411,10 @@ header {
   gap: 1rem;
   cursor: pointer;
   transition: background 0.15s;
-  animation: fadeIn 0.3s ease both;
 }
-.inv-row:hover { background: var(--surface2); }
+.inv-row:hover { background: #EDE8E0; }
 .inv-row:nth-child(even) { background: var(--surface2); }
-.inv-row:nth-child(even):hover { background: #222; }
+.inv-row:nth-child(even):hover { background: #E5E0D8; }
 .inv-row-brand { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.25rem; font-weight: 600; }
 .inv-row-model { font-family: 'Playfair Display', serif; font-size: 1.2rem; line-height: 1.25; color: var(--text); margin-bottom: 0.2rem; }
 .inv-row-sub { font-size: 0.7rem; color: var(--text2); }
@@ -819,30 +818,22 @@ header {
         </div>
       </div>
 
-      <!-- TAB: CONTACTS -->
+      <!-- TAB: PHOTOS -->
       <div class="modal-tab-panel" id="tab-photos">
         <div style="margin-bottom:1rem">
           <div style="font-size:0.68rem;color:var(--text2);margin-bottom:1rem;line-height:1.6">
-            Upload up to 8 photos for this watch. The first photo will be used as the main storefront image. Drag to reorder.
+            Upload up to 8 photos. <strong>First photo = main storefront image.</strong> Drag thumbnails to reorder.
           </div>
-          <!-- Photo upload zone -->
-          <div id="photo-upload-zone" style="border:2px dashed var(--border2);padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:1rem"
-               onclick="document.getElementById('photo-file-input').click()"
-               ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
-               ondragleave="this.style.borderColor='var(--border2)'"
-               ondrop="handlePhotoDrop(event)">
+          <div id="photo-upload-zone" style="border:2px dashed var(--border2);padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:1rem">
             <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.4">📷</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--text2)">Click or drop photos here</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--text2)">Click or drop photos here</div>
             <div style="font-size:0.68rem;color:var(--text2);margin-top:0.25rem">JPG, PNG — max 5MB each</div>
           </div>
-          <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(event)">
-          <!-- Photo preview grid -->
+          <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none">
           <div id="photo-preview-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem"></div>
-          <div id="photo-upload-status" style="font-size:0.7rem;color:var(--text2);margin-top:0.5rem"></div>
+          <div id="photo-upload-status" style="font-size:0.7rem;color:var(--text2);margin-top:0.5rem;text-align:center"></div>
         </div>
       </div>
-
-      <!-- TAB: CONTACTS -->
       <div class="modal-tab-panel" id="tab-contacts">
         <div class="contact-card">
           <div class="contact-card-title">▸ Purchased From</div>
@@ -1232,7 +1223,7 @@ function renderInventory() {
     const pillClass = d > 60 ? 'warn' : d > 30 ? '' : 'ok';
     const details = [w.ref, w.dial_color, w.bracelet_type, w.case_size].filter(Boolean).join(' · ');
     const contacts = [w.buy_name?'📥 '+w.buy_name:'', w.sell_name?'📤 '+w.sell_name:''].filter(Boolean).join('  ');
-    return `<div class="inv-row" onclick="editWatch('${w.id}')" style="animation-delay:${i*0.03}s">
+    return `<div class="inv-row" onclick="editWatch('${w.id}')">
       <div>
         <div class="inv-row-brand">${w.brand}${w.year?' · '+w.year:''}</div>
         <div class="inv-row-model">${w.model}</div>
@@ -1678,66 +1669,108 @@ function showToast(msg) {
 //  PHOTO UPLOAD
 // ══════════════════════════════════════════════════
 
-let pendingPhotos = []; // {file, url, existing}
+// ══════════════════════════════════════════════════
+//  PHOTO UPLOAD & REORDER
+// ══════════════════════════════════════════════════
+let pendingPhotos = []; // [{file, url, existing}]
 let dragSrcIdx = null;
 
-function handlePhotoDrop(e) {
-  e.preventDefault();
-  document.getElementById('photo-upload-zone').style.borderColor = 'var(--border2)';
-  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-  addPhotoFiles(files);
+function initPhotoListeners() {
+  const zone = document.getElementById('photo-upload-zone');
+  const input = document.getElementById('photo-file-input');
+  const grid  = document.getElementById('photo-preview-grid');
+
+  // Click zone → open file picker
+  zone.addEventListener('click', () => input.click());
+
+  // File input change
+  input.addEventListener('change', e => {
+    addPhotoFiles(Array.from(e.target.files));
+    e.target.value = '';
+  });
+
+  // Drag FILES onto upload zone
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--gold)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border2)'; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--border2)';
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (files.length) addPhotoFiles(files);
+  });
+
+  // Drag THUMBNAILS to reorder — use event delegation on grid
+  grid.addEventListener('dragstart', e => {
+    const thumb = e.target.closest('[data-idx]');
+    if (!thumb) return;
+    dragSrcIdx = parseInt(thumb.dataset.idx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragSrcIdx); // required for Firefox
+    setTimeout(() => thumb.style.opacity = '0.35', 0);
+  });
+
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const thumb = e.target.closest('[data-idx]');
+    if (!thumb) return;
+    const overIdx = parseInt(thumb.dataset.idx);
+    if (overIdx === dragSrcIdx) return;
+    // Visual highlight only — don't re-render mid-drag
+    grid.querySelectorAll('[data-idx]').forEach(t => t.style.outline = '');
+    thumb.style.outline = '2px solid var(--gold)';
+  });
+
+  grid.addEventListener('dragleave', e => {
+    const thumb = e.target.closest('[data-idx]');
+    if (thumb) thumb.style.outline = '';
+  });
+
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    const thumb = e.target.closest('[data-idx]');
+    if (!thumb || dragSrcIdx === null) return;
+    const destIdx = parseInt(thumb.dataset.idx);
+    if (destIdx !== dragSrcIdx) {
+      // Reorder pendingPhotos array
+      const moved = pendingPhotos.splice(dragSrcIdx, 1)[0];
+      pendingPhotos.splice(destIdx, 0, moved);
+    }
+    dragSrcIdx = null;
+    renderPhotoGrid();
+  });
+
+  grid.addEventListener('dragend', e => {
+    dragSrcIdx = null;
+    grid.querySelectorAll('[data-idx]').forEach(t => { t.style.opacity = ''; t.style.outline = ''; });
+  });
 }
-function handlePhotoSelect(e) {
-  addPhotoFiles(Array.from(e.target.files));
-  e.target.value = '';
-}
+
 function addPhotoFiles(files) {
   const remaining = 8 - pendingPhotos.length;
+  if (remaining <= 0) { showToast('Maximum 8 photos per watch.'); return; }
   files.slice(0, remaining).forEach(file => {
-    const url = URL.createObjectURL(file);
-    pendingPhotos.push({ file, url, existing: false });
+    pendingPhotos.push({ file, url: URL.createObjectURL(file), existing: false });
   });
   renderPhotoGrid();
 }
 
 function renderPhotoGrid() {
   const grid = document.getElementById('photo-preview-grid');
+  const status = document.getElementById('photo-upload-status');
+  if (!pendingPhotos.length) {
+    grid.innerHTML = '';
+    status.textContent = '';
+    return;
+  }
   grid.innerHTML = pendingPhotos.map((p, i) => `
-    <div class="photo-thumb" draggable="true"
-         data-idx="${i}"
-         ondragstart="photoDragStart(event,${i})"
-         ondragover="photoDragOver(event,${i})"
-         ondragend="photoDragEnd(event)"
-         style="cursor:grab;opacity:1;transition:opacity 0.15s">
-      <img src="${p.url}" alt="Watch photo ${i+1}">
+    <div class="photo-thumb" draggable="true" data-idx="${i}" title="${i===0?'Main photo':'Drag to make main'}">
+      <img src="${p.url}" alt="Photo ${i+1}" style="pointer-events:none">
       ${i === 0 ? '<div class="photo-main-badge">Main</div>' : ''}
       <button class="photo-remove" onclick="removePhoto(${i})" title="Remove">✕</button>
     </div>
   `).join('');
-  document.getElementById('photo-upload-status').textContent =
-    pendingPhotos.length
-      ? `${pendingPhotos.length} photo${pendingPhotos.length>1?'s':''} · Drag to reorder · First is main storefront image`
-      : 'No photos yet — click or drop above to add';
-}
-
-function photoDragStart(e, idx) {
-  dragSrcIdx = idx;
-  e.dataTransfer.effectAllowed = 'move';
-  e.currentTarget.style.opacity = '0.4';
-}
-function photoDragOver(e, idx) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  if (idx === dragSrcIdx) return;
-  // Reorder in place for live preview
-  const moved = pendingPhotos.splice(dragSrcIdx, 1)[0];
-  pendingPhotos.splice(idx, 0, moved);
-  dragSrcIdx = idx;
-  renderPhotoGrid();
-}
-function photoDragEnd(e) {
-  dragSrcIdx = null;
-  renderPhotoGrid();
+  status.textContent = `${pendingPhotos.length}/8 photos · Drag to reorder · First = storefront main image`;
 }
 
 function removePhoto(idx) {
@@ -1749,16 +1782,25 @@ function removePhoto(idx) {
 async function uploadPhotosForWatch(watchId) {
   const urls = [];
   for (const p of pendingPhotos) {
-    if (p.existing) { urls.push(p.url); continue; }
-    const ext = p.file.name.split('.').pop().toLowerCase();
-    const path = `${currentUser.id}/${watchId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await db.storage.from('watch-photos').upload(path, p.file, { upsert: true });
-    if (error) {
-      console.error('Photo upload error:', error.message);
-      showToast('Photo upload failed: ' + error.message);
-    } else {
-      const { data } = db.storage.from('watch-photos').getPublicUrl(path);
-      urls.push(data.publicUrl);
+    if (p.existing) {
+      urls.push(p.url);
+      continue;
+    }
+    try {
+      const ext = p.file.name.split('.').pop().toLowerCase() || 'jpg';
+      const path = `${currentUser.id}/${watchId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { data: upData, error: upErr } = await db.storage
+        .from('watch-photos')
+        .upload(path, p.file, { contentType: p.file.type, upsert: true });
+      if (upErr) {
+        console.error('Upload error:', upErr);
+        showToast('Upload error: ' + upErr.message);
+        continue;
+      }
+      const { data: urlData } = db.storage.from('watch-photos').getPublicUrl(path);
+      urls.push(urlData.publicUrl);
+    } catch(err) {
+      console.error('Photo exception:', err);
     }
   }
   return urls;
@@ -1771,6 +1813,7 @@ function loadPhotosForEdit(photoUrls) {
 
 // ─── BOOT ─────────────────────────────────────────
 initAuth();
+initPhotoListeners();
 </script>
 </body>
 </html>
