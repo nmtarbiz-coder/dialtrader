@@ -473,7 +473,28 @@ header {
 .contact-card { background: var(--bg); border: 1px solid var(--border); padding: 1rem; margin-bottom: 0.75rem; }
 .contact-card-title { font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.75rem; }
 
-/* Import */
+/* Photo preview */
+.photo-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-thumb .photo-remove {
+  position: absolute; top: 3px; right: 3px;
+  background: rgba(0,0,0,0.7); color: var(--text); border: none;
+  width: 20px; height: 20px; border-radius: 50%; font-size: 0.65rem;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.photo-thumb .photo-main-badge {
+  position: absolute; bottom: 3px; left: 3px;
+  background: var(--gold); color: #0e0e0e;
+  font-size: 0.5rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0.1rem 0.3rem;
+}
 .import-zone { border: 2px dashed var(--border2); padding: 3rem; text-align: center; transition: border-color 0.2s; cursor: pointer; margin-bottom: 1rem; }
 .import-zone:hover, .import-zone.drag { border-color: var(--gold); }
 .import-zone-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.4; }
@@ -704,6 +725,7 @@ header {
       <div class="modal-tabs">
         <div class="modal-tab active" onclick="switchTab('basics')">Basics & Financials</div>
         <div class="modal-tab" onclick="switchTab('details')">Watch Details</div>
+        <div class="modal-tab" onclick="switchTab('photos')">Photos</div>
         <div class="modal-tab" onclick="switchTab('contacts')">Contacts</div>
         <div class="modal-tab" id="tab-sell-btn" onclick="switchTab('sell')" style="display:none">Mark as Sold</div>
       </div>
@@ -799,6 +821,29 @@ header {
               <input class="form-input" id="f-bracelet-color" placeholder="e.g. Black, Brown, Steel...">
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- TAB: CONTACTS -->
+      <div class="modal-tab-panel" id="tab-photos">
+        <div style="margin-bottom:1rem">
+          <div style="font-size:0.68rem;color:var(--text2);margin-bottom:1rem;line-height:1.6">
+            Upload up to 8 photos for this watch. The first photo will be used as the main storefront image. Drag to reorder.
+          </div>
+          <!-- Photo upload zone -->
+          <div id="photo-upload-zone" style="border:2px dashed var(--border2);padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:1rem"
+               onclick="document.getElementById('photo-file-input').click()"
+               ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+               ondragleave="this.style.borderColor='var(--border2)'"
+               ondrop="handlePhotoDrop(event)">
+            <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.4">📷</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--text2)">Click or drop photos here</div>
+            <div style="font-size:0.68rem;color:var(--text2);margin-top:0.25rem">JPG, PNG — max 5MB each</div>
+          </div>
+          <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(event)">
+          <!-- Photo preview grid -->
+          <div id="photo-preview-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem"></div>
+          <div id="photo-upload-status" style="font-size:0.7rem;color:var(--text2);margin-top:0.5rem"></div>
         </div>
       </div>
 
@@ -1320,6 +1365,8 @@ function openModal() {
   document.getElementById('btn-delete').style.display='none';
   document.getElementById('tab-sell-btn').style.display='none';
   clearForm();
+  pendingPhotos = [];
+  renderPhotoGrid();
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
   buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
   switchTab('basics');
@@ -1337,8 +1384,7 @@ function editWatch(id) {
 
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
   buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
-
-  // Basics
+  loadPhotosForEdit(row.photo_urls || []);
   document.getElementById('f-brand').value=row.brand||'';
   document.getElementById('f-model').value=row.model||'';
   document.getElementById('f-ref').value=row.ref||'';
@@ -1438,19 +1484,35 @@ async function saveWatch() {
 
   const dbRow = localToDb(data);
 
-  let error;
+  let error, savedId;
   if (editingId) {
     const res = await db.from('inventory').update(dbRow).eq('id', editingId);
     error = res.error;
+    savedId = editingId;
     if (!error) { const idx=inventory.findIndex(w=>w.id===editingId); inventory[idx]={...inventory[idx],...dbRow,id:editingId}; }
   } else {
     const res = await db.from('inventory').insert(dbRow).select().single();
     error = res.error;
-    if (!error) inventory.unshift(res.data);
+    if (!error) { savedId = res.data.id; inventory.unshift(res.data); }
+  }
+
+  if (error) { btn.disabled=false; btn.textContent='Save Watch'; showToast('Error: '+error.message); return; }
+
+  // Upload any new photos
+  if (pendingPhotos.some(p => !p.existing)) {
+    btn.textContent = 'Uploading photos...';
+    const photoUrls = await uploadPhotosForWatch(savedId);
+    await db.from('inventory').update({ photo_urls: photoUrls }).eq('id', savedId);
+    const idx = inventory.findIndex(w=>w.id===savedId);
+    if (idx !== -1) inventory[idx].photo_urls = photoUrls;
+  } else if (pendingPhotos.length > 0) {
+    const photoUrls = pendingPhotos.map(p => p.url);
+    await db.from('inventory').update({ photo_urls: photoUrls }).eq('id', savedId);
+    const idx = inventory.findIndex(w=>w.id===savedId);
+    if (idx !== -1) inventory[idx].photo_urls = photoUrls;
   }
 
   btn.disabled=false; btn.textContent='Save Watch';
-  if (error) { showToast('Error: '+error.message); return; }
   closeModal();
   refreshAll();
   showToast(editingId?'Watch updated.':'Watch added to inventory.');
@@ -1617,6 +1679,69 @@ function showToast(msg) {
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+// ══════════════════════════════════════════════════
+//  PHOTO UPLOAD
+// ══════════════════════════════════════════════════
+
+let pendingPhotos = []; // {file, url, existing} — photos staged for this watch
+let existingPhotoUrls = []; // already saved URLs when editing
+
+function handlePhotoDrop(e) {
+  e.preventDefault();
+  document.getElementById('photo-upload-zone').style.borderColor = 'var(--border2)';
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  addPhotoFiles(files);
+}
+function handlePhotoSelect(e) {
+  addPhotoFiles(Array.from(e.target.files));
+  e.target.value = '';
+}
+function addPhotoFiles(files) {
+  const remaining = 8 - pendingPhotos.length;
+  files.slice(0, remaining).forEach(file => {
+    const url = URL.createObjectURL(file);
+    pendingPhotos.push({ file, url, existing: false });
+  });
+  renderPhotoGrid();
+}
+function renderPhotoGrid() {
+  const grid = document.getElementById('photo-preview-grid');
+  grid.innerHTML = pendingPhotos.map((p, i) => `
+    <div class="photo-thumb">
+      <img src="${p.url}" alt="Watch photo ${i+1}">
+      ${i === 0 ? '<div class="photo-main-badge">Main</div>' : ''}
+      <button class="photo-remove" onclick="removePhoto(${i})">✕</button>
+    </div>
+  `).join('');
+  document.getElementById('photo-upload-status').textContent =
+    pendingPhotos.length ? `${pendingPhotos.length} photo${pendingPhotos.length>1?'s':''} — first is main storefront image` : '';
+}
+function removePhoto(idx) {
+  if (!pendingPhotos[idx].existing) URL.revokeObjectURL(pendingPhotos[idx].url);
+  pendingPhotos.splice(idx, 1);
+  renderPhotoGrid();
+}
+
+async function uploadPhotosForWatch(watchId) {
+  const urls = [];
+  for (const p of pendingPhotos) {
+    if (p.existing) { urls.push(p.url); continue; }
+    const ext = p.file.name.split('.').pop();
+    const path = `${currentUser.id}/${watchId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await db.storage.from('watch-photos').upload(path, p.file, { upsert: true });
+    if (!error) {
+      const { data } = db.storage.from('watch-photos').getPublicUrl(path);
+      urls.push(data.publicUrl);
+    }
+  }
+  return urls;
+}
+
+function loadPhotosForEdit(photoUrls) {
+  pendingPhotos = (photoUrls || []).map(url => ({ file: null, url, existing: true }));
+  renderPhotoGrid();
 }
 
 // ─── BOOT ─────────────────────────────────────────
