@@ -1478,7 +1478,9 @@ async function saveWatch() {
   const btn = document.getElementById('btn-save');
   btn.disabled=true; btn.textContent='Saving...';
 
+  // Build DB row WITHOUT photo_urls — we handle photos separately to avoid overwriting
   const dbRow = localToDb(data);
+  delete dbRow.photo_urls;
 
   let error, savedId;
   if (editingId) {
@@ -1494,19 +1496,13 @@ async function saveWatch() {
 
   if (error) { btn.disabled=false; btn.textContent='Save Watch'; showToast('Error: '+error.message); return; }
 
-  // Upload any new photos
-  if (pendingPhotos.some(p => !p.existing)) {
-    btn.textContent = 'Uploading photos...';
-    const photoUrls = await uploadPhotosForWatch(savedId);
-    await db.from('inventory').update({ photo_urls: photoUrls }).eq('id', savedId);
-    const idx = inventory.findIndex(w=>w.id===savedId);
-    if (idx !== -1) inventory[idx].photo_urls = photoUrls;
-  } else if (pendingPhotos.length > 0) {
-    const photoUrls = pendingPhotos.map(p => p.url);
-    await db.from('inventory').update({ photo_urls: photoUrls }).eq('id', savedId);
-    const idx = inventory.findIndex(w=>w.id===savedId);
-    if (idx !== -1) inventory[idx].photo_urls = photoUrls;
-  }
+  // Always save current photo state (handles new uploads, reorders, and deletions)
+  btn.textContent = pendingPhotos.some(p => !p.existing) ? 'Uploading photos...' : 'Saving...';
+  const photoUrls = await uploadPhotosForWatch(savedId);
+  const { error: photoErr } = await db.from('inventory').update({ photo_urls: photoUrls }).eq('id', savedId);
+  if (photoErr) showToast('Photos may not have saved: ' + photoErr.message);
+  const idx2 = inventory.findIndex(w=>w.id===savedId);
+  if (idx2 !== -1) inventory[idx2].photo_urls = photoUrls;
 
   btn.disabled=false; btn.textContent='Save Watch';
   closeModal();
@@ -1682,8 +1678,8 @@ function showToast(msg) {
 //  PHOTO UPLOAD
 // ══════════════════════════════════════════════════
 
-let pendingPhotos = []; // {file, url, existing} — photos staged for this watch
-let existingPhotoUrls = []; // already saved URLs when editing
+let pendingPhotos = []; // {file, url, existing}
+let dragSrcIdx = null;
 
 function handlePhotoDrop(e) {
   e.preventDefault();
@@ -1703,18 +1699,47 @@ function addPhotoFiles(files) {
   });
   renderPhotoGrid();
 }
+
 function renderPhotoGrid() {
   const grid = document.getElementById('photo-preview-grid');
   grid.innerHTML = pendingPhotos.map((p, i) => `
-    <div class="photo-thumb">
+    <div class="photo-thumb" draggable="true"
+         data-idx="${i}"
+         ondragstart="photoDragStart(event,${i})"
+         ondragover="photoDragOver(event,${i})"
+         ondragend="photoDragEnd(event)"
+         style="cursor:grab;opacity:1;transition:opacity 0.15s">
       <img src="${p.url}" alt="Watch photo ${i+1}">
       ${i === 0 ? '<div class="photo-main-badge">Main</div>' : ''}
-      <button class="photo-remove" onclick="removePhoto(${i})">✕</button>
+      <button class="photo-remove" onclick="removePhoto(${i})" title="Remove">✕</button>
     </div>
   `).join('');
   document.getElementById('photo-upload-status').textContent =
-    pendingPhotos.length ? `${pendingPhotos.length} photo${pendingPhotos.length>1?'s':''} — first is main storefront image` : '';
+    pendingPhotos.length
+      ? `${pendingPhotos.length} photo${pendingPhotos.length>1?'s':''} · Drag to reorder · First is main storefront image`
+      : 'No photos yet — click or drop above to add';
 }
+
+function photoDragStart(e, idx) {
+  dragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '0.4';
+}
+function photoDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  if (idx === dragSrcIdx) return;
+  // Reorder in place for live preview
+  const moved = pendingPhotos.splice(dragSrcIdx, 1)[0];
+  pendingPhotos.splice(idx, 0, moved);
+  dragSrcIdx = idx;
+  renderPhotoGrid();
+}
+function photoDragEnd(e) {
+  dragSrcIdx = null;
+  renderPhotoGrid();
+}
+
 function removePhoto(idx) {
   if (!pendingPhotos[idx].existing) URL.revokeObjectURL(pendingPhotos[idx].url);
   pendingPhotos.splice(idx, 1);
@@ -1725,10 +1750,13 @@ async function uploadPhotosForWatch(watchId) {
   const urls = [];
   for (const p of pendingPhotos) {
     if (p.existing) { urls.push(p.url); continue; }
-    const ext = p.file.name.split('.').pop();
+    const ext = p.file.name.split('.').pop().toLowerCase();
     const path = `${currentUser.id}/${watchId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await db.storage.from('watch-photos').upload(path, p.file, { upsert: true });
-    if (!error) {
+    if (error) {
+      console.error('Photo upload error:', error.message);
+      showToast('Photo upload failed: ' + error.message);
+    } else {
       const { data } = db.storage.from('watch-photos').getPublicUrl(path);
       urls.push(data.publicUrl);
     }
