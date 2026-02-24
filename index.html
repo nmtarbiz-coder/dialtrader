@@ -1095,6 +1095,7 @@ function localToDb(w) {
     sell_phone: w.sellPhone || null,
     sell_email: w.sellEmail || null,
     sell_location: w.sellLocation || null,
+    photo_urls: w.photoUrls || [],
   };
 }
 
@@ -1549,6 +1550,7 @@ async function markAsSold() {
     sell_phone: document.getElementById('f-sell-phone').value.trim()||row.sell_phone,
     sell_email: document.getElementById('f-sell-email').value.trim()||row.sell_email,
     sell_location: document.getElementById('f-sell-location').value.trim()||row.sell_location,
+    photo_urls: row.photo_urls || [],
   };
 
   const [insertRes, deleteRes] = await Promise.all([
