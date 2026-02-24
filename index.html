@@ -656,7 +656,7 @@ header {
         <th>Brand / Model</th><th>Reference</th><th>Cost Basis</th><th>Sold Price</th><th>Platform</th>
         <th onclick="setSoldSort('profit-desc')">Net Profit ↕</th>
         <th onclick="setSoldSort('roi-desc')">ROI % ↕</th>
-        <th>Hold Days</th><th>P/Day</th>
+        <th>Hold Days</th><th>P/Day</th><th>Photos</th>
       </tr></thead>
       <tbody id="sold-body"></tbody>
     </table>
@@ -895,6 +895,33 @@ header {
 </div>
 
 </div><!-- end app-screen -->
+
+<!-- ═══════════════ SOLD PHOTO MODAL ══════════════ -->
+<div class="modal-overlay" id="sold-photo-modal" onclick="if(event.target===this)closeSoldPhotoModal()">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title" id="sold-photo-modal-title">Edit Sold Watch Photos</div>
+      <button class="modal-close" onclick="closeSoldPhotoModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:0.72rem;color:var(--text2);margin-bottom:1rem;line-height:1.6">
+        Add or reorder photos for this sold watch. The first photo will appear on the storefront's "Recently Gone" section.
+      </div>
+      <div id="sold-photo-upload-zone" style="border:2px dashed var(--border2);padding:2rem;text-align:center;cursor:pointer;transition:border-color 0.2s;margin-bottom:1rem">
+        <div style="font-size:2rem;margin-bottom:0.5rem;opacity:0.4">📷</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--text2)">Click or drop photos here</div>
+        <div style="font-size:0.68rem;color:var(--text2);margin-top:0.25rem">JPG, PNG — max 5MB each</div>
+      </div>
+      <input type="file" id="sold-photo-file-input" accept="image/*" multiple style="display:none">
+      <div id="sold-photo-preview-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem"></div>
+      <div id="sold-photo-status" style="font-size:0.7rem;color:var(--text2);margin-top:0.5rem;text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" onclick="closeSoldPhotoModal()">Cancel</button>
+      <button class="btn-gold" id="sold-photo-save-btn" onclick="saveSoldPhotos()">Save Photos</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -1268,7 +1295,8 @@ function renderSold() {
     const p=soldNetProfit(s), r=soldROI(s);
     const d=daysHeld(s.purchase_date,s.sale_date);
     const ppd=d&&d>0?p/d:null;
-    return `<tr>
+    const hasPhoto = s.photo_urls && s.photo_urls.length > 0;
+    return `<tr style="cursor:pointer" onclick="openSoldPhotoModal('${s.id}')" title="Click to add/edit photos">
       <td><div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.2rem">${s.brand}</div><div style="font-size:0.76rem">${s.model}</div></td>
       <td style="color:var(--text2);font-size:0.7rem">${s.ref||'—'}</td>
       <td>${fmt(soldCostBasis(s))}</td>
@@ -1278,6 +1306,7 @@ function renderSold() {
       <td style="color:${r>=0?'var(--green)':'var(--red)'}">${fmtPct(r)}</td>
       <td style="color:var(--text2)">${d!==null?d+'d':'—'}</td>
       <td style="color:var(--text2);font-size:0.68rem">${ppd!==null?(ppd>=0?'+':'')+fmt(ppd,2):'—'}</td>
+      <td style="font-size:0.7rem">${hasPhoto ? '📷 '+s.photo_urls.length : '<span style="color:var(--text2)">+ photo</span>'}</td>
     </tr>`;
   }).join('');
 }
@@ -1670,6 +1699,148 @@ function showToast(msg) {
 // ══════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════
+//  SOLD PHOTO MODAL
+// ══════════════════════════════════════════════════
+let editingSoldId = null;
+let soldPendingPhotos = [];
+let soldDragSrcIdx = null;
+
+function openSoldPhotoModal(id) {
+  const s = soldWatches.find(w => w.id === id);
+  if (!s) return;
+  editingSoldId = id;
+  document.getElementById('sold-photo-modal-title').textContent = `Photos — ${s.brand} ${s.model}`;
+  soldPendingPhotos = (s.photo_urls || []).map(url => ({ file: null, url, existing: true }));
+  renderSoldPhotoGrid();
+  document.getElementById('sold-photo-modal').classList.add('open');
+}
+
+function closeSoldPhotoModal() {
+  document.getElementById('sold-photo-modal').classList.remove('open');
+  editingSoldId = null;
+  soldPendingPhotos = [];
+}
+
+function renderSoldPhotoGrid() {
+  const grid = document.getElementById('sold-photo-preview-grid');
+  const status = document.getElementById('sold-photo-status');
+  if (!soldPendingPhotos.length) { grid.innerHTML = ''; status.textContent = ''; return; }
+  grid.innerHTML = soldPendingPhotos.map((p, i) => `
+    <div class="photo-thumb" draggable="true" data-sidx="${i}">
+      <img src="${p.url}" alt="Photo ${i+1}" style="pointer-events:none">
+      ${i === 0 ? '<div class="photo-main-badge">Main</div>' : ''}
+      <button class="photo-remove" onclick="removeSoldPhoto(${i})">✕</button>
+    </div>
+  `).join('');
+  status.textContent = `${soldPendingPhotos.length}/8 photos · Drag to reorder · First = storefront image`;
+}
+
+function removeSoldPhoto(idx) {
+  if (!soldPendingPhotos[idx].existing) URL.revokeObjectURL(soldPendingPhotos[idx].url);
+  soldPendingPhotos.splice(idx, 1);
+  renderSoldPhotoGrid();
+}
+
+function initSoldPhotoListeners() {
+  const zone  = document.getElementById('sold-photo-upload-zone');
+  const input = document.getElementById('sold-photo-file-input');
+  const grid  = document.getElementById('sold-photo-preview-grid');
+
+  zone.addEventListener('click', () => input.click());
+  input.addEventListener('change', e => {
+    const remaining = 8 - soldPendingPhotos.length;
+    Array.from(e.target.files).slice(0, remaining).forEach(file => {
+      soldPendingPhotos.push({ file, url: URL.createObjectURL(file), existing: false });
+    });
+    e.target.value = '';
+    renderSoldPhotoGrid();
+  });
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--gold)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = 'var(--border2)'; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = 'var(--border2)';
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    const remaining = 8 - soldPendingPhotos.length;
+    files.slice(0, remaining).forEach(file => {
+      soldPendingPhotos.push({ file, url: URL.createObjectURL(file), existing: false });
+    });
+    renderSoldPhotoGrid();
+  });
+
+  // Drag to reorder
+  grid.addEventListener('dragstart', e => {
+    const thumb = e.target.closest('[data-sidx]');
+    if (!thumb) return;
+    soldDragSrcIdx = parseInt(thumb.dataset.sidx);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', soldDragSrcIdx);
+    setTimeout(() => thumb.style.opacity = '0.35', 0);
+  });
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const thumb = e.target.closest('[data-sidx]');
+    if (!thumb) return;
+    grid.querySelectorAll('[data-sidx]').forEach(t => t.style.outline = '');
+    if (parseInt(thumb.dataset.sidx) !== soldDragSrcIdx) thumb.style.outline = '2px solid var(--gold)';
+  });
+  grid.addEventListener('dragleave', e => {
+    const thumb = e.target.closest('[data-sidx]');
+    if (thumb) thumb.style.outline = '';
+  });
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    const thumb = e.target.closest('[data-sidx]');
+    if (!thumb || soldDragSrcIdx === null) return;
+    const destIdx = parseInt(thumb.dataset.sidx);
+    if (destIdx !== soldDragSrcIdx) {
+      const moved = soldPendingPhotos.splice(soldDragSrcIdx, 1)[0];
+      soldPendingPhotos.splice(destIdx, 0, moved);
+    }
+    soldDragSrcIdx = null;
+    renderSoldPhotoGrid();
+  });
+  grid.addEventListener('dragend', () => {
+    soldDragSrcIdx = null;
+    grid.querySelectorAll('[data-sidx]').forEach(t => { t.style.opacity = ''; t.style.outline = ''; });
+  });
+}
+
+async function saveSoldPhotos() {
+  if (!editingSoldId) return;
+  const btn = document.getElementById('sold-photo-save-btn');
+  btn.disabled = true;
+  btn.textContent = soldPendingPhotos.some(p => !p.existing) ? 'Uploading...' : 'Saving...';
+
+  const urls = [];
+  for (const p of soldPendingPhotos) {
+    if (p.existing) { urls.push(p.url); continue; }
+    try {
+      const ext = p.file.name.split('.').pop().toLowerCase() || 'jpg';
+      const path = `${currentUser.id}/sold/${editingSoldId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await db.storage.from('watch-photos').upload(path, p.file, { contentType: p.file.type, upsert: true });
+      if (upErr) { showToast('Upload error: ' + upErr.message); continue; }
+      const { data: urlData } = db.storage.from('watch-photos').getPublicUrl(path);
+      urls.push(urlData.publicUrl);
+    } catch(err) { console.error(err); }
+  }
+
+  const { error } = await db.from('sold_inventory').update({ photo_urls: urls }).eq('id', editingSoldId);
+  if (error) { showToast('Error saving: ' + error.message); btn.disabled = false; btn.textContent = 'Save Photos'; return; }
+
+  // Update local cache
+  const idx = soldWatches.findIndex(w => w.id === editingSoldId);
+  if (idx !== -1) soldWatches[idx].photo_urls = urls;
+
+  btn.disabled = false;
+  btn.textContent = 'Save Photos';
+  closeSoldPhotoModal();
+  renderSold();
+  showToast('Photos saved.');
+}
+
+// ══════════════════════════════════════════════════
 //  PHOTO UPLOAD & REORDER
 // ══════════════════════════════════════════════════
 let pendingPhotos = []; // [{file, url, existing}]
@@ -1814,6 +1985,7 @@ function loadPhotosForEdit(photoUrls) {
 // ─── BOOT ─────────────────────────────────────────
 initAuth();
 initPhotoListeners();
+initSoldPhotoListeners();
 </script>
 </body>
 </html>
