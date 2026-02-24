@@ -1756,6 +1756,11 @@ function initSoldPhotoListeners() {
     if (!files.length) return;
     const remaining = 8 - soldPendingPhotos.length;
     files.slice(0, remaining).forEach(file => {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'heic' || ext === 'heif' || file.type === 'image/heic' || file.type === 'image/heif') {
+        showToast('⚠️ HEIC files not supported. On your iPhone: Settings → Camera → Formats → Most Compatible (JPG).');
+        return;
+      }
       const reader = new FileReader();
       reader.onload = ev => {
         soldPendingPhotos.push({ file, url: ev.target.result, existing: false });
@@ -1936,6 +1941,11 @@ function addPhotoFiles(files) {
   const remaining = 8 - pendingPhotos.length;
   if (remaining <= 0) { showToast('Maximum 8 photos per watch.'); return; }
   files.slice(0, remaining).forEach(file => {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'heic' || ext === 'heif' || file.type === 'image/heic' || file.type === 'image/heif') {
+      showToast('⚠️ HEIC files not supported. On your iPhone: Settings → Camera → Formats → Most Compatible (JPG).');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = e => {
       pendingPhotos.push({ file, url: e.target.result, existing: false });
