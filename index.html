@@ -8,15 +8,15 @@
 <script>
   const SUPABASE_URL  = 'https://kstbnvcozplquymqecck.supabase.co';
   const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdGJudmNvenBscXV5bXFlY2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzY5ODYsImV4cCI6MjA4NzQ1Mjk4Nn0.RqcYRWvz4O-V1L5NAne8mP-nHKff8V451nAzle3CLWU';
-  const BIZ_NAME     = 'Source Max Luxury';
+  const BIZ_NAME     = 'SourceMax Luxury';
   const BIZ_ADDRESS  = 'Conway, Arkansas';
   const BIZ_EMAIL    = 'toxictimers@gmail.com';
-  const BIZ_PHONE    = '(501) 237-6848';
+  const BIZ_PHONE    = '(501) 237-6481';
   const PAY_ZELLE    = '(501) 733-1970';
-  const PAY_APPLEPAY = '(501) 733-1970';
+  const PAY_APPLEPAY = '(501) 7331970-0000';
   const WIRE_BANK    = 'Centennial Bank';
-  const WIRE_NAME    = 'NXT Enterprises LLC';
-  const WIRE_ADDRESS = '345 Nob Hill St Conway, AR 72034';
+  const WIRE_NAME    = 'Nathan Tolliver - NXT Enterprises LLC';
+  const WIRE_ADDRESS = '345 Nob Hill St Conway AR 72034';
   const WIRE_ACCOUNT = '502483711';
   const WIRE_ROUTING = '082902757';
 </script>
@@ -228,11 +228,29 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .color-chip{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color 0.1s,transform 0.1s;flex-shrink:0;}
 .color-chip:hover{transform:scale(1.15);}.color-chip.selected{border-color:var(--gold)!important;}
 .platform-checks{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.4rem;}
-.platform-check{display:flex;align-items:center;gap:0.3rem;background:var(--surface2);border:1px solid var(--border);padding:0.25rem 0.6rem;cursor:pointer;font-size:0.7rem;transition:all 0.12s;user-select:none;}
+.platform-check{display:flex;align-items:center;gap:0.3rem;background:var(--surface2);border:1px solid var(--border);padding:0.25rem 0.6rem;cursor:pointer;font-size:0.7rem;transition:all 0.12s;user-select:none;position:relative;}
 .platform-check:hover{border-color:var(--gold);}
 .platform-check.selected{background:var(--gold-dim);border-color:var(--gold);color:var(--gold);font-weight:600;}
-.platform-check input{display:none;}
-/* Tax Report */
+.platform-check input{position:absolute;opacity:0;width:0;height:0;}
+/* STAGE BADGES */
+.stage-badge{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.2rem 0.55rem;font-weight:700;white-space:nowrap;border-radius:2px;}
+.stage-0{background:#2a2a2a;color:#888;}           /* Purchased - awaiting payment */
+.stage-1{background:#1e3a5f;color:#6aabff;}        /* Paid - shipping to me */
+.stage-2{background:#2d1f4a;color:#b48fff;}        /* In hand - cleaning */
+.stage-3{background:#3a2200;color:#ffad33;}        /* Photography / prep */
+.stage-4{background:#0a3a2a;color:#3fc88a;}        /* Listed - active */
+.stage-5{background:#3a1a00;color:#ff8c42;}        /* Offer accepted */
+.stage-6{background:#3a0a1a;color:#ff6b9d;}        /* Authentication */
+.stage-7{background:#1a1a3a;color:#7eb3ff;}        /* Awaiting payment */
+.stage-8{background:#003a2a;color:#4dffb4;}        /* Shipped to buyer */
+.stage-9{background:#1a3a00;color:#90ff60;}        /* Closed / Complete */
+.stage-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+/* Stage selector in modal */
+.stage-selector{display:flex;flex-direction:column;gap:0.35rem;margin-top:0.4rem;}
+.stage-option{display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0.75rem;border:1px solid var(--border);cursor:pointer;transition:all 0.12s;font-size:0.74rem;}
+.stage-option:hover{border-color:var(--gold);background:var(--gold-dim);}
+.stage-option.selected{border-color:var(--gold);background:var(--gold-dim);}
+.stage-option-num{font-size:0.6rem;color:var(--text2);min-width:1.2rem;}
 .tax-year-block{background:var(--surface);border:1px solid var(--border);margin-bottom:1.5rem;}
 .tax-year-header{background:var(--charcoal);color:#fff;padding:1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;}
 .tax-year-title{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:400;}
@@ -412,7 +430,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
         </select>
       </div>
       <div class="inv-rows" id="inventory-grid">
-        <div class="inv-row-header"><span>Watch</span><span>Cost Basis</span><span>MSRP</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>
+        <div class="inv-row-header"><span>Watch / Stage</span><span>Cost Basis</span><span>MSRP</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>
       </div>
       <div id="inv-empty" class="empty-state" style="display:none"><h3>No watches in inventory</h3><p>Click "+ Add Watch" to get started.</p></div>
     </div>
@@ -558,18 +576,22 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
           <div class="form-group"><label class="form-label">MSRP ($)</label><input class="form-input" id="f-msrp" type="number" placeholder="Retail / market value"></div>
           <div class="form-group full"><label class="form-label">Platform(s) Listed On</label>
             <div class="platform-checks" id="f-platform-checks">
-              <label class="platform-check" onclick="togglePlatform(this,'eBay')"><input type="checkbox" value="eBay">eBay</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Chrono24')"><input type="checkbox" value="Chrono24">Chrono24</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Grailzee')"><input type="checkbox" value="Grailzee">Grailzee</label>
-              <label class="platform-check" onclick="togglePlatform(this,'WatchBox')"><input type="checkbox" value="WatchBox">WatchBox</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Facebook Marketplace')"><input type="checkbox" value="Facebook Marketplace">Facebook</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Instagram')"><input type="checkbox" value="Instagram">Instagram</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Direct / Private')"><input type="checkbox" value="Direct / Private">Direct</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Bob\'s Watches')"><input type="checkbox" value="Bob's Watches">Bob's Watches</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Other')"><input type="checkbox" value="Other">Other</label>
+              <div class="platform-check" data-val="eBay" onclick="togglePlatform(this)">eBay</div>
+              <div class="platform-check" data-val="Chrono24" onclick="togglePlatform(this)">Chrono24</div>
+              <div class="platform-check" data-val="Grailzee" onclick="togglePlatform(this)">Grailzee</div>
+              <div class="platform-check" data-val="WatchBox" onclick="togglePlatform(this)">WatchBox</div>
+              <div class="platform-check" data-val="Facebook Marketplace" onclick="togglePlatform(this)">Facebook</div>
+              <div class="platform-check" data-val="Instagram" onclick="togglePlatform(this)">Instagram</div>
+              <div class="platform-check" data-val="Direct / Private" onclick="togglePlatform(this)">Direct</div>
+              <div class="platform-check" data-val="Bob's Watches" onclick="togglePlatform(this)">Bob's Watches</div>
+              <div class="platform-check" data-val="Other" onclick="togglePlatform(this)">Other</div>
             </div>
           </div>
           <div class="form-group full"><label class="form-label">Link to Contact</label><select class="form-select" id="f-contact-link"><option value="">— None —</option></select></div>
+          <div class="form-group full">
+            <label class="form-label">Deal Stage</label>
+            <div class="stage-selector" id="f-stage-selector"></div>
+          </div>
           <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-notes" placeholder="Additional notes..."></textarea></div>
         </div>
       </div>
@@ -635,15 +657,15 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
           <div class="form-group"><label class="form-label">Shipping Out ($)</label><input class="form-input" id="f-shipping-out" type="number" placeholder="0.00" oninput="updateSellPnL()"></div>
           <div class="form-group full"><label class="form-label">Sale Platform</label>
             <div class="platform-checks" id="f-sale-platform-checks">
-              <label class="platform-check" onclick="togglePlatform(this,'eBay','sale')"><input type="checkbox" value="eBay">eBay</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Chrono24','sale')"><input type="checkbox" value="Chrono24">Chrono24</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Grailzee','sale')"><input type="checkbox" value="Grailzee">Grailzee</label>
-              <label class="platform-check" onclick="togglePlatform(this,'WatchBox','sale')"><input type="checkbox" value="WatchBox">WatchBox</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Facebook Marketplace','sale')"><input type="checkbox" value="Facebook Marketplace">Facebook</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Instagram','sale')"><input type="checkbox" value="Instagram">Instagram</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Direct / Private','sale')"><input type="checkbox" value="Direct / Private">Direct</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Bob\'s Watches','sale')"><input type="checkbox" value="Bob's Watches">Bob's Watches</label>
-              <label class="platform-check" onclick="togglePlatform(this,'Other','sale')"><input type="checkbox" value="Other">Other</label>
+              <div class="platform-check" data-val="eBay" onclick="togglePlatform(this)">eBay</div>
+              <div class="platform-check" data-val="Chrono24" onclick="togglePlatform(this)">Chrono24</div>
+              <div class="platform-check" data-val="Grailzee" onclick="togglePlatform(this)">Grailzee</div>
+              <div class="platform-check" data-val="WatchBox" onclick="togglePlatform(this)">WatchBox</div>
+              <div class="platform-check" data-val="Facebook Marketplace" onclick="togglePlatform(this)">Facebook</div>
+              <div class="platform-check" data-val="Instagram" onclick="togglePlatform(this)">Instagram</div>
+              <div class="platform-check" data-val="Direct / Private" onclick="togglePlatform(this)">Direct</div>
+              <div class="platform-check" data-val="Bob's Watches" onclick="togglePlatform(this)">Bob's Watches</div>
+              <div class="platform-check" data-val="Other" onclick="togglePlatform(this)">Other</div>
             </div>
           </div>
           <div class="form-group full"><label class="form-label">Sold To (Name)</label><input class="form-input" id="f-sell-name-sell" placeholder="Buyer name"></div>
@@ -898,7 +920,7 @@ function renderInventory(){
   const cap=inventory.reduce((s,w)=>s+costBasis(w),0);
   document.getElementById('inv-subtitle').textContent=`${inventory.length} watches · ${fmt(cap)} capital`;
   const grid=document.getElementById('inventory-grid'),empty=document.getElementById('inv-empty');
-  const hdr=`<div class="inv-row-header"><span>Watch</span><span>Cost Basis</span><span>MSRP</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>`;
+  const hdr=`<div class="inv-row-header"><span>Watch / Stage</span><span>Cost Basis</span><span>MSRP</span><span>Listed At</span><span>Potential Profit</span><span>Days Held</span><span>Platform</span></div>`;
   if(!f.length){grid.innerHTML=hdr;empty.style.display='block';return;}
   empty.style.display='none';
   grid.innerHTML=hdr+f.map(w=>{
@@ -907,8 +929,10 @@ function renderInventory(){
     const pillCls=d>60?'warn':d>30?'':'ok';
     const sub=[w.ref,w.serial?'SN:'+w.serial:'',w.dial_color,w.case_size].filter(Boolean).join(' · ');
     const plat=Array.isArray(w.platform)?w.platform.join(', '):(w.platform||'—');
+    const si=w.stage_index!=null?w.stage_index:null;
+    const stageBadge=si!=null?`<div style="margin-top:0.4rem"><span class="stage-badge stage-${si}"><span class="stage-dot"></span>${STAGES[si]}</span></div>`:'';
     return`<div class="inv-row" onclick="editWatch('${w.id}')">
-      <div><div class="inv-row-brand">${w.brand||''}${w.year?' · '+w.year:''}</div><div class="inv-row-model">${w.model||''}</div><div class="inv-row-sub">${sub||'—'}</div></div>
+      <div><div class="inv-row-brand">${w.brand||''}${w.year?' · '+w.year:''}</div><div class="inv-row-model">${w.model||''}</div><div class="inv-row-sub">${sub||'—'}</div>${stageBadge}</div>
       <div class="inv-row-val gold">${fmt(b)}</div>
       <div class="inv-row-val muted">${w.msrp?fmt(w.msrp):'—'}</div>
       <div class="inv-row-val">${w.listed_price?fmt(w.listed_price):'—'}</div>
@@ -1338,6 +1362,7 @@ function openModal(){
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
   buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
   populateContactDropdowns();
+  buildStageSelector(0);
   switchTab('basics');
   document.getElementById('modal').classList.add('open');
   setTimeout(()=>document.getElementById('f-brand').focus(),50);
@@ -1351,6 +1376,7 @@ function editWatch(id){
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
   buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
   populateContactDropdowns();
+  buildStageSelector(w.stage_index!=null?w.stage_index:0);
   loadPhotosForEdit(w.photo_urls||[]);
   const fields={
     'f-brand':w.brand,'f-model':w.model,'f-ref':w.ref,'f-serial':w.serial,
@@ -1394,12 +1420,44 @@ function updateSellPnL(){
   el.innerHTML=`<span style="color:${profit>=0?'var(--green)':'var(--red)'}">Profit: ${fmt(profit)} (${fmtPct(roi)})</span> <span style="color:var(--text2);font-size:0.72rem">· Cost basis: ${fmt(b)}</span>`;
 }
 
-function getPlatforms(groupId){return Array.from(document.querySelectorAll(`#${groupId} .platform-check.selected`)).map(el=>el.querySelector('input').value);}
-function togglePlatform(el,val,group){el.classList.toggle('selected');}
+const STAGES=[
+  'Purchased — Awaiting Payment',
+  'Paid — Shipping to Me',
+  'In Hand — Cleaning / Service',
+  'Photography / Prep for Listing',
+  'Listed — Active on Platforms',
+  'Offer Accepted — Pending Auth',
+  'Authentication — Shipped to Auth',
+  'Awaiting Payment from Buyer',
+  'Shipped to Buyer',
+  'Closed / Complete',
+];
+const STAGE_ICONS=['💳','📦','🔧','📸','🏷️','🤝','🔍','⏳','🚚','✅'];
+
+function buildStageSelector(selectedIdx){
+  const el=document.getElementById('f-stage-selector');if(!el)return;
+  el.innerHTML=STAGES.map((s,i)=>`
+    <div class="stage-option${selectedIdx===i?' selected':''}" onclick="selectStage(${i})">
+      <span class="stage-badge stage-${i}" style="flex-shrink:0"><span class="stage-dot"></span></span>
+      <span class="stage-option-num">${i+1}.</span>
+      <span>${STAGE_ICONS[i]} ${s}</span>
+    </div>`).join('');
+}
+function selectStage(idx){
+  document.querySelectorAll('.stage-option').forEach((el,i)=>el.classList.toggle('selected',i===idx));
+}
+function getSelectedStage(){
+  const el=document.querySelector('.stage-option.selected');
+  if(!el)return null;
+  return Array.from(document.querySelectorAll('.stage-option')).indexOf(el);
+}
+
+function getPlatforms(groupId){return Array.from(document.querySelectorAll(`#${groupId} .platform-check.selected`)).map(el=>el.dataset.val);}
+function togglePlatform(el){el.classList.toggle('selected');}
 function setPlatforms(groupId,values){
-  const arr=Array.isArray(values)?values:(values?values.split(',').map(s=>s.trim()):[]);
+  const arr=Array.isArray(values)?values:(values?[values]:[]);
   document.querySelectorAll(`#${groupId} .platform-check`).forEach(el=>{
-    el.classList.toggle('selected',arr.includes(el.querySelector('input').value));
+    el.classList.toggle('selected',arr.includes(el.dataset.val));
   });
 }
 function clearPlatforms(groupId){document.querySelectorAll(`#${groupId} .platform-check`).forEach(el=>el.classList.remove('selected'));}
@@ -1416,6 +1474,7 @@ function getFormData(){
     listedPrice:parseFloat(g('f-listed-price').value)||null,
     msrp:parseFloat(g('f-msrp').value)||null,
     platform:getPlatforms('f-platform-checks'),
+    stageIndex:getSelectedStage(),
     notes:g('f-notes').value.trim(),
     contactId:g('f-contact-link').value||null,
     caseSize:g('f-case-size').value.trim(),caseMaterial:g('f-case-material').value,
@@ -1435,6 +1494,7 @@ function localToDb(d){
     tax:d.tax||0,shipping_in:d.shippingIn||0,other_fees:d.otherFees||0,
     listed_price:d.listedPrice||null,msrp:d.msrp||null,
     platform:d.platform&&d.platform.length?d.platform:null,
+    stage_index:d.stageIndex!=null?d.stageIndex:0,
     notes:d.notes||null,contact_id:d.contactId||null,
     case_size:d.caseSize||null,case_material:d.caseMaterial||null,
     movement:d.movement||null,condition:d.condition||null,box_papers:d.boxPapers||null,
