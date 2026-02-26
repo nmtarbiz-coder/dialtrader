@@ -26,7 +26,7 @@
   --blue:#3A6A9A;--blue-dim:rgba(58,106,154,0.1);--charcoal:#2A2A2A;--sidebar-w:210px;
 }
 html,body{height:100%;}
-body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;display:flex;flex-direction:column;}
+body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes load{to{left:110%;}}
@@ -59,8 +59,8 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .auth-success{font-size:0.7rem;color:var(--green);margin-top:0.75rem;text-align:center;}
 
 /* APP LAYOUT */
-#app-screen{display:none;height:100vh;overflow:hidden;}
-#app-screen.visible{display:flex;align-items:stretch;}
+#app-screen{display:none;height:100vh;}
+#app-screen.visible{display:flex;}
 
 /* SIDEBAR */
 .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--charcoal);display:flex;flex-direction:column;height:100vh;overflow-y:auto;border-right:3px solid var(--gold);}
@@ -172,8 +172,8 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .sidebar-signout:hover{color:var(--red);}
 
 /* MAIN */
-.main-content{flex:1;overflow-y:auto;min-height:0;height:0;}
-.page{display:none;padding:2rem 2rem 4rem;animation:fadeIn 0.25s ease;width:100%;}
+.main-content{flex:1;overflow-y:auto;min-height:0;}
+.page{display:none;padding:2rem 2rem 4rem;animation:fadeIn 0.25s ease;}
 .page.active{display:block;min-height:0;}
 
 /* BUTTONS */
