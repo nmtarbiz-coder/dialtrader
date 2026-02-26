@@ -74,7 +74,64 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .nav-item.active{color:#fff;background:rgba(184,148,58,0.15);border-left-color:var(--gold2);}
 .nav-divider{height:1px;background:var(--border2);margin:0.5rem 1.25rem;}
 
-/* ── SETTINGS CARDS ── */
+/* ── STOREFRONT PAGE ── */
+.sf-layout{display:grid;grid-template-columns:320px 1fr;gap:0;min-height:600px;border:1px solid var(--border);}
+.sf-controls{background:var(--surface2);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;}
+.sf-preview-pane{background:var(--bg);display:flex;flex-direction:column;}
+.sf-section-label{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text2);margin:1.25rem 0 0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);}
+.sf-section-label:first-child{margin-top:0;}
+.sf-theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:0.25rem;}
+.sf-theme-swatch{
+  border:2px solid transparent;border-radius:2px;cursor:pointer;overflow:hidden;
+  transition:border-color 0.15s;aspect-ratio:3/2;position:relative;
+}
+.sf-theme-swatch.active{border-color:var(--gold2);}
+.sf-theme-swatch-inner{width:100%;height:100%;display:flex;flex-direction:column;}
+.sf-swatch-header{flex:0 0 40%;display:flex;align-items:center;justify-content:center;}
+.sf-swatch-body{flex:1;display:flex;align-items:center;justify-content:center;}
+.sf-swatch-dot{width:8px;height:8px;border-radius:50%;}
+.sf-swatch-label{font-size:0.58rem;color:var(--text2);text-align:center;margin-top:0.3rem;}
+.sf-font-list{display:flex;flex-direction:column;gap:0.4rem;}
+.sf-font-item{
+  padding:0.6rem 0.75rem;border:1px solid var(--border);cursor:pointer;
+  transition:border-color 0.15s,background 0.15s;
+}
+.sf-font-item:hover{background:rgba(255,255,255,0.04);}
+.sf-font-item.active{border-color:var(--gold2);background:rgba(184,148,58,0.08);}
+.sf-font-display{font-size:0.95rem;color:var(--text1);margin-bottom:0.1rem;}
+.sf-font-sub{font-size:0.6rem;color:var(--text2);letter-spacing:0.05em;}
+.sf-hero-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.5rem;}
+.sf-hero-thumb{
+  aspect-ratio:16/9;background-size:cover;background-position:center;
+  border:2px solid transparent;cursor:pointer;transition:border-color 0.15s;
+  position:relative;overflow:hidden;
+}
+.sf-hero-thumb.active{border-color:var(--gold2);}
+.sf-hero-thumb-label{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,0.6);font-size:0.58rem;color:#fff;
+  padding:0.25rem 0.4rem;text-align:center;
+}
+.sf-custom-url{width:100%;margin-top:0.5rem;}
+.sf-preview-bar{
+  background:var(--surface2);border-bottom:1px solid var(--border);
+  padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;
+}
+.sf-preview-dot{width:10px;height:10px;border-radius:50%;}
+.sf-preview-url{
+  flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);
+  padding:0.2rem 0.75rem;font-size:0.62rem;color:var(--text2);font-family:monospace;
+}
+.sf-preview-frame{flex:1;border:none;width:100%;min-height:500px;background:#fff;}
+.sf-download-bar{
+  padding:1rem 1.5rem;border-top:1px solid var(--border);background:var(--surface2);
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+}
+.sf-status{font-size:0.72rem;color:var(--text2);flex:1;}
+.sf-status strong{color:var(--gold2);}
+@media(max-width:900px){.sf-layout{grid-template-columns:1fr;}.sf-preview-pane{min-height:400px;}}
+
+
 .card{background:var(--surface2);border:1px solid var(--border);padding:1.5rem;}
 .card-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:500;color:var(--text1);margin-bottom:0.25rem;}
 .card-sub{font-size:0.72rem;color:var(--text2);margin-bottom:0.25rem;}
@@ -418,6 +475,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="nav-item" onclick="showPage('import')"><span class="nav-icon">📥</span>Import / Export</div>
     <div class="nav-item" onclick="showPage('tax')"><span class="nav-icon">💰</span>Tax Report</div>
     <div class="nav-divider"></div>
+    <div class="nav-item" onclick="showPage('storefront')"><span class="nav-icon">🌐</span>My Storefront</div>
     <div class="nav-item" onclick="showPage('help')"><span class="nav-icon">❓</span>Help &amp; Setup</div>
     <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span>Settings</div>
     <div class="sidebar-footer">
@@ -598,6 +656,60 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
         </div>
       </div>
       <div id="tax-report-content"></div>
+    </div>
+
+    <!-- MY STOREFRONT PAGE -->
+    <div class="page" id="page-storefront" style="display:none">
+      <div class="page-header">
+        <div><div class="page-title">My <span>Storefront</span></div><div class="page-subtitle">Customize your public watch store — pick a theme and download your ready-to-deploy file</div></div>
+      </div>
+
+      <!-- PROFILE INCOMPLETE WARNING -->
+      <div id="sf-profile-warn" style="display:none;background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.3);padding:0.85rem 1rem;margin-bottom:1.25rem;font-size:0.78rem;color:#e07060;">
+        ⚠️ Your <strong>Business Profile</strong> is incomplete. <a href="#" onclick="showPage('settings')" style="color:var(--gold2)">Go to Settings</a> and fill in your business name, email, and phone before downloading — those appear on your storefront.
+      </div>
+
+      <div class="sf-layout">
+        <!-- LEFT: CONTROLS -->
+        <div class="sf-controls">
+
+          <div class="sf-section-label">Color Theme</div>
+          <div class="sf-theme-grid" id="sf-theme-grid">
+            <!-- Swatches injected by JS -->
+          </div>
+
+          <div class="sf-section-label">Font Pairing</div>
+          <div class="sf-font-list" id="sf-font-list">
+            <!-- Font options injected by JS -->
+          </div>
+
+          <div class="sf-section-label">Hero Background</div>
+          <div class="sf-hero-grid" id="sf-hero-grid">
+            <!-- Hero thumbs injected by JS -->
+          </div>
+          <input class="form-input sf-custom-url" id="sf-hero-custom" placeholder="Or paste any image URL..." oninput="sfSetCustomHero(this.value)">
+
+        </div>
+
+        <!-- RIGHT: PREVIEW + DOWNLOAD -->
+        <div class="sf-preview-pane">
+          <div class="sf-preview-bar">
+            <div class="sf-preview-dot" style="background:#ff5f57"></div>
+            <div class="sf-preview-dot" style="background:#febc2e"></div>
+            <div class="sf-preview-dot" style="background:#28c840"></div>
+            <div class="sf-preview-url" id="sf-preview-url">yoursite.com</div>
+          </div>
+          <iframe class="sf-preview-frame" id="sf-preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+          <div class="sf-download-bar">
+            <div class="sf-status" id="sf-status">
+              Theme: <strong id="sf-status-theme">Classic Dark</strong> &nbsp;·&nbsp;
+              Fonts: <strong id="sf-status-font">Playfair + Raleway</strong>
+            </div>
+            <button class="btn-outline" onclick="sfRefreshPreview()">↻ Refresh Preview</button>
+            <button class="btn-gold" onclick="sfDownload()">⬇ Download Storefront</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- SETTINGS PAGE -->
@@ -1246,6 +1358,7 @@ function showPage(name){
   if(name==='tax')renderTaxReport();
   if(name==='settings')populateSettingsPage();
   if(name==='help'){showHelp(currentHelpArticle);}
+  if(name==='storefront')initStorefrontPage();
 }
 
 // ── HELPERS ───────────────────────────────────────
@@ -2629,6 +2742,1477 @@ async function saveProfileSetup(){
   updateSidebarProfile();
   skipProfileSetup();
   showToast('Profile saved. Welcome to DialTrader!');
+}
+
+const STOREFRONT_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">My Watch Store</title>
+<meta name="description" id="page-desc" content="Pre-owned luxury watches — authenticated, fairly priced.">
+<link id="font-link" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script>
+  // ════════════════════════════════════════════════════════
+  //  DIALTRADER STOREFRONT CONFIG — auto-generated
+  //  Do not edit manually — regenerate from DialTrader app
+  // ════════════════════════════════════════════════════════
+  const SUPABASE_URL  = '%%SUPABASE_URL%%';
+  const SUPABASE_ANON = '%%SUPABASE_ANON%%';
+
+  // Theme — injected by DialTrader theme picker
+  const THEME = {
+    bodyBg:       '%%THEME_BODY_BG%%',
+    headerBg:     '%%THEME_HEADER_BG%%',
+    gold:         '%%THEME_GOLD%%',
+    gold2:        '%%THEME_GOLD2%%',
+    bodyBorder:   '%%THEME_BODY_BORDER%%',
+    fontDisplay:  '%%THEME_FONT_DISPLAY%%',
+    fontBody:     '%%THEME_FONT_BODY%%',
+    fontUrl:      '%%THEME_FONT_URL%%',
+    heroBg:       '%%THEME_HERO_BG%%',
+  };
+
+  // Profile — injected from user_profiles at download time
+  // (also refreshed live from Supabase on load)
+  const PROFILE_CACHE = {
+    bizName:   '%%PROFILE_BIZ_NAME%%',
+    phone:     '%%PROFILE_PHONE%%',
+    email:     '%%PROFILE_EMAIL%%',
+    instagram: '%%PROFILE_INSTAGRAM%%',
+    location:  '%%PROFILE_LOCATION%%',
+    website:   '%%PROFILE_WEBSITE%%',
+    tagline:   '%%PROFILE_TAGLINE%%',
+  };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Dynamic — injected by applyTheme() on load */
+  --header-bg: #2A2A2A;
+  --header-border: #3A3A3A;
+  --body-bg: #F5F2ED;
+  --body-surface: #FFFFFF;
+  --body-surface2: #EEEBE5;
+  --body-border: #DDD8D0;
+  --text-dark: #1A1A1A;
+  --text-mid: #555050;
+  --text-light: #8A8278;
+  --gold: #B8943A;
+  --gold2: #D4AF5A;
+  --gold-light: rgba(184,148,58,0.12);
+  --charcoal: #2A2A2A;
+  --red: #B03A3A;
+  --green: #3A7A5A;
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body, 'Raleway', sans-serif);
+  background: var(--body-bg);
+  color: var(--text-dark);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+/* ─── PAGE LOADER ────────────────────────────── */
+#page-loader {
+  position: fixed; inset: 0;
+  background: var(--charcoal);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1.25rem;
+  transition: opacity 0.6s ease;
+}
+#page-loader.hidden { opacity: 0; pointer-events: none; }
+.loader-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; font-weight: 400; letter-spacing: 0.12em;
+  color: #C9A84C; text-transform: uppercase;
+}
+.loader-logo span { font-style: italic; color: #fff; }
+.loader-bar { width: 140px; height: 1px; background: #444; position: relative; overflow: hidden; }
+.loader-bar::after {
+  content: ''; position: absolute; left: -60%; top: 0;
+  width: 60%; height: 100%; background: #C9A84C;
+  animation: load 1.2s ease infinite;
+}
+@keyframes load { to { left: 110%; } }
+
+/* ─── TOP HEADER BAR ─────────────────────────── */
+.top-bar {
+  background: var(--charcoal);
+  padding: 0.5rem 2rem;
+  display: flex; align-items: center; justify-content: center;
+  gap: 2rem; flex-wrap: wrap;
+  border-bottom: 1px solid var(--header-border);
+}
+.top-bar a {
+  font-size: 0.72rem; letter-spacing: 0.1em;
+  color: #AAA; text-decoration: none; transition: color 0.15s;
+}
+.top-bar a:hover { color: #C9A84C; }
+.top-bar-divider { color: #444; font-size: 0.7rem; }
+
+/* ─── MAIN HEADER ────────────────────────────── */
+header {
+  background: var(--charcoal);
+  padding: 1.5rem 2rem 1.25rem;
+  text-align: center;
+  border-bottom: 3px solid var(--gold);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo-area { margin-bottom: 1rem; }
+.logo-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; font-weight: 500; letter-spacing: 0.2em;
+  color: #FFFFFF; text-transform: uppercase; line-height: 1;
+}
+.logo-text em {
+  font-style: italic; color: var(--gold2); font-weight: 400;
+}
+.logo-tagline {
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.6rem; letter-spacing: 0.35em; text-transform: uppercase;
+  color: #888; margin-top: 0.4rem;
+}
+.logo-icon { font-size: 1.8rem; margin-bottom: 0.3rem; display: block; }
+
+/* Replace logo-area with image when logo found */
+.logo-img { height: 70px; width: auto; display: block; margin: 0 auto 0.5rem; }
+
+header nav {
+  display: flex; justify-content: center; gap: 2.5rem;
+}
+header nav a {
+  font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #AAA; text-decoration: none; transition: color 0.15s;
+  padding-bottom: 2px; border-bottom: 1px solid transparent;
+}
+header nav a:hover { color: #fff; border-bottom-color: var(--gold); }
+
+/* ─── HERO ───────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 75vh; min-height: 500px;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.65) 100%),
+    url('https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=1600&q=80&auto=format') center/cover no-repeat;
+}
+.hero-content { position: relative; z-index: 1; padding: 2rem; }
+.hero-eyebrow {
+  font-size: 0.68rem; letter-spacing: 0.35em; text-transform: uppercase;
+  color: var(--gold2); margin-bottom: 1.25rem;
+  animation: fadeIn 0.8s ease both;
+}
+.hero-eyebrow::before, .hero-eyebrow::after {
+  content: '——'; margin: 0 0.75rem; opacity: 0.5;
+}
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  font-weight: 400; color: #FFFFFF; line-height: 1.1;
+  letter-spacing: 0.02em; margin-bottom: 1.25rem;
+  animation: fadeIn 0.8s 0.1s ease both;
+}
+.hero-title em { font-style: italic; color: var(--gold2); }
+.hero-sub {
+  font-size: 0.85rem; color: rgba(255,255,255,0.75);
+  letter-spacing: 0.05em; margin-bottom: 2.5rem;
+  animation: fadeIn 0.8s 0.2s ease both;
+}
+.hero-btns {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+  animation: fadeIn 0.8s 0.3s ease both;
+}
+.btn-hero-primary {
+  background: #fff; color: #1A1A1A;
+  padding: 0.85rem 2.5rem;
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.18em;
+  text-transform: uppercase; text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  display: inline-block;
+}
+.btn-hero-primary:hover { background: var(--gold2); color: #1A1A1A; }
+.btn-hero-outline {
+  background: transparent; color: #fff;
+  border: 1px solid rgba(255,255,255,0.6);
+  padding: 0.85rem 2.5rem;
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em;
+  text-transform: uppercase; text-decoration: none;
+  transition: all 0.15s; display: inline-block;
+}
+.btn-hero-outline:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
+
+/* ─── GOLD DIVIDER ───────────────────────────── */
+.gold-divider {
+  background: var(--charcoal);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  padding: 1rem 2rem;
+  text-align: center;
+  display: flex; align-items: center; justify-content: center; gap: 3rem; flex-wrap: wrap;
+}
+.divider-stat { text-align: center; }
+.divider-stat-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem; font-weight: 400; color: var(--gold2);
+}
+.divider-stat-label {
+  font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: #888; margin-top: 0.2rem;
+}
+.divider-sep { color: #444; font-size: 1.5rem; }
+
+/* ─── SECTION ─────────────────────────────────── */
+.section { padding: 4rem 2rem; max-width: 1400px; margin: 0 auto; }
+.section-header { text-align: center; margin-bottom: 3rem; }
+.section-eyebrow {
+  font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 0.75rem;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; font-weight: 400; color: var(--text-dark);
+  letter-spacing: 0.02em;
+}
+.section-title em { font-style: italic; color: var(--gold); }
+.section-line {
+  width: 60px; height: 2px; background: var(--gold);
+  margin: 1rem auto 0;
+}
+
+/* ─── FILTER BAR ─────────────────────────────── */
+.filter-strip {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+  margin-bottom: 2.5rem; align-items: center;
+  padding-bottom: 1.5rem; border-bottom: 1px solid var(--body-border);
+}
+.filter-input {
+  background: #fff; border: 1px solid var(--body-border);
+  color: var(--text-dark); padding: 0.6rem 1rem;
+  font-family: 'Raleway', sans-serif; font-size: 0.78rem;
+  outline: none; width: 280px; transition: border-color 0.15s;
+}
+.filter-input::placeholder { color: var(--text-light); }
+.filter-input:focus { border-color: var(--gold); }
+.filter-select {
+  background: #fff; border: 1px solid var(--body-border);
+  color: var(--text-mid); padding: 0.6rem 0.9rem;
+  font-family: 'Raleway', sans-serif; font-size: 0.75rem; outline: none; cursor: pointer;
+}
+.results-count { font-size: 0.7rem; color: var(--text-light); margin-left: auto; font-style: italic; }
+
+/* ─── WATCH GRID — TALL PORTRAIT CARDS ───────── */
+.watch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+.watch-card {
+  background: var(--body-surface);
+  border: 1px solid var(--body-border);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: fadeIn 0.4s ease both;
+  display: flex; flex-direction: column;
+}
+.watch-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+}
+.watch-card:hover .watch-photo img { transform: scale(1.04); }
+
+/* TALL PORTRAIT — 3:4 ratio */
+.watch-photo {
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background: var(--body-surface2);
+  position: relative;
+}
+.watch-photo img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.5s ease; display: block;
+}
+.watch-photo-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 0.75rem;
+}
+.ph-icon { font-size: 3rem; opacity: 0.15; }
+.ph-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-light); opacity: 0.5;
+}
+.photo-count-badge {
+  position: absolute; bottom: 0.6rem; right: 0.6rem;
+  background: rgba(0,0,0,0.65); color: #fff;
+  font-size: 0.6rem; padding: 0.2rem 0.5rem; letter-spacing: 0.06em;
+}
+.watch-tag {
+  position: absolute; top: 0.75rem; left: 0.75rem;
+  background: var(--charcoal); color: #fff;
+  font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 0.25rem 0.6rem;
+}
+
+.watch-info { padding: 1rem 1.1rem 1.25rem; flex: 1; display: flex; flex-direction: column; }
+.watch-card-brand {
+  font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 0.35rem; font-weight: 600;
+}
+.watch-card-model {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem; line-height: 1.3; color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+.watch-card-ref { font-size: 0.68rem; color: var(--text-light); margin-bottom: 0.85rem; }
+.watch-card-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1rem; }
+.chip {
+  font-size: 0.58rem; letter-spacing: 0.06em;
+  background: var(--body-surface2); color: var(--text-mid);
+  padding: 0.15rem 0.5rem; border: 1px solid var(--body-border);
+}
+.watch-card-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 0.85rem; border-top: 1px solid var(--body-border);
+  margin-top: auto;
+}
+.watch-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 500; color: var(--text-dark);
+}
+.watch-inquire {
+  font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-mid); background: none;
+  border: 1px solid var(--body-border);
+  padding: 0.4rem 0.85rem; cursor: pointer;
+  font-family: 'Raleway', sans-serif; font-weight: 600;
+  transition: all 0.15s;
+}
+.watch-inquire:hover { background: var(--charcoal); color: #fff; border-color: var(--charcoal); }
+
+/* ─── LIGHTBOX ───────────────────────────────── */
+.lightbox {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88); z-index: 600;
+  align-items: center; justify-content: center; padding: 1rem;
+}
+.lightbox.open { display: flex; }
+.lb-inner {
+  background: #fff; width: 900px; max-width: 100%;
+  max-height: 92vh; overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+  display: grid; grid-template-columns: 1.1fr 1fr;
+}
+@media(max-width:640px){ .lb-inner { grid-template-columns: 1fr; } }
+
+.lb-photo-panel { background: var(--body-surface2); position: relative; }
+.lb-main-img { aspect-ratio: 3/4; overflow: hidden; }
+.lb-main-img img { width:100%; height:100%; object-fit:cover; display:block; }
+.lb-main-placeholder { aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; font-size:5rem; opacity:0.1; }
+.lb-thumbs-row { display:flex; gap:2px; padding:2px; overflow-x:auto; background:var(--body-border); }
+.lb-thumb { width:65px; height:65px; flex-shrink:0; overflow:hidden; cursor:pointer; opacity:0.5; transition:opacity 0.15s; }
+.lb-thumb.active { opacity:1; outline:2px solid var(--gold); }
+.lb-thumb img { width:100%; height:100%; object-fit:cover; }
+.lb-close {
+  position:absolute; top:0.75rem; right:0.75rem;
+  background:rgba(0,0,0,0.5); border:none; color:#fff;
+  width:30px; height:30px; border-radius:50%; font-size:0.9rem;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10;
+}
+
+.lb-info { padding: 2rem 1.75rem; display:flex; flex-direction:column; }
+.lb-brand { font-size:0.62rem; letter-spacing:0.22em; text-transform:uppercase; color:var(--gold); font-weight:600; margin-bottom:0.4rem; }
+.lb-model { font-family:'Playfair Display',serif; font-size:1.7rem; font-weight:400; line-height:1.2; color:var(--text-dark); margin-bottom:0.3rem; }
+.lb-ref { font-size:0.72rem; color:var(--text-light); margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--body-border); }
+.lb-price { font-family:'Playfair Display',serif; font-size:2rem; font-weight:500; color:var(--text-dark); margin-bottom:1.5rem; }
+.lb-specs { display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:1.5rem; }
+.lb-spec { background:var(--body-surface2); padding:0.6rem 0.75rem; }
+.lb-spec-label { font-size:0.55rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-light); margin-bottom:0.2rem; }
+.lb-spec-value { font-size:0.8rem; color:var(--text-dark); font-weight:500; }
+.lb-notes { font-size:0.75rem; color:var(--text-mid); line-height:1.7; margin-bottom:1.5rem; padding:0.85rem; background:var(--body-surface2); border-left:3px solid var(--gold); }
+.lb-actions { display:flex; flex-direction:column; gap:0.6rem; margin-top:auto; }
+.lb-btn-primary {
+  background:var(--charcoal); color:#fff; border:none;
+  padding:0.9rem; font-family:'Raleway',sans-serif;
+  font-size:0.72rem; font-weight:600; letter-spacing:0.16em;
+  text-transform:uppercase; cursor:pointer; transition:background 0.15s;
+}
+.lb-btn-primary:hover { background:#444; }
+.lb-btn-outline {
+  background:none; color:var(--text-mid);
+  border:1px solid var(--body-border); padding:0.75rem;
+  font-family:'Raleway',sans-serif; font-size:0.68rem;
+  letter-spacing:0.12em; text-transform:uppercase; cursor:pointer;
+  transition:all 0.15s; text-align:center; text-decoration:none; display:block;
+}
+.lb-btn-outline:hover { border-color:var(--charcoal); color:var(--charcoal); }
+
+/* ─── SOLD SECTION ───────────────────────────── */
+.sold-section-wrap { background: var(--charcoal); padding: 4rem 2rem; }
+.sold-section-inner { max-width:1400px; margin:0 auto; }
+.sold-section-title {
+  font-family:'Playfair Display',serif;
+  font-size:1.8rem; font-weight:400; color:#fff;
+  text-align:center; margin-bottom:0.5rem;
+}
+.sold-section-title em { font-style:italic; color:var(--gold2); }
+.sold-sub { text-align:center; font-size:0.68rem; letter-spacing:0.16em; text-transform:uppercase; color:#888; margin-bottom:2rem; }
+.sold-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(160px,1fr));
+  gap:1px; background:var(--header-border);
+}
+.sold-photo { aspect-ratio:3/4; overflow:hidden; }
+.sold-photo img { width:100%; height:100%; object-fit:cover; display:block; filter:grayscale(20%) brightness(0.85); transition: filter 0.3s; }
+.sold-card:hover .sold-photo img { filter:grayscale(0%) brightness(1); }
+.sold-card-body { padding:0.85rem 1rem; }
+.sold-card {
+  background:var(--charcoal); padding:0;
+  position:relative; overflow:hidden;
+  border-top: 1px solid #3A3A3A;
+}
+.sold-card::after {
+  content:'SOLD'; position:absolute; top:12px; right:-24px;
+  background:var(--red); color:#fff;
+  font-size:0.5rem; letter-spacing:0.1em; font-weight:700;
+  padding:0.2rem 2rem; transform:rotate(45deg);
+}
+.sold-brand { font-size:0.58rem; letter-spacing:0.16em; text-transform:uppercase; color:#666; margin-bottom:0.25rem; }
+.sold-model { font-family:'Playfair Display',serif; font-size:0.9rem; color:#AAA; line-height:1.3; }
+
+/* ─── SELL YOUR WATCH ────────────────────────── */
+.sell-wrap { background:var(--body-surface); border-top:1px solid var(--body-border); border-bottom:1px solid var(--body-border); }
+.sell-inner { max-width:1100px; margin:0 auto; padding:4rem 2rem; display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:start; }
+@media(max-width:700px){ .sell-inner { grid-template-columns:1fr; gap:2rem; } }
+
+.sell-pitch h2 { font-family:'Playfair Display',serif; font-size:2rem; font-weight:400; margin-bottom:1rem; }
+.sell-pitch h2 em { font-style:italic; color:var(--gold); }
+.sell-pitch p { font-size:0.8rem; color:var(--text-mid); line-height:1.8; margin-bottom:0.85rem; }
+.sell-steps { list-style:none; counter-reset:steps; margin-top:1.5rem; }
+.sell-steps li {
+  counter-increment:steps; font-size:0.78rem; color:var(--text-mid);
+  line-height:1.7; padding-left:2.25rem; position:relative; margin-bottom:0.6rem;
+}
+.sell-steps li::before {
+  content:counter(steps);
+  position:absolute; left:0; top:0;
+  width:1.5rem; height:1.5rem; background:var(--gold);
+  color:#fff; font-size:0.7rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.form-group { margin-bottom:1rem; }
+.form-label { display:block; font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-mid); margin-bottom:0.4rem; font-weight:600; }
+.form-input, .form-select, .form-textarea {
+  width:100%; background:#fff; border:1px solid var(--body-border);
+  color:var(--text-dark); padding:0.7rem 0.9rem;
+  font-family:'Raleway',sans-serif; font-size:0.8rem; outline:none;
+  transition:border-color 0.15s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--gold); }
+.form-textarea { resize:vertical; min-height:100px; }
+.form-select option { background:#fff; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+.form-submit {
+  width:100%; background:var(--charcoal); color:#fff; border:none;
+  padding:0.95rem; font-family:'Raleway',sans-serif;
+  font-size:0.75rem; font-weight:600; letter-spacing:0.18em;
+  text-transform:uppercase; cursor:pointer; margin-top:0.5rem;
+  transition:background 0.15s;
+}
+.form-submit:hover { background:#444; }
+
+/* ─── TRUST STRIP ────────────────────────────── */
+.trust-strip { background:var(--body-surface2); border-top:1px solid var(--body-border); border-bottom:1px solid var(--body-border); }
+.trust-inner { max-width:1100px; margin:0 auto; padding:3rem 2rem; display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; }
+@media(max-width:640px){ .trust-inner { grid-template-columns:1fr; } }
+.trust-item { text-align:center; }
+.trust-icon { font-size:2rem; margin-bottom:0.75rem; }
+.trust-title { font-family:'Playfair Display',serif; font-size:1.1rem; margin-bottom:0.5rem; }
+.trust-desc { font-size:0.75rem; color:var(--text-mid); line-height:1.7; }
+
+/* ─── CONTACT ────────────────────────────────── */
+.contact-strip { background:var(--charcoal); padding:3.5rem 2rem; }
+.contact-inner { max-width:900px; margin:0 auto; text-align:center; }
+.contact-title { font-family:'Playfair Display',serif; font-size:1.8rem; font-weight:400; color:#fff; margin-bottom:0.5rem; }
+.contact-title em { font-style:italic; color:var(--gold2); }
+.contact-sub { font-size:0.75rem; color:#888; margin-bottom:2.5rem; }
+.contact-items { display:flex; justify-content:center; gap:3rem; flex-wrap:wrap; }
+.contact-item { text-align:center; }
+.contact-icon { font-size:1.5rem; margin-bottom:0.5rem; }
+.contact-label { font-size:0.58rem; letter-spacing:0.18em; text-transform:uppercase; color:#666; margin-bottom:0.3rem; }
+.contact-val { color:var(--gold2); font-size:0.88rem; text-decoration:none; }
+.contact-val:hover { color:#fff; }
+
+/* ─── FOOTER ─────────────────────────────────── */
+footer { background:#1A1A1A; padding:3rem 2rem; }
+.footer-inner { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:2.5rem; }
+@media(max-width:640px){ .footer-inner { grid-template-columns:1fr; } }
+.footer-logo { font-family:'Playfair Display',serif; font-size:1.2rem; letter-spacing:0.15em; text-transform:uppercase; color:#C9A84C; margin-bottom:0.75rem; }
+.footer-logo span { font-style:italic; color:#fff; }
+.footer-desc { font-size:0.72rem; color:#666; line-height:1.75; }
+.footer-heading { font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:#C9A84C; margin-bottom:1rem; font-weight:600; }
+.footer-links { list-style:none; }
+.footer-links li { margin-bottom:0.5rem; }
+.footer-links a { font-size:0.72rem; color:#666; text-decoration:none; transition:color 0.15s; }
+.footer-links a:hover { color:#fff; }
+.footer-bottom { max-width:1200px; margin:2rem auto 0; padding-top:1.5rem; border-top:1px solid #2A2A2A; display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; }
+.footer-bottom p { font-size:0.62rem; color:#444; }
+
+/* ─── EMPTY STATE ────────────────────────────── */
+.empty-state { text-align:center; padding:5rem 2rem; }
+.empty-state h3 { font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:400; color:var(--text-mid); margin-bottom:0.5rem; }
+.empty-state p { font-size:0.78rem; color:var(--text-light); }
+
+/* ─── TOAST ──────────────────────────────────── */
+.toast { position:fixed; bottom:2rem; right:2rem; background:var(--charcoal); color:#fff; border-left:3px solid var(--gold); padding:0.85rem 1.25rem; font-size:0.75rem; z-index:9000; display:none; animation:fadeIn 0.2s ease; max-width:320px; font-family:'Raleway',sans-serif; }
+.toast.show { display:block; }
+
+::-webkit-scrollbar { width:4px; height:4px; }
+::-webkit-scrollbar-track { background:#f0ede8; }
+::-webkit-scrollbar-thumb { background:#ccc; }
+
+/* ═══════════════════════════════════════════════════
+   MOBILE RESPONSIVE — added for full mobile support
+═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Header */
+  header { padding: 1rem 1rem 0.85rem; }
+  .logo-text { font-size: 1.5rem; letter-spacing: 0.1em; }
+  .logo-icon { font-size: 1.4rem; margin-bottom: 0.2rem; }
+  .logo-tagline { font-size: 0.52rem; letter-spacing: 0.2em; }
+  header nav { gap: 1.2rem; flex-wrap: wrap; }
+  header nav a { font-size: 0.62rem; letter-spacing: 0.12em; }
+
+  /* Hero */
+  .hero { height: 60vh; min-height: 380px; }
+  .hero-content { padding: 1rem; }
+  .hero-title { font-size: clamp(1.8rem, 9vw, 3rem); }
+  .hero-sub { font-size: 0.75rem; margin-bottom: 1.5rem; }
+  .btn-hero-primary, .btn-hero-outline { padding: 0.75rem 1.5rem; font-size: 0.68rem; }
+  .hero-btns { gap: 0.75rem; }
+
+  /* Gold divider stats */
+  .gold-divider { gap: 1.25rem; padding: 0.85rem 1rem; }
+  .divider-stat-val { font-size: 1.2rem; }
+  .divider-sep { display: none; }
+
+  /* Section padding */
+  .section { padding: 2.5rem 1rem; }
+  .section-title { font-size: 1.6rem; }
+
+  /* Filter bar — stack vertically */
+  .filter-strip { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+  .filter-input { width: 100%; }
+  .filter-select { width: 100%; }
+  .results-count { margin-left: 0; text-align: center; }
+
+  /* Watch grid — 2 columns on mobile */
+  .watch-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+
+  /* Lightbox */
+  .lb-inner { grid-template-columns: 1fr; }
+  .lb-details { padding: 1.5rem 1rem; }
+
+  /* Sold grid */
+  .sold-grid { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  .sold-section-inner { padding: 2rem 1rem; }
+  .sold-section-title { font-size: 1.5rem; }
+
+  /* About blurb */
+  .about-blurb { padding: 2.5rem 1rem; }
+  .about-blurb h1 { font-size: 1.5rem; }
+
+  /* Sell section */
+  .sell-inner { grid-template-columns: 1fr; gap: 1.5rem; padding: 2rem 1rem; }
+
+  /* Trust strip */
+  .trust-inner { grid-template-columns: 1fr; gap: 1.25rem; padding: 2rem 1rem; text-align: center; }
+
+  /* Contact */
+  .contact-inner { padding: 2rem 1rem; }
+
+  /* Footer */
+  .footer-inner { grid-template-columns: 1fr; gap: 1.5rem; padding: 2rem 1rem; }
+  .footer-bottom { flex-direction: column; text-align: center; padding: 1rem; }
+}
+
+@media (max-width: 400px) {
+  /* Very small phones — 1 column watch grid */
+  .watch-grid { grid-template-columns: 1fr; }
+  .sold-grid { grid-template-columns: repeat(2, 1fr); }
+  .logo-text { font-size: 1.25rem; }
+}
+
+
+/* ─── ABOUT BLURB ─────────────────────────────── */
+.about-blurb {
+  background: var(--charcoal);
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+  padding: 4rem 2rem;
+  text-align: center;
+}
+.about-blurb-inner { max-width: 780px; margin: 0 auto; }
+.about-blurb h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 400;
+  color: #fff; letter-spacing: 0.03em;
+  margin-bottom: 1.25rem; line-height: 1.3;
+}
+.about-blurb h1 em { font-style: italic; color: var(--gold2); }
+.about-blurb p {
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.9rem; line-height: 1.85;
+  color: #AAA; letter-spacing: 0.02em;
+}
+.about-blurb-line {
+  width: 50px; height: 2px; background: var(--gold);
+  margin: 1.25rem auto 1.5rem;
+}
+
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="page-loader">
+  <div class="loader-logo" id="loader-biz-name">Loading...</div>
+  <div class="loader-bar"></div>
+</div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <a id="tb-phone" href="#"></a>
+  <span class="top-bar-divider">|</span>
+  <a id="tb-email" href="#"></a>
+  <span class="top-bar-divider">|</span>
+  <a id="tb-instagram" href="#" target="_blank"></a>
+  <span class="top-bar-divider">|</span>
+  <a href="#" style="color:#888" id="hero-location"></a>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-area">
+    <!-- LOGO IMAGE — uncomment and update src when you have your logo file:
+    <img class="logo-img" id="header-logo-img" src="" alt="" style="display:none">
+    -->
+    <!-- TEXT LOGO — remove this block when you add your image logo above -->
+    <div class="logo-icon">◉</div>
+    <div class="logo-text" id="hdr-biz-name-display">My Watch Store</div>
+    <div class="logo-tagline" id="hdr-tagline">Pre-Owned Luxury Timepieces</div>
+  </div>
+  <nav>
+    <a href="#available">Available Watches</a>
+    <a href="#sell">Sell Your Watch</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">Welcome</div>
+    <h1 class="hero-title">Luxury Watches<br><em>Done Right</em></h1>
+    <p class="hero-sub">Personally sourced · Authenticated · Fairly priced</p>
+    <div class="hero-btns">
+      <a href="#available" class="btn-hero-primary">Shop All Watches</a>
+      <a href="#sell" class="btn-hero-outline">Sell Your Watch</a>
+    </div>
+  </div>
+</section>
+
+<!-- STATS DIVIDER -->
+<div class="gold-divider">
+  <div class="divider-stat">
+    <div class="divider-stat-val" id="stat-available">—</div>
+    <div class="divider-stat-label">Available Now</div>
+  </div>
+  <div class="divider-sep">·</div>
+  <div class="divider-stat">
+    <div class="divider-stat-val" id="stat-sold">—</div>
+    <div class="divider-stat-label">Watches Sold</div>
+  </div>
+  <div class="divider-sep">·</div>
+  <div class="divider-stat">
+    <div class="divider-stat-val">100%</div>
+    <div class="divider-stat-label">Authenticated</div>
+  </div>
+  <div class="divider-sep">·</div>
+  <div class="divider-stat">
+    <div class="divider-stat-val">24hr</div>
+    <div class="divider-stat-label">Response Time</div>
+  </div>
+</div>
+
+
+<!-- ABOUT BLURB -->
+<div class="about-blurb">
+  <div class="about-blurb-inner">
+    <h1>Luxury Watches for the World, <em>from Arkansas</em></h1>
+    <div class="about-blurb-line"></div>
+    <p>In business since 2017, we buy, sell, trade, source, and broker luxury timepieces. With access to massive stocks of inventory worldwide, we can find virtually anything you're looking for — at a fair price, from someone you can trust. Fill out our form and we'll be in touch in a flash.</p>
+  </div>
+</div>
+
+<!-- CURRENTLY AVAILABLE -->
+<section class="section" id="available">
+  <div class="section-header">
+    <div class="section-eyebrow">In Stock</div>
+    <h2 class="section-title">Currently <em>Available</em></h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="filter-strip">
+    <input class="filter-input" type="text" id="search-input" placeholder="Search brand, model, reference..." oninput="filterWatches()">
+    <select class="filter-select" id="brand-filter" onchange="filterWatches()">
+      <option value="">All Brands</option>
+    </select>
+    <select class="filter-select" id="sort-select" onchange="filterWatches()">
+      <option value="newest">Newest First</option>
+      <option value="price-asc">Price: Low to High</option>
+      <option value="price-desc">Price: High to Low</option>
+    </select>
+    <div class="results-count" id="results-count"></div>
+  </div>
+
+  <div class="watch-grid" id="watch-grid"></div>
+  <div class="empty-state" id="no-results" style="display:none">
+    <h3>No watches found</h3>
+    <p>Try clearing your filters — new watches added regularly.</p>
+  </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip">
+  <div class="trust-inner">
+    <div class="trust-item">
+      <div class="trust-icon">✦</div>
+      <div class="trust-title">Personally Authenticated</div>
+      <div class="trust-desc">Every watch inspected for authenticity and condition before listing. What you see is what you get.</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon">◈</div>
+      <div class="trust-title">Insured Shipping</div>
+      <div class="trust-desc">Fully insured on every order. Secure packaging, tracking provided, ships within 24 hours of payment.</div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon">🤝</div>
+      <div class="trust-title">Fair Market Pricing</div>
+      <div class="trust-desc">No retail markups. Priced based on current market comps. Trades and cash considered.</div>
+    </div>
+  </div>
+</div>
+
+<!-- RECENTLY SOLD -->
+<div class="sold-section-wrap" id="sold-wrap">
+  <div class="sold-section-inner">
+    <div class="sold-section-title">Recently <em>Gone</em></div>
+    <div class="sold-sub">These moved fast — new inventory added regularly</div>
+    <div class="sold-grid" id="sold-grid"></div>
+  </div>
+</div>
+
+<!-- SELL YOUR WATCH -->
+<div class="sell-wrap" id="sell">
+  <div class="sell-inner">
+    <div class="sell-pitch">
+      <h2>Sell Your <em>Watch</em></h2>
+      <p>Looking to sell a luxury timepiece? I offer fair, competitive offers based on current market conditions — fast payment, no hassle.</p>
+      <p>Rolex, Omega, Tudor, Cartier, AP, Patek and more. Box and papers always a plus but not required.</p>
+      <ol class="sell-steps">
+        <li>Fill out the form with your watch details</li>
+        <li>I'll respond within 24 hours with an offer</li>
+        <li>Accept and ship with a prepaid insured label</li>
+        <li>Get paid promptly upon receipt and verification</li>
+      </ol>
+    </div>
+    <div>
+      <div class="form-group">
+        <label class="form-label">Your Name *</label>
+        <input class="form-input" id="sell-name" placeholder="Full name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input class="form-input" id="sell-phone" type="tel" placeholder="(555) 000-0000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email *</label>
+          <input class="form-input" id="sell-email" type="email" placeholder="you@email.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Watch Brand *</label>
+        <input class="form-input" id="sell-brand" placeholder="e.g. Rolex, Omega, Tudor...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Model / Reference</label>
+        <input class="form-input" id="sell-model" placeholder="e.g. Submariner 126610LN">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Box & Papers?</label>
+        <select class="form-select" id="sell-papers">
+          <option value="">— Select —</option>
+          <option>Full Set (Box + Papers)</option>
+          <option>Box Only</option>
+          <option>Papers Only</option>
+          <option>No Box, No Papers</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Condition & Notes</label>
+        <textarea class="form-textarea" id="sell-notes" placeholder="Describe condition, any scratches, service history, asking price..."></textarea>
+      </div>
+      <button class="form-submit" onclick="submitSellInquiry()">Submit for Offer</button>
+      <div id="sell-msg" style="font-size:0.72rem;margin-top:0.75rem;text-align:center;font-family:'Raleway',sans-serif"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div class="contact-strip" id="contact">
+  <div class="contact-inner">
+    <div class="contact-title">Get In <em>Touch</em></div>
+    <div class="contact-sub">Available by phone, text, email, or Instagram. Quick responses guaranteed.</div>
+    <div class="contact-items">
+      <div class="contact-item">
+        <div class="contact-icon">📞</div>
+        <div class="contact-label">Phone / Text</div>
+        <a class="contact-val" id="c-phone" href="#"></a>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">✉️</div>
+        <div class="contact-label">Email</div>
+        <a class="contact-val" id="c-email" href="#"></a>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">📸</div>
+        <div class="contact-label">Instagram</div>
+        <a class="contact-val" id="c-instagram" href="#" target="_blank"></a>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">◉</div>
+        <div class="contact-label">Location</div>
+        <div class="contact-val" id="c-location"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-logo" id="footer-biz-name">My Watch Store</div>
+      <p class="footer-desc" id="footer-desc">Pre-owned luxury watches personally sourced, authenticated, and fairly priced.</p>
+    </div>
+    <div>
+      <div class="footer-heading">Navigation</div>
+      <ul class="footer-links">
+        <li><a href="#available">Available Watches</a></li>
+        <li><a href="#sell">Sell Your Watch</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-heading">Contact</div>
+      <ul class="footer-links">
+        <li><a id="f-phone" href="#">—</a></li>
+        <li><a id="f-email" href="#">—</a></li>
+        <li><a id="f-ig" href="#" target="_blank">—</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p id="footer-copy">© 2025 My Watch Store. All rights reserved.</p>
+    <p>All watches guaranteed authentic. Prior sale possible.</p>
+  </div>
+</footer>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLbOverlay(event)">
+  <div class="lb-inner">
+    <div class="lb-photo-panel">
+      <button class="lb-close" onclick="closeLb()">✕</button>
+      <div id="lb-main"></div>
+      <div class="lb-thumbs-row" id="lb-thumbs"></div>
+    </div>
+    <div class="lb-info" id="lb-info"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── THEME ENGINE ──────────────────────────────────────
+function applyTheme(t) {
+  const r = document.documentElement.style;
+  if (t.bodyBg)     { r.setProperty('--body-bg', t.bodyBg); r.setProperty('--body-surface2', shadeColor(t.bodyBg, -5)); r.setProperty('--body-surface', shadeColor(t.bodyBg, 5)); }
+  if (t.headerBg)   { r.setProperty('--header-bg', t.headerBg); r.setProperty('--charcoal', t.headerBg); r.setProperty('--header-border', shadeColor(t.headerBg, 15)); }
+  if (t.gold)       { r.setProperty('--gold', t.gold); r.setProperty('--gold-light', hexToRgba(t.gold, 0.12)); }
+  if (t.gold2)      { r.setProperty('--gold2', t.gold2); }
+  if (t.bodyBorder) { r.setProperty('--body-border', t.bodyBorder); }
+  if (t.heroBg) {
+    const heroEl = document.querySelector('.hero-bg');
+    if (heroEl) heroEl.style.background = \`linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.6) 100%), url('\${t.heroBg}') center/cover no-repeat\`;
+  }
+  if (t.fontUrl && t.fontDisplay && t.fontBody) {
+    document.getElementById('font-link').href = t.fontUrl;
+    r.setProperty('--font-display', \`'\${t.fontDisplay}', serif\`);
+    r.setProperty('--font-body', \`'\${t.fontBody}', sans-serif\`);
+    document.body.style.fontFamily = \`'\${t.fontBody}', sans-serif\`;
+    document.querySelectorAll('.logo-text, .section-title, .hero-title, .watch-model, .lb-model, .sold-section-title').forEach(el => {
+      el.style.fontFamily = \`'\${t.fontDisplay}', serif\`;
+    });
+  }
+}
+
+function shadeColor(hex, pct) {
+  try {
+    const num = parseInt(hex.replace('#',''), 16);
+    const r = Math.min(255, Math.max(0, (num >> 16) + pct*2));
+    const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + pct*2));
+    const b = Math.min(255, Math.max(0, (num & 0xff) + pct*2));
+    return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+  } catch(e) { return hex; }
+}
+
+function hexToRgba(hex, alpha) {
+  try {
+    const num = parseInt(hex.replace('#',''), 16);
+    return \`rgba(\${num>>16},\${(num>>8)&0xff},\${num&0xff},\${alpha})\`;
+  } catch(e) { return 'rgba(184,148,58,0.12)'; }
+}
+
+// ── PROFILE ENGINE ────────────────────────────────────
+async function loadAndApplyProfile() {
+  // 1. Apply cached profile instantly (no flash)
+  applyProfileData(PROFILE_CACHE);
+  // 2. Then fetch live from Supabase (picks up any updates)
+  try {
+    const { data } = await db.from('user_profiles').select('*').eq('user_id', (await db.auth.getUser()).data?.user?.id).single();
+    if (data) {
+      window._profile = {
+        bizName:   data.biz_name   || PROFILE_CACHE.bizName,
+        phone:     data.phone      || PROFILE_CACHE.phone,
+        email:     data.contact_email || PROFILE_CACHE.email,
+        instagram: data.website    || PROFILE_CACHE.instagram,
+        location:  data.address    || PROFILE_CACHE.location,
+        website:   data.website    || PROFILE_CACHE.website,
+        tagline:   data.tagline    || PROFILE_CACHE.tagline,
+      };
+      applyProfileData(window._profile);
+    }
+  } catch(e) {
+    // Use cache only — storefront is public, user may not be logged in
+  }
+}
+
+function applyProfileData(p) {
+  const bizName = p.bizName || p.biz_name || 'My Watch Store';
+  const location = p.location || p.address || '';
+  const email = p.email || p.contact_email || '';
+  const phone = p.phone || '';
+
+  // Update all text nodes
+  const set = (id, val) => { const el = document.getElementById(id); if(el && val) el.textContent = val; };
+  set('loader-biz-name', bizName);
+  set('hdr-tagline', location ? \`Pre-Owned Luxury Timepieces · \${location}\` : 'Pre-Owned Luxury Timepieces');
+  set('hero-location', location);
+  set('footer-biz-name', bizName);
+  set('footer-desc', \`Pre-owned luxury watches personally sourced, authenticated, and fairly priced.\${location ? ' Based in '+location+'.' : ''}\`);
+  set('footer-copy', \`© \${new Date().getFullYear()} \${bizName}. All rights reserved.\`);
+
+  // Logo text — split into plain + italic
+  const hdrEl = document.getElementById('hdr-biz-name-display');
+  if (hdrEl) {
+    const parts = bizName.split(' ');
+    if (parts.length > 1) {
+      hdrEl.innerHTML = parts.slice(0,-1).join(' ') + ' <em>' + parts[parts.length-1] + '</em>';
+    } else {
+      hdrEl.textContent = bizName;
+    }
+  }
+
+  // Page title & meta
+  document.title = bizName + ' — Pre-Owned Luxury Watches';
+  const metaDesc = document.getElementById('page-desc');
+  if (metaDesc) metaDesc.content = \`Pre-owned luxury watches from \${bizName}\${location ? ', '+location : ''}.\`;
+
+  // Contact links
+  const setHref = (id, href) => { const el = document.getElementById(id); if(el) el.href = href; };
+  if (phone) {
+    const tel = phone.replace(/\\D/g,'');
+    ['tb-phone','c-phone','f-phone'].forEach(id => setHref(id, 'tel:'+tel));
+  }
+  if (email) {
+    ['tb-email','c-email','f-email'].forEach(id => setHref(id, 'mailto:'+email));
+  }
+}
+
+let allWatches = [], soldWatches = [], lbPhotos = [], lbIdx = 0;
+
+// Contact info
+function setContact() {
+  // Contact info loaded from profile (see applyProfile below)
+  const phone = window._profile?.phone || PROFILE_CACHE.phone || '';
+  const email = window._profile?.email || PROFILE_CACHE.email || '';
+  const ig = window._profile?.instagram || PROFILE_CACHE.instagram || '';
+  const loc = window._profile?.location || PROFILE_CACHE.location || '';
+  document.getElementById('tb-phone').textContent = phone;
+  document.getElementById('tb-phone').href = 'tel:'+phone.replace(/\\D/g,'');
+  document.getElementById('tb-email').textContent = email;
+  document.getElementById('tb-email').href = 'mailto:'+email;
+  document.getElementById('tb-instagram').textContent = '@'+ig;
+  document.getElementById('tb-instagram').href = 'https://instagram.com/'+ig;
+  document.getElementById('c-phone').textContent = phone;
+  document.getElementById('c-phone').href = 'tel:'+phone.replace(/\\D/g,'');
+  document.getElementById('c-email').textContent = email;
+  document.getElementById('c-email').href = 'mailto:'+email;
+  document.getElementById('c-instagram').textContent = '@'+ig;
+  document.getElementById('c-instagram').href = 'https://instagram.com/'+ig;
+  document.getElementById('c-location').textContent = loc;
+  document.getElementById('f-phone').textContent = phone;
+  document.getElementById('f-phone').href = 'tel:'+phone.replace(/\\D/g,'');
+  document.getElementById('f-email').textContent = email;
+  document.getElementById('f-email').href = 'mailto:'+email;
+  document.getElementById('f-ig').textContent = '@'+ig;
+  document.getElementById('f-ig').href = 'https://instagram.com/'+ig;
+}
+
+async function init() {
+  // Apply theme & profile immediately on load
+  applyTheme(THEME);
+  applyProfileData(PROFILE_CACHE);
+  loadAndApplyProfile(); // also refreshes live from Supabase
+  setContact();
+  try {
+    const [invRes, soldRes] = await Promise.all([
+      db.from('inventory').select('*').order('created_at', { ascending: false }),
+      db.from('sold_inventory').select('brand,model,ref,sale_date,photo_urls').order('sale_date', { ascending: false }).limit(50)
+    ]);
+    allWatches = invRes.data || [];
+    soldWatches = soldRes.data || [];
+  } catch(e) { allWatches = []; soldWatches = []; }
+
+  document.getElementById('stat-available').textContent = allWatches.length;
+  document.getElementById('stat-sold').textContent = soldWatches.length + '+';
+
+  // Brand filter
+  const brands = [...new Set(allWatches.map(w=>w.brand).filter(Boolean))].sort();
+  const sel = document.getElementById('brand-filter');
+  brands.forEach(b => { const o=document.createElement('option'); o.value=b; o.textContent=b; sel.appendChild(o); });
+
+  renderWatches(allWatches);
+  renderSold();
+  hideLoader();
+}
+
+function hideLoader() {
+  const l = document.getElementById('page-loader');
+  l.classList.add('hidden');
+  setTimeout(()=>l.style.display='none', 700);
+}
+
+// ═══════════════════════════════════════════
+//  WATCH GRID
+// ═══════════════════════════════════════════
+function filterWatches() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const brand = document.getElementById('brand-filter').value;
+  const sort = document.getElementById('sort-select').value;
+
+  let filtered = allWatches.filter(w => {
+    const txt = \`\${w.brand} \${w.model} \${w.ref}\`.toLowerCase();
+    return txt.includes(q) && (!brand || w.brand===brand);
+  });
+
+  filtered.sort((a,b) => {
+    if(sort==='price-asc') return (a.listed_price||0)-(b.listed_price||0);
+    if(sort==='price-desc') return (b.listed_price||0)-(a.listed_price||0);
+    return new Date(b.created_at||0)-new Date(a.created_at||0);
+  });
+
+  renderWatches(filtered);
+  document.getElementById('results-count').textContent =
+    filtered.length !== allWatches.length ? \`Showing \${filtered.length} of \${allWatches.length}\` : \`\${allWatches.length} watches\`;
+}
+
+function renderWatches(watches) {
+  const grid = document.getElementById('watch-grid');
+  const noRes = document.getElementById('no-results');
+  if (!watches.length) { grid.innerHTML=''; noRes.style.display='block'; return; }
+  noRes.style.display='none';
+
+  grid.innerHTML = watches.map((w,i) => {
+    const photos = w.photo_urls || [];
+    const mainPhoto = photos[0];
+    const price = w.listed_price ? '$'+Number(w.listed_price).toLocaleString() : 'Inquire for Price';
+    const chips = [w.condition, w.box_papers, w.case_material].filter(Boolean).slice(0,3);
+
+    return \`<div class="watch-card" onclick="openLb('\${w.id}')" style="animation-delay:\${Math.min(i,12)*0.04}s">
+      <div class="watch-photo">
+        \${mainPhoto
+          ? \`<img src="\${mainPhoto}" alt="\${w.brand||''} \${w.model||''}" loading="lazy">\`
+          : \`<div class="watch-photo-placeholder"><div class="ph-icon">◉</div><div class="ph-brand">\${w.brand||''}</div></div>\`
+        }
+        \${photos.length>1?\`<div class="photo-count-badge">📷 \${photos.length}</div>\`:''}
+        \${w.box_papers==='Full Set (Box + Papers)'?\`<div class="watch-tag">Full Set</div>\`:''}
+      </div>
+      <div class="watch-info">
+        <div class="watch-card-brand">\${w.brand||''}\${w.year?' · '+w.year:''}</div>
+        <div class="watch-card-model">\${w.model||''}</div>
+        <div class="watch-card-ref">\${w.ref||'—'}</div>
+        \${chips.length?\`<div class="watch-card-chips">\${chips.map(c=>\`<span class="chip">\${c}</span>\`).join('')}</div>\`:''}
+        <div class="watch-card-footer">
+          <div class="watch-price">\${price}</div>
+          <button class="watch-inquire" onclick="event.stopPropagation();doInquire('\${(w.brand||'')+' '+(w.model||'')}')">Inquire</button>
+        </div>
+      </div>
+    </div>\`;
+  }).join('');
+
+  document.getElementById('results-count').textContent = \`\${watches.length} watch\${watches.length!==1?'es':''}\`;
+}
+
+function renderSold() {
+  if(!soldWatches.length){ document.getElementById('sold-wrap').style.display='none'; return; }
+  document.getElementById('sold-grid').innerHTML = soldWatches.map(s => {
+    const photo = s.photo_urls && s.photo_urls[0];
+    return \`<div class="sold-card">
+      \${photo ? \`<div class="sold-photo"><img src="\${photo}" alt="\${s.brand||''} \${s.model||''}" loading="lazy"></div>\` : ''}
+      <div class="sold-card-body">
+        <div class="sold-brand">\${s.brand||''}</div>
+        <div class="sold-model">\${s.model||''}</div>
+      </div>
+    </div>\`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+//  LIGHTBOX
+// ═══════════════════════════════════════════
+function openLb(id) {
+  const w = allWatches.find(x=>x.id===id); if(!w) return;
+  lbPhotos = w.photo_urls||[]; lbIdx=0;
+
+  const mainEl = document.getElementById('lb-main');
+  mainEl.innerHTML = lbPhotos.length
+    ? \`<div class="lb-main-img"><img src="\${lbPhotos[0]}" alt="\${w.brand||''} \${w.model||''}"></div>\`
+    : \`<div class="lb-main-placeholder">◉</div>\`;
+
+  document.getElementById('lb-thumbs').innerHTML = lbPhotos.length>1
+    ? lbPhotos.map((p,i)=>\`<div class="lb-thumb \${i===0?'active':''}" onclick="setLbImg(\${i})"><img src="\${p}" alt="Photo \${i+1}"></div>\`).join('')
+    : '';
+
+  const price = w.listed_price ? '$'+Number(w.listed_price).toLocaleString() : 'Inquire for Price';
+  const specs = [
+    w.condition&&{l:'Condition',v:w.condition},
+    w.box_papers&&{l:'Box & Papers',v:w.box_papers},
+    w.case_size&&{l:'Case Size',v:w.case_size},
+    w.case_material&&{l:'Material',v:w.case_material},
+    w.movement&&{l:'Movement',v:w.movement},
+    w.dial_color&&{l:'Dial',v:w.dial_color},
+    w.bezel_color&&{l:'Bezel',v:w.bezel_color},
+    w.bracelet_type&&{l:'Bracelet',v:w.bracelet_type},
+    w.year&&{l:'Year',v:w.year},
+    w.ref&&{l:'Reference',v:w.ref},
+  ].filter(Boolean);
+
+  document.getElementById('lb-info').innerHTML = \`
+    <div class="lb-brand">\${w.brand||''}</div>
+    <div class="lb-model">\${w.model||''}</div>
+    <div class="lb-ref">\${w.ref||''}\${w.year?' · '+w.year:''}</div>
+    <div class="lb-price">\${price}</div>
+    \${specs.length?\`<div class="lb-specs">\${specs.map(s=>\`<div class="lb-spec"><div class="lb-spec-label">\${s.l}</div><div class="lb-spec-value">\${s.v}</div></div>\`).join('')}</div>\`:''}
+    \${w.notes?\`<div class="lb-notes">\${w.notes}</div>\`:''}
+    <div class="lb-actions">
+      <button class="lb-btn-primary" onclick="doInquire('\${(w.brand||'')+' '+(w.model||'')}')">Inquire About This Watch</button>
+      <a class="lb-btn-outline" href="sms:\${(window._profile?.phone||PROFILE_CACHE.phone||'').replace(/\\D/g,'')}&body=Hi, I'm interested in the \${encodeURIComponent((w.brand||'')+' '+(w.model||''))}">Text Us Directly</a>
+      <a class="lb-btn-outline" href="mailto:\${window._profile?.email||PROFILE_CACHE.email||''}?subject=Inquiry: \${encodeURIComponent((w.brand||'')+' '+(w.model||''))}">Send Email</a>
+    </div>
+  \`;
+
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function setLbImg(i) {
+  lbIdx=i;
+  document.getElementById('lb-main').innerHTML=\`<div class="lb-main-img"><img src="\${lbPhotos[i]}" alt="Photo \${i+1}"></div>\`;
+  document.querySelectorAll('.lb-thumb').forEach((t,j)=>t.classList.toggle('active',j===i));
+}
+
+function closeLb() { document.getElementById('lightbox').classList.remove('open'); document.body.style.overflow=''; }
+function closeLbOverlay(e) { if(e.target===document.getElementById('lightbox'))closeLb(); }
+
+// ═══════════════════════════════════════════
+//  CONTACT / SELL
+// ═══════════════════════════════════════════
+function doInquire(watch) {
+  closeLb();
+  window.location.href=\`mailto:\${window._profile?.email||PROFILE_CACHE.email||''}?subject=Inquiry: \${encodeURIComponent(watch)}&body=Hi, I'm interested in the \${encodeURIComponent(watch)}. Is it still available?\`;
+}
+
+function submitSellInquiry() {
+  const name=document.getElementById('sell-name').value.trim();
+  const email=document.getElementById('sell-email').value.trim();
+  const brand=document.getElementById('sell-brand').value.trim();
+  const msg=document.getElementById('sell-msg');
+  if(!name||!email||!brand){ msg.style.color='#B03A3A'; msg.textContent='Please fill in name, email, and brand.'; return; }
+  const model=document.getElementById('sell-model').value.trim();
+  const papers=document.getElementById('sell-papers').value;
+  const notes=document.getElementById('sell-notes').value.trim();
+  const phone=document.getElementById('sell-phone').value.trim();
+  const body=\`Sell Inquiry\\
+\\
+Name: \${name}\\
+Phone: \${phone}\\
+Email: \${email}\\
+\\
+Watch: \${brand} \${model}\\
+Box & Papers: \${papers}\\
+\\
+Notes:\\
+\${notes}\`;
+  window.location.href=\`mailto:\${window._profile?.email||PROFILE_CACHE.email||''}?subject=Sell Inquiry: \${encodeURIComponent(brand+' '+model)}&body=\${encodeURIComponent(body)}\`;
+  msg.style.color='#3A7A5A'; msg.textContent='Opening your email app — we respond within 24 hours!';
+}
+
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
+
+init();
+</script>
+</body>
+</html>`;
+
+// ── MY STOREFRONT ─────────────────────────────────
+
+const SF_THEMES = [
+  { id:'classic-dark', name:'Classic Dark',
+    headerBg:'#1A1A1A', bodyBg:'#F5F2ED', gold:'#B8943A', gold2:'#D4AF5A',
+    bodyBorder:'#DDD8D0', headerSwatch:'#1A1A1A', bodySwatch:'#F5F2ED', accentSwatch:'#D4AF5A' },
+  { id:'navy-gold', name:'Navy & Gold',
+    headerBg:'#0F2040', bodyBg:'#F0F4F8', gold:'#C89E2F', gold2:'#E5C15A',
+    bodyBorder:'#D0D8E4', headerSwatch:'#0F2040', bodySwatch:'#F0F4F8', accentSwatch:'#E5C15A' },
+  { id:'all-dark', name:'Full Dark',
+    headerBg:'#111111', bodyBg:'#1A1A1A', gold:'#C89E2F', gold2:'#E5C15A',
+    bodyBorder:'#333333', headerSwatch:'#111', bodySwatch:'#1A1A1A', accentSwatch:'#E5C15A' },
+  { id:'forest', name:'Forest & Cream',
+    headerBg:'#1E2D1E', bodyBg:'#F5F2EC', gold:'#7A9A5A', gold2:'#9CBD7A',
+    bodyBorder:'#DDD8CC', headerSwatch:'#1E2D1E', bodySwatch:'#F5F2EC', accentSwatch:'#9CBD7A' },
+  { id:'slate-copper', name:'Slate & Copper',
+    headerBg:'#2C3040', bodyBg:'#F4F2F0', gold:'#B87040', gold2:'#D4925A',
+    bodyBorder:'#DDD8D2', headerSwatch:'#2C3040', bodySwatch:'#F4F2F0', accentSwatch:'#D4925A' },
+  { id:'midnight-silver', name:'Midnight Silver',
+    headerBg:'#0A0A12', bodyBg:'#F2F2F5', gold:'#8090A8', gold2:'#A8BACE',
+    bodyBorder:'#D8D8E0', headerSwatch:'#0A0A12', bodySwatch:'#F2F2F5', accentSwatch:'#A8BACE' },
+];
+
+const SF_FONTS = [
+  { id:'playfair-raleway', name:'Playfair Display', sub:'+ Raleway (Luxury Classic)',
+    display:'Playfair Display', body:'Raleway',
+    url:'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Raleway:wght@300;400;500;600&display=swap' },
+  { id:'cormorant-jost', name:'Cormorant Garamond', sub:'+ Jost (Refined Editorial)',
+    display:'Cormorant Garamond', body:'Jost',
+    url:'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Jost:wght@300;400;500;600&display=swap' },
+  { id:'libre-source', name:'Libre Baskerville', sub:'+ Source Sans 3 (Bold & Clear)',
+    display:'Libre Baskerville', body:'Source Sans 3',
+    url:'https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;600&display=swap' },
+  { id:'dm-serif', name:'DM Serif Display', sub:'+ DM Sans (Clean Minimal)',
+    display:'DM Serif Display', body:'DM Sans',
+    url:'https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap' },
+  { id:'crimson-nunito', name:'Crimson Pro', sub:'+ Nunito (Warm & Approachable)',
+    display:'Crimson Pro', body:'Nunito',
+    url:'https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Nunito:wght@300;400;500;600&display=swap' },
+];
+
+const SF_HEROES = [
+  { id:'watches-dark', label:'Watch Close-Up',
+    url:'https://images.unsplash.com/photo-1547996160-81dfa63595aa?w=1600&q=80&auto=format' },
+  { id:'rolex', label:'Classic Dial',
+    url:'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=1600&q=80&auto=format' },
+  { id:'watch-flat', label:'Flat Lay',
+    url:'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=1600&q=80&auto=format' },
+  { id:'luxury-table', label:'Luxury Still Life',
+    url:'https://images.unsplash.com/photo-1612817288484-6f916006741a?w=1600&q=80&auto=format' },
+  { id:'watch-wrist', label:'On Wrist',
+    url:'https://images.unsplash.com/photo-1601121141461-9d6647bef0a1?w=1600&q=80&auto=format' },
+  { id:'watch-tools', label:'Watchmaker',
+    url:'https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?w=1600&q=80&auto=format' },
+];
+
+let sfState = {
+  themeId: 'classic-dark',
+  fontId:  'playfair-raleway',
+  heroId:  'watches-dark',
+  heroCustom: '',
+};
+
+function sfInit() {
+  // Build theme swatches
+  const tg = document.getElementById('sf-theme-grid');
+  tg.innerHTML = SF_THEMES.map(t => `
+    <div class="sf-theme-swatch ${t.id===sfState.themeId?'active':''}" onclick="sfSelectTheme('${t.id}')" title="${t.name}">
+      <div class="sf-theme-swatch-inner">
+        <div class="sf-swatch-header" style="background:${t.headerSwatch};padding:4px;">
+          <div class="sf-swatch-dot" style="background:${t.accentSwatch}"></div>
+        </div>
+        <div class="sf-swatch-body" style="background:${t.bodySwatch}">
+          <div style="width:60%;height:4px;background:${t.accentSwatch};opacity:0.5;border-radius:1px"></div>
+        </div>
+      </div>
+      <div class="sf-swatch-label">${t.name}</div>
+    </div>`).join('');
+
+  // Build font list
+  const fl = document.getElementById('sf-font-list');
+  fl.innerHTML = SF_FONTS.map(f => `
+    <div class="sf-font-item ${f.id===sfState.fontId?'active':''}" onclick="sfSelectFont('${f.id}')">
+      <div class="sf-font-display">${f.name}</div>
+      <div class="sf-font-sub">${f.sub}</div>
+    </div>`).join('');
+
+  // Build hero grid
+  const hg = document.getElementById('sf-hero-grid');
+  hg.innerHTML = SF_HEROES.map(h => `
+    <div class="sf-hero-thumb ${h.id===sfState.heroId?'active':''}"
+      style="background-image:url('${h.url}')"
+      onclick="sfSelectHero('${h.id}')">
+      <div class="sf-hero-thumb-label">${h.label}</div>
+    </div>`).join('');
+
+  sfRefreshPreview();
+}
+
+function sfSelectTheme(id) {
+  sfState.themeId = id;
+  document.querySelectorAll('.sf-theme-swatch').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.sf-theme-swatch[onclick="sfSelectTheme('${id}')"]`)?.classList.add('active');
+  const t = SF_THEMES.find(x=>x.id===id);
+  document.getElementById('sf-status-theme').textContent = t?.name || id;
+  sfRefreshPreview();
+}
+
+function sfSelectFont(id) {
+  sfState.fontId = id;
+  document.querySelectorAll('.sf-font-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.sf-font-item[onclick="sfSelectFont('${id}')"]`)?.classList.add('active');
+  const f = SF_FONTS.find(x=>x.id===id);
+  document.getElementById('sf-status-font').textContent = f ? `${f.display} + ${f.body}` : id;
+  sfRefreshPreview();
+}
+
+function sfSelectHero(id) {
+  sfState.heroId = id;
+  sfState.heroCustom = '';
+  document.getElementById('sf-hero-custom').value = '';
+  document.querySelectorAll('.sf-hero-thumb').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.sf-hero-thumb[onclick="sfSelectHero('${id}')"]`)?.classList.add('active');
+  sfRefreshPreview();
+}
+
+function sfSetCustomHero(url) {
+  if (!url) return;
+  sfState.heroCustom = url;
+  sfState.heroId = '';
+  document.querySelectorAll('.sf-hero-thumb').forEach(el => el.classList.remove('active'));
+  sfRefreshPreview();
+}
+
+function sfBuildHTML() {
+  const theme = SF_THEMES.find(t=>t.id===sfState.themeId) || SF_THEMES[0];
+  const font  = SF_FONTS.find(f=>f.id===sfState.fontId)   || SF_FONTS[0];
+  const hero  = sfState.heroCustom || SF_HEROES.find(h=>h.id===sfState.heroId)?.url || SF_HEROES[0].url;
+
+  const supaUrl  = typeof SUPABASE_URL  !== 'undefined' ? SUPABASE_URL  : 'PASTE_YOUR_PROJECT_URL_HERE';
+  const supaAnon = typeof SUPABASE_ANON !== 'undefined' ? SUPABASE_ANON : 'PASTE_YOUR_ANON_KEY_HERE';
+
+  // Profile from userProfile
+  const p = userProfile;
+
+  let html = STOREFRONT_TEMPLATE;
+  html = html.replace(/%%SUPABASE_URL%%/g,     supaUrl);
+  html = html.replace(/%%SUPABASE_ANON%%/g,    supaAnon);
+  html = html.replace(/%%THEME_BODY_BG%%/g,    theme.bodyBg);
+  html = html.replace(/%%THEME_HEADER_BG%%/g,  theme.headerBg);
+  html = html.replace(/%%THEME_GOLD%%/g,        theme.gold);
+  html = html.replace(/%%THEME_GOLD2%%/g,       theme.gold2);
+  html = html.replace(/%%THEME_BODY_BORDER%%/g, theme.bodyBorder);
+  html = html.replace(/%%THEME_FONT_DISPLAY%%/g,font.display);
+  html = html.replace(/%%THEME_FONT_BODY%%/g,   font.body);
+  html = html.replace(/%%THEME_FONT_URL%%/g,    font.url);
+  html = html.replace(/%%THEME_HERO_BG%%/g,     hero);
+  html = html.replace(/%%PROFILE_BIZ_NAME%%/g,  (p.biz_name||'').replace(/'/g,"\\'"));
+  html = html.replace(/%%PROFILE_PHONE%%/g,     (p.phone||'').replace(/'/g,"\\'"));
+  html = html.replace(/%%PROFILE_EMAIL%%/g,     (p.contact_email||'').replace(/'/g,"\\'"));
+  html = html.replace(/%%PROFILE_INSTAGRAM%%/g, (p.website||'').replace(/'/g,"\\'"));
+  html = html.replace(/%%PROFILE_LOCATION%%/g,  (p.address||'').replace(/'/g,"\\'"));
+  html = html.replace(/%%PROFILE_WEBSITE%%/g,   (p.website||'').replace(/'/g,"\\'"));
+  html = html.replace(/%%PROFILE_TAGLINE%%/g,   'Pre-Owned Luxury Timepieces');
+  return html;
+}
+
+function sfRefreshPreview() {
+  const frame = document.getElementById('sf-preview-frame');
+  const html = sfBuildHTML();
+  frame.srcdoc = html;
+  // Update preview URL bar
+  const bizName = userProfile.biz_name||'yourstore';
+  document.getElementById('sf-preview-url').textContent =
+    bizName.toLowerCase().replace(/\s+/g,'')+'.vercel.app';
+}
+
+function sfDownload() {
+  if (!userProfile.biz_name) {
+    showToast('Please set your Business Name in Settings first.');
+    showPage('settings');
+    return;
+  }
+  const html = sfBuildHTML();
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const slug = (userProfile.biz_name||'storefront').toLowerCase().replace(/\s+/g,'-');
+  a.download = slug+'-storefront.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Storefront downloaded! Rename to index.html and upload to GitHub.');
+}
+
+// Called when My Storefront page opens
+function initStorefrontPage() {
+  // Warn if profile incomplete
+  const warn = document.getElementById('sf-profile-warn');
+  if (!userProfile.biz_name || !userProfile.contact_email) {
+    warn.style.display = 'block';
+  } else {
+    warn.style.display = 'none';
+  }
+  sfInit();
 }
 
 // ── HELP CONTENT ──────────────────────────────────
