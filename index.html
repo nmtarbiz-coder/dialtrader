@@ -15,6 +15,7 @@
   const WIRE_ADDRESS = '345 Nob Hill St Conway, AR 72034';
   const WIRE_ACCOUNT = '502483711';
   const WIRE_ROUTING = '082902757';
+
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -26,7 +27,7 @@
   --blue:#3A6A9A;--blue-dim:rgba(58,106,154,0.1);--charcoal:#2A2A2A;--sidebar-w:210px;
 }
 html,body{height:100%;}
-body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);}
+body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 @keyframes spin{to{transform:rotate(360deg);}}
 @keyframes load{to{left:110%;}}
@@ -75,8 +76,8 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);}
 .nav-divider{height:1px;background:var(--border2);margin:0.5rem 1.25rem;}
 
 /* ── STOREFRONT PAGE ── */
-.sf-layout{display:grid;grid-template-columns:320px 1fr;gap:0;border:1px solid var(--border);height:calc(100vh - 180px);min-height:500px;overflow:hidden;}
-.sf-controls{background:var(--surface2);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;height:100%;width:320px;min-width:320px;max-width:320px;flex-shrink:0;box-sizing:border-box;}
+.sf-layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:0;border:1px solid var(--border);height:calc(100vh - 200px);overflow:hidden;}
+.sf-controls{background:var(--surface2);border-right:1px solid var(--border);padding:1.5rem;overflow-y:auto;overflow-x:hidden;}
 .sf-preview-pane{background:var(--bg);display:flex;flex-direction:column;height:100%;overflow:hidden;}
 .sf-section-label{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text2);margin:1.25rem 0 0.6rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border);}
 .sf-section-label:first-child{margin-top:0;}
@@ -137,14 +138,14 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);}
 .card-sub{font-size:0.72rem;color:var(--text2);margin-bottom:0.25rem;}
 
 /* ── HELP CENTER ── */
-.help-layout{display:grid;grid-template-columns:220px 1fr;gap:0;border:1px solid var(--border);height:calc(100vh - 180px);min-height:500px;overflow:hidden;}
-.help-sidebar{background:var(--surface2);border-right:1px solid var(--border);padding:1rem 0;overflow-y:auto;width:220px;min-width:220px;max-width:220px;flex-shrink:0;height:100%;box-sizing:border-box;}
+.help-layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:0;border:1px solid var(--border);height:calc(100vh - 200px);overflow:hidden;}
+.help-sidebar{background:var(--surface2);border-right:1px solid var(--border);padding:1rem 0;overflow-y:auto;overflow-x:hidden;}
 .help-nav-section{font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text2);padding:0.75rem 1.25rem 0.35rem;margin-top:0.5rem;}
 .help-nav-section:first-child{margin-top:0;}
 .help-nav-item{font-size:0.75rem;color:#AAA;padding:0.5rem 1.25rem;cursor:pointer;transition:all 0.15s;border-left:3px solid transparent;}
 .help-nav-item:hover{color:#fff;background:rgba(255,255,255,0.04);}
 .help-nav-item.active{color:#fff;background:rgba(184,148,58,0.1);border-left-color:var(--gold2);}
-.help-content{padding:2rem 2.5rem;overflow-y:auto;height:100%;min-width:0;overflow-x:hidden;}
+.help-content{padding:2rem 2.5rem;overflow-y:auto;overflow-x:hidden;min-width:0;box-sizing:border-box;}
 .help-article h1{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:500;color:var(--text1);margin-bottom:0.5rem;}
 .help-article .help-tag{display:inline-block;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;background:rgba(184,148,58,0.15);color:var(--gold2);padding:0.2rem 0.6rem;margin-bottom:1.25rem;}
 .help-article h2{font-family:'Playfair Display',serif;font-size:1rem;font-weight:500;color:var(--text1);margin:1.75rem 0 0.6rem;}
@@ -172,8 +173,8 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);}
 .sidebar-signout:hover{color:var(--red);}
 
 /* MAIN */
-.main-content{flex:1;overflow-y:auto;min-height:0;}
-.page{display:none;padding:2rem 2rem 4rem;animation:fadeIn 0.25s ease;}
+.main-content{flex:1;overflow-y:auto;height:100vh;}
+.page{display:none;padding:2rem;padding-bottom:5rem;animation:fadeIn 0.25s ease;}
 .page.active{display:block;min-height:0;}
 
 /* BUTTONS */
@@ -656,7 +657,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);}
           <button class="btn-gold" onclick="window.print()">🖨 Print Report</button>
         </div>
       </div>
-      <div id="tax-report-content"></div>
+      <div id="tax-report-content" style="overflow-x:auto;"></div>
     </div>
 
     <!-- MY STOREFRONT PAGE -->
@@ -1333,30 +1334,47 @@ async function doSignOut(){await db.auth.signOut();}
 
 // ── DATA ──────────────────────────────────────────
 async function syncSoldContacts(){
-  // One-time backfill: create contacts from sold watches that have names but no contact link
-  const unlinked = soldWatches.filter(w => (w.buy_name||w.sell_name) && !w.contact_id);
-  if(!unlinked.length){ showToast('All sold watches already linked to contacts.'); return; }
-  let created = 0;
-  for(const w of unlinked){
-    const name = w.buy_name || w.sell_name;
-    if(!name) continue;
-    const phone = w.buy_name ? w.buy_phone : w.sell_phone;
-    const email = w.buy_name ? w.buy_email : w.sell_email;
-    // Check if contact already exists
-    let contactId = contacts.find(c=>c.name?.toLowerCase()===name.toLowerCase())?.id;
-    if(!contactId){
-      const{data:nc}=await db.from('contacts').insert({
+  // Backfill contacts from all sold watches — handles both buyer AND seller per watch
+  showToast('Syncing...');
+  let created = 0, linked = 0;
+
+  async function upsertContact(name, phone, email){
+    if(!name?.trim()) return null;
+    name = name.trim();
+    let contact = contacts.find(c=>c.name?.toLowerCase()===name.toLowerCase());
+    if(!contact){
+      const{data:nc,error}=await db.from('contacts').insert({
         user_id:currentUser.id, name, phone:phone||null, email:email||null
       }).select().single();
-      if(nc){ contactId=nc.id; contacts=[...contacts,nc]; created++; }
+      if(nc){ contact=nc; contacts=[...contacts,nc]; created++; }
     }
-    if(contactId){
-      await db.from('sold_inventory').update({contact_id:contactId}).eq('id',w.id);
-      soldWatches=soldWatches.map(s=>s.id===w.id?{...s,contact_id:contactId}:s);
+    return contact?.id||null;
+  }
+
+  for(const w of soldWatches){
+    // Handle buyer
+    if(w.buy_name){
+      const cid = await upsertContact(w.buy_name, w.buy_phone, w.buy_email);
+      if(cid && !w.contact_id){
+        await db.from('sold_inventory').update({contact_id:cid}).eq('id',w.id);
+        soldWatches=soldWatches.map(s=>s.id===w.id?{...s,contact_id:cid}:s);
+        linked++;
+      }
+    }
+    // Handle seller (stored on inventory side, may also be on sold record)
+    if(w.sell_name){
+      await upsertContact(w.sell_name, w.sell_phone, w.sell_email);
     }
   }
+
+  // Also sync from active inventory contacts
+  for(const w of inventory){
+    if(w.buy_name) await upsertContact(w.buy_name, w.buy_phone, w.buy_email);
+    if(w.sell_name) await upsertContact(w.sell_name, w.sell_phone, w.sell_email);
+  }
+
   renderContacts(); updateNavBadges();
-  showToast(`Done — ${created} new contact${created!==1?'s':''} created from ${unlinked.length} sold watches.`);
+  showToast(`Sync complete — ${created} new contact${created!==1?'s':''} created.`);
 }
 
 async function loadAllData(){
@@ -3256,7 +3274,9 @@ function showHelp(key){
   currentHelpArticle=key;
   document.querySelectorAll('.help-nav-item').forEach(i=>i.classList.remove('active'));
   document.querySelector(`.help-nav-item[onclick="showHelp('${key}')"]`)?.classList.add('active');
-  document.getElementById('help-content-area').innerHTML=HELP_ARTICLES[key]||'<div class="help-article"><h1>Coming Soon</h1><p>This article is being written.</p></div>';
+  const area=document.getElementById('help-content-area');
+  area.innerHTML=HELP_ARTICLES[key]||'<div class="help-article"><h1>Coming Soon</h1><p>This article is being written.</p></div>';
+  area.scrollTop=0;
 }
 
 // ── BOOT ──────────────────────────────────────────
