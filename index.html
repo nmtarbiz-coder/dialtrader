@@ -1695,17 +1695,25 @@ async function showApp(){
   document.getElementById('auth-screen').classList.remove('visible');
   document.getElementById('loading-screen').classList.add('visible');
   document.getElementById('app-screen').classList.remove('visible');
-  const profileComplete=await loadUserProfile();
-  await loadAllData();
-  renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();
-  document.getElementById('loading-screen').classList.remove('visible');
-  document.getElementById('app-screen').classList.add('visible');
-  showPage('dashboard');
-  if(!profileComplete){setTimeout(openProfileSetupModal,600);}
-  const sidebarIcon=document.getElementById('sidebar-logo-icon');
-  if(sidebarIcon&&typeof LOGO_SVG!=='undefined'){
-    const sized=LOGO_SVG.replace(/width="600"/,'width="160"').replace(/height="700"/,'height="187"');
-    sidebarIcon.innerHTML=sized;
+  try {
+    const profileComplete=await loadUserProfile();
+    await loadAllData();
+    renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();
+    document.getElementById('loading-screen').classList.remove('visible');
+    document.getElementById('app-screen').classList.add('visible');
+    showPage('dashboard');
+    if(!profileComplete){setTimeout(openProfileSetupModal,600);}
+    const sidebarIcon=document.getElementById('sidebar-logo-icon');
+    if(sidebarIcon&&typeof LOGO_SVG!=='undefined'){
+      const sized=LOGO_SVG.replace(/width="600"/,'width="160"').replace(/height="700"/,'height="187"');
+      sidebarIcon.innerHTML=sized;
+    }
+  } catch(err) {
+    console.error('showApp error:', err);
+    document.getElementById('loading-screen').classList.remove('visible');
+    document.getElementById('app-screen').classList.add('visible');
+    showPage('dashboard');
+    showToast('⚠️ Some data failed to load. Check console for details.');
   }
 }
 function switchAuthTab(tab){document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));document.querySelector(`.auth-tab[onclick="switchAuthTab('${tab}')"]`).classList.add('active');document.getElementById('auth-'+tab).classList.add('active');}
@@ -1760,15 +1768,20 @@ async function syncSoldContacts(){
 }
 
 async function loadAllData(){
-  const[invRes,soldRes,contactRes,invoiceRes,receivedRes]=await Promise.all([
-    db.from('inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-    db.from('sold_inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-    db.from('contacts').select('*').eq('user_id',currentUser.id).order('name',{ascending:true}),
-    db.from('invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-    db.from('received_invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-  ]);
-  inventory=(invRes.data||[]).filter(w=>!w.trashed);soldWatches=(soldRes.data||[]).filter(w=>!w.trashed);contacts=contactRes.data||[];invoices=invoiceRes.data||[];receivedInvoices=receivedRes.data||[];
-  await loadTrash();
+  try {
+    const[invRes,soldRes,contactRes,invoiceRes]=await Promise.all([
+      db.from('inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      db.from('sold_inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      db.from('contacts').select('*').eq('user_id',currentUser.id).order('name',{ascending:true}),
+      db.from('invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+    ]);
+    inventory=invRes.data||[];
+    soldWatches=soldRes.data||[];
+    contacts=contactRes.data||[];
+    invoices=invoiceRes.data||[];
+  } catch(e){ console.error('loadAllData core error:',e); inventory=[];soldWatches=[];contacts=[];invoices=[]; }
+  try { const r=await db.from('received_invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}); receivedInvoices=r.data||[]; } catch(e){ receivedInvoices=[]; }
+  try { await loadTrash(); } catch(e){ console.warn('Trash table not ready (run v11 migration):',e.message); }
   updateNavBadges();populateContactDropdowns();
 }
 function updateNavBadges(){document.getElementById('nav-inv-count').textContent=inventory.length;document.getElementById('nav-contact-count').textContent=contacts.length;document.getElementById('nav-invoice-count').textContent=invoices.length;}
