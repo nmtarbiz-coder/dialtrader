@@ -2025,30 +2025,54 @@ function showContactDetail(id){
       </div>
       ${c.notes?`<div style="background:var(--surface2);border-left:3px solid var(--gold);padding:0.75rem;font-size:0.75rem;color:var(--text2);line-height:1.7;margin-bottom:1.25rem">${escHtml(c.notes)}</div>`:''}
 
-      <!-- Transaction history -->
-      ${bought.length?`<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">Sourced From This Contact (${sourced.length})</div>
-        ${sourced.map(w=>{const inInv=inventory.some(x=>x.id===w.id);return`<div class="contact-history-item" style="cursor:pointer" onclick="${inInv?`editWatch('${w.id}')`:``}">
-          <div><div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)">${w.brand}</div><div style="font-size:0.8rem;font-weight:600">${w.model}${w.ref?' · '+w.ref:''}</div></div>
-          <span class="contact-history-type bought">${inInv?'In Stock':'Sold'}</span>
-          <div style="font-size:0.8rem;color:var(--gold);font-weight:600">${fmt(costBasis(w))}</div>
-        </div>`).join('')}`:''}
-
-      ${sold2.length?`<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:1rem 0 0.5rem">Sold To (${sold2.length})</div>
-        ${soldTo.map(s=>`<div class="contact-history-item">
-          <div><div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)">${s.brand}</div><div style="font-size:0.8rem;font-weight:600">${s.model}${s.ref?' · '+s.ref:''}</div></div>
-          <span class="contact-history-type sold-to">Buyer</span>
-          <div><div style="font-size:0.8rem;font-weight:600">${fmt(s.sold_price)}</div><div style="font-size:0.68rem;color:${soldNetProfit(s)>=0?'var(--green)':'var(--red)'}">${fmt(soldNetProfit(s))}</div></div>
-        </div>`).join('')}`:''}
-
-      ${cinvoices.length?`<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:1rem 0 0.5rem">Invoices (${cinvoices.length})</div>
-        ${cinvoices.map(i=>`<div class="contact-history-item" onclick="viewInvoice('${i.id}')" style="cursor:pointer">
-          <div><div style="font-size:0.78rem;font-weight:600">Invoice #${i.invoice_number||'—'}</div><div style="font-size:0.68rem;color:var(--text2)">${i.invoice_date||''}</div></div>
-          <span class="invoice-status ${i.status||'unpaid'}">${i.status||'Unpaid'}</span>
-          <div style="font-family:'Playfair Display',serif;font-size:0.95rem">${fmt(i.total)}</div>
-        </div>`).join('')}`:''}
-
-      ${!sourced.length&&!soldTo.length&&!cinvoices.length?`<div style="text-align:center;padding:2rem;color:var(--text2);font-size:0.78rem">No transactions yet</div>`:''}
+      <!-- Transaction history - built safely to avoid nested template literal issues -->
+      ${buildContactHistory(sourced, soldTo, cinvoices)}
     </div>`;
+}
+
+function buildContactHistory(sourced, soldTo, cinvoices) {
+  let html = '';
+  if (sourced.length) {
+    html += '<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">Sourced From This Contact (' + sourced.length + ')</div>';
+    sourced.forEach(w => {
+      const inInv = inventory.some(x => x.id === w.id);
+      const onclick = inInv ? 'onclick="editWatch(\'' + w.id + '\')"' : '';
+      html += '<div class="contact-history-item" style="cursor:pointer" ' + onclick + '>';
+      html += '<div><div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)">' + (w.brand||'') + '</div>';
+      html += '<div style="font-size:0.8rem;font-weight:600">' + (w.model||'') + (w.ref ? ' · ' + w.ref : '') + '</div></div>';
+      html += '<span class="contact-history-type bought">' + (inInv ? 'In Stock' : 'Sold') + '</span>';
+      html += '<div style="font-size:0.8rem;color:var(--gold);font-weight:600">' + fmt(costBasis(w)) + '</div>';
+      html += '</div>';
+    });
+  }
+  if (soldTo.length) {
+    html += '<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:1rem 0 0.5rem">Sold To This Contact (' + soldTo.length + ')</div>';
+    soldTo.forEach(s => {
+      const profit = soldNetProfit(s);
+      html += '<div class="contact-history-item">';
+      html += '<div><div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)">' + (s.brand||'') + '</div>';
+      html += '<div style="font-size:0.8rem;font-weight:600">' + (s.model||'') + (s.ref ? ' · ' + s.ref : '') + '</div></div>';
+      html += '<span class="contact-history-type sold-to">Buyer</span>';
+      html += '<div><div style="font-size:0.8rem;font-weight:600">' + fmt(s.sold_price) + '</div>';
+      html += '<div style="font-size:0.68rem;color:' + (profit >= 0 ? 'var(--green)' : 'var(--red)') + '">' + fmt(profit) + '</div></div>';
+      html += '</div>';
+    });
+  }
+  if (cinvoices.length) {
+    html += '<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:1rem 0 0.5rem">Invoices (' + cinvoices.length + ')</div>';
+    cinvoices.forEach(i => {
+      html += '<div class="contact-history-item" onclick="viewInvoice(\'' + i.id + '\')" style="cursor:pointer">';
+      html += '<div><div style="font-size:0.78rem;font-weight:600">Invoice #' + (i.invoice_number||'—') + '</div>';
+      html += '<div style="font-size:0.68rem;color:var(--text2)">' + (i.invoice_date||'') + '</div></div>';
+      html += '<span class="invoice-status ' + (i.status||'unpaid') + '">' + (i.status||'Unpaid') + '</span>';
+      html += '<div style="font-family:\'Playfair Display\',serif;font-size:0.95rem">' + fmt(i.total) + '</div>';
+      html += '</div>';
+    });
+  }
+  if (!sourced.length && !soldTo.length && !cinvoices.length) {
+    html += '<div style="text-align:center;padding:2rem;color:var(--text2);font-size:0.78rem">No transactions yet</div>';
+  }
+  return html;
 }
 
 function showContactsList(){activeContactId=null;}
