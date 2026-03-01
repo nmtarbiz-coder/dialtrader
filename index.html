@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script>
   const SUPABASE_URL  = 'https://kstbnvcozplquymqecck.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdGJudmNvenBscXV5bXFlY2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzY5ODYsImV4cCI6MjA4NzQ1Mjk4Nn0.RqcYRWvz4O-V1L5NAne8mP-nHKff8V451nAzle3CLWU';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzdGJudmNvenBscXV5bXFlY2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4NzY5ODYsImV4cCI6MjA4NzQ1Mjk4Nn0.RqcYRWvz4O-V1L5NAne8mP-nHKff8V451nAzle3CLWU';;
   // Business info now loaded from user profile (see userProfile variable in JS)
   // Wire/bank info is stored per-user in Settings → user_profiles.wire_info
 </script>
@@ -1231,21 +1231,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
     <div class="modal-body">
       <div class="form-grid">
         <div class="form-group full"><label class="form-label">Full Name *</label><input class="form-input" id="cf-name" placeholder="Full name"></div>
-        <div class="form-group full">
-          <label class="form-label">Contact Type</label>
-          <div style="display:flex;gap:0.5rem;margin-top:0.25rem">
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.78rem;color:var(--text2);padding:0.4rem 0.8rem;border:1px solid var(--border);flex:1;justify-content:center" id="ctype-buyer-lbl">
-              <input type="radio" name="cf-type" id="ctype-buyer" value="buyer" style="accent-color:var(--gold)"> Buyer
-            </label>
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.78rem;color:var(--text2);padding:0.4rem 0.8rem;border:1px solid var(--border);flex:1;justify-content:center" id="ctype-seller-lbl">
-              <input type="radio" name="cf-type" id="ctype-seller" value="seller" style="accent-color:var(--gold)"> Seller / Source
-            </label>
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.78rem;color:var(--text2);padding:0.4rem 0.8rem;border:1px solid var(--border);flex:1;justify-content:center" id="ctype-both-lbl">
-              <input type="radio" name="cf-type" id="ctype-both" value="both" style="accent-color:var(--gold)"> Both
-            </label>
-          </div>
-          <div style="font-size:0.65rem;color:var(--text2);margin-top:0.4rem">Buyers = people you've sold to. Sellers/Sources = dealers, platforms, or individuals you buy from. Use this to filter for marketing.</div>
-        </div>
+
         <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="cf-phone" type="tel" placeholder="(555) 000-0000"></div>
         <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="cf-email" type="email" placeholder="contact@email.com"></div>
         <div class="form-group full"><label class="form-label">Street Address</label><input class="form-input" id="cf-address" placeholder="Street address"></div>
@@ -1911,8 +1897,16 @@ function setContactFilter(f){
 }
 
 function getContactTag(c){
-  // Use manually set contact_type field — buyer, seller, both, or none
-  return c.contact_type||'none';
+  // source_contact_id on inventory = who we BOUGHT FROM (seller/source)
+  // source_contact_id on sold_inventory = who we BOUGHT FROM (seller/source, carried over)
+  // buyer_contact_id on sold_inventory = who we SOLD TO (buyer)
+  // Also fall back to legacy contact_id field for backward compatibility
+  const isSource =
+    inventory.some(w => w.source_contact_id === c.id || (!w.source_contact_id && w.contact_id === c.id)) ||
+    soldWatches.some(w => w.source_contact_id === c.id);
+  const isBuyer =
+    soldWatches.some(w => w.buyer_contact_id === c.id || (!w.buyer_contact_id && !w.source_contact_id && w.contact_id === c.id));
+  return isSource && isBuyer ? 'both' : isSource ? 'seller' : isBuyer ? 'buyer' : 'none';
 }
 
 function contactInitials(name){
@@ -1947,7 +1941,9 @@ function renderContacts(){
       <div class="contacts-alpha-label">${letter}</div>
       ${groups[letter].map(c=>{
         const tag=getContactTag(c);
-        const txnCount=inventory.filter(w=>w.contact_id===c.id).length+soldWatches.filter(w=>w.contact_id===c.id).length;
+        const txnCount=
+            inventory.filter(w=>w.source_contact_id===c.id||(w.contact_id===c.id&&!w.source_contact_id)).length+
+            soldWatches.filter(w=>w.source_contact_id===c.id||w.buyer_contact_id===c.id||(w.contact_id===c.id&&!w.source_contact_id&&!w.buyer_contact_id)).length;
         const sub=[c.phone,c.email].filter(Boolean).join(' · ')||c.city||'No contact info';
         const isActive=c.id===activeContactId;
         const isSelected=selectedContacts.has(c.id);
@@ -1969,16 +1965,24 @@ function renderContacts(){
 
 function showContactDetail(id){
   const c=contacts.find(x=>x.id===id);if(!c)return;
-  // Update active row highlight
   document.querySelectorAll('.contact-row').forEach(r=>r.classList.remove('active'));
   const row=document.getElementById('crow-'+id);if(row)row.classList.add('active');
   activeContactId=id;
-  const bought=inventory.filter(w=>w.contact_id===id);
-  const sold2=soldWatches.filter(w=>w.contact_id===id);
+
+  // Watches sourced FROM this contact (they sold to us)
+  const sourced = [
+    ...inventory.filter(w => w.source_contact_id === id || (!w.source_contact_id && w.contact_id === id)),
+    ...soldWatches.filter(w => w.source_contact_id === id)
+  ];
+  // Watches sold TO this contact (they bought from us)
+  const soldTo = soldWatches.filter(w =>
+    w.buyer_contact_id === id ||
+    (!w.buyer_contact_id && !w.source_contact_id && w.contact_id === id)
+  );
   const cinvoices=invoices.filter(i=>i.contact_id===id);
-  const totalBought=bought.reduce((s,w)=>s+costBasis(w),0);
-  const totalSold=sold2.reduce((s,w)=>s+(+w.sold_price||0),0);
-  const totalProfit=sold2.reduce((s,w)=>s+soldNetProfit(w),0);
+  const totalSold=soldTo.reduce((s,w)=>s+(+w.sold_price||0),0);
+  const totalProfit=soldTo.reduce((s,w)=>s+soldNetProfit(w),0);
+  const totalSourced=sourced.reduce((s,w)=>s+costBasis(w),0);
   document.getElementById('contact-detail-content').innerHTML=`
     <div class="contact-detail-panel">
       <!-- Header -->
@@ -1999,7 +2003,7 @@ function showContactDetail(id){
       <!-- Stats row -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-bottom:1.25rem">
         <div class="card" style="text-align:center;padding:0.75rem">
-          <div style="font-size:1.3rem;font-weight:700;color:var(--gold)">${bought.length+sold2.length}</div>
+          <div style="font-size:1.3rem;font-weight:700;color:var(--gold)">${sourced.length+soldTo.length}</div>
           <div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Transactions</div>
         </div>
         <div class="card" style="text-align:center;padding:0.75rem">
@@ -2022,15 +2026,15 @@ function showContactDetail(id){
       ${c.notes?`<div style="background:var(--surface2);border-left:3px solid var(--gold);padding:0.75rem;font-size:0.75rem;color:var(--text2);line-height:1.7;margin-bottom:1.25rem">${escHtml(c.notes)}</div>`:''}
 
       <!-- Transaction history -->
-      ${bought.length?`<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">Sourced From (${bought.length})</div>
-        ${bought.map(w=>`<div class="contact-history-item" style="cursor:pointer" onclick="editWatch('${w.id}')">
+      ${bought.length?`<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">Sourced From This Contact (${sourced.length})</div>
+        ${sourced.map(w=>{const inInv=inventory.some(x=>x.id===w.id);return`<div class="contact-history-item" style="cursor:pointer" onclick="${inInv?`editWatch('${w.id}')`:``}">
           <div><div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)">${w.brand}</div><div style="font-size:0.8rem;font-weight:600">${w.model}${w.ref?' · '+w.ref:''}</div></div>
-          <span class="contact-history-type bought">Source</span>
+          <span class="contact-history-type bought">${inInv?'In Stock':'Sold'}</span>
           <div style="font-size:0.8rem;color:var(--gold);font-weight:600">${fmt(costBasis(w))}</div>
         </div>`).join('')}`:''}
 
       ${sold2.length?`<div style="font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:1rem 0 0.5rem">Sold To (${sold2.length})</div>
-        ${sold2.map(s=>`<div class="contact-history-item">
+        ${soldTo.map(s=>`<div class="contact-history-item">
           <div><div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold)">${s.brand}</div><div style="font-size:0.8rem;font-weight:600">${s.model}${s.ref?' · '+s.ref:''}</div></div>
           <span class="contact-history-type sold-to">Buyer</span>
           <div><div style="font-size:0.8rem;font-weight:600">${fmt(s.sold_price)}</div><div style="font-size:0.68rem;color:${soldNetProfit(s)>=0?'var(--green)':'var(--red)'}">${fmt(soldNetProfit(s))}</div></div>
@@ -2043,7 +2047,7 @@ function showContactDetail(id){
           <div style="font-family:'Playfair Display',serif;font-size:0.95rem">${fmt(i.total)}</div>
         </div>`).join('')}`:''}
 
-      ${!bought.length&&!sold2.length&&!cinvoices.length?`<div style="text-align:center;padding:2rem;color:var(--text2);font-size:0.78rem">No transactions yet</div>`:''}
+      ${!sourced.length&&!soldTo.length&&!cinvoices.length?`<div style="text-align:center;padding:2rem;color:var(--text2);font-size:0.78rem">No transactions yet</div>`:''}
     </div>`;
 }
 
@@ -2547,7 +2551,7 @@ function localToDb(d){
     listed_price:d.listedPrice||null,msrp:d.msrp||null,
     platform:d.platform&&d.platform.length?d.platform:null,
     stage_index:d.stageIndex!=null?d.stageIndex:0,
-    notes:d.notes||null,contact_id:d.contactId||null,
+    notes:d.notes||null,contact_id:d.contactId||null,source_contact_id:d.contactId||null,
     case_size:d.caseSize||null,case_material:d.caseMaterial||null,
     movement:d.movement||null,condition:d.condition||null,box_papers:d.boxPapers||null,
     dial_color:d.dialColor||null,bezel_color:d.bezelColor||null,
@@ -2598,18 +2602,22 @@ async function markAsSold(){
   const sellName=g('f-sell-name-sell')||row.sell_name||'';
   const sellPhone=g('f-sell-phone-sell')||row.sell_phone||'';
   const sellEmail=g('f-sell-email-sell')||row.sell_email||'';
-  // Auto-create contact
-  let contactId=row.contact_id;
-  if(sellName&&!contactId){
+  // Auto-create buyer contact (separate from source contact)
+  let buyerContactId=null;
+  if(sellName){
     const existing=contacts.find(c=>c.name.toLowerCase()===sellName.toLowerCase());
-    if(existing){contactId=existing.id;}
+    if(existing){buyerContactId=existing.id;}
     else{
       const{data:nc}=await db.from('contacts').insert({user_id:currentUser.id,name:sellName,phone:sellPhone||null,email:sellEmail||null}).select().single();
-      if(nc){contacts.unshift(nc);contactId=nc.id;updateNavBadges();}
+      if(nc){contacts.unshift(nc);buyerContactId=nc.id;updateNavBadges();}
     }
   }
+  const sourceContactId = row.source_contact_id || row.contact_id || null;
   const soldRow={
-    user_id:currentUser.id,contact_id:contactId||null,
+    user_id:currentUser.id,
+    source_contact_id:sourceContactId,
+    buyer_contact_id:buyerContactId,
+    contact_id:buyerContactId||sourceContactId||null,
     brand:row.brand,model:row.model,ref:row.ref,year:row.year,serial:row.serial,
     purchase_date:row.purchase_date,
     sale_date:document.getElementById('f-sale-date').value||new Date().toISOString().split('T')[0],
@@ -3339,6 +3347,8 @@ async function saveSoldEdit(){
     buy_name:buyName||null, buy_phone:buyPhone||null, buy_email:buyEmail||null,
     sell_name:sellName||null, sell_phone:sellPhone||null, sell_email:sellEmail||null,
     contact_id: buyContactId || sellContactId || null,
+    buyer_contact_id: buyContactId || null,
+    source_contact_id: sellContactId || null,
   };
   const{error}=await db.from('sold_inventory').update(row).eq('id',editingSoldWatchId);
   if(error){showToast('Error: '+error.message);return;}
@@ -4565,7 +4575,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 <!-- MORE MENU OVERLAY -->
 <div id="more-overlay" onclick="toggleMore()"></div>
 <div id="more-menu">
-  <div class="more-item" onclick="closeMore();showPage('help');setTimeout(()=>showHelp('pipeline'),100)"><span class="more-icon">📊</span>Pipeline Guide</div>
   <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
   <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
   <div class="more-item" onclick="closeMore();showPage('import')"><span class="more-icon">📥</span>Import / Export</div>
