@@ -3303,51 +3303,53 @@ async function saveSoldEdit(){
   if(!editingSoldWatchId)return;
   const g=id=>(document.getElementById(id).value||'').trim();
 
-  // ── Upsert buyer contact ──────────────────────────
-  const buyName=g('se-buy-name'), buyPhone=g('se-buy-phone'), buyEmail=g('se-buy-email');
-  let buyContactId = null;
-  if(buyName){
-    // Check if contact already exists by name
-    const existing = contacts.find(c=>c.name.toLowerCase()===buyName.toLowerCase());
+  // NOTE: se-buy-* = "Purchased From" = SOURCE contact (who we bought from)
+  //       se-sell-* = "Sold To"        = BUYER contact (who we sold to)
+  // The field IDs say "buy/sell" from OUR action perspective, not the contact's role.
+
+  // ── Upsert SOURCE contact (Purchased From) ────────
+  const sourceName=g('se-buy-name'), sourcePhone=g('se-buy-phone'), sourceEmail=g('se-buy-email');
+  let sourceContactId = null;
+  if(sourceName){
+    const existing = contacts.find(c=>c.name.toLowerCase()===sourceName.toLowerCase());
     if(existing){
-      buyContactId = existing.id;
-      // Update phone/email if we have new info
+      sourceContactId = existing.id;
       const updates={};
-      if(buyPhone && !existing.phone) updates.phone=buyPhone;
-      if(buyEmail && !existing.email) updates.email=buyEmail;
+      if(sourcePhone && !existing.phone) updates.phone=sourcePhone;
+      if(sourceEmail && !existing.email) updates.email=sourceEmail;
       if(Object.keys(updates).length){
-        await db.from('contacts').update(updates).eq('id',buyContactId);
-        contacts=contacts.map(c=>c.id===buyContactId?{...c,...updates}:c);
+        await db.from('contacts').update(updates).eq('id',sourceContactId);
+        contacts=contacts.map(c=>c.id===sourceContactId?{...c,...updates}:c);
       }
     } else {
       const{data:nc}=await db.from('contacts').insert({
-        user_id:currentUser.id, name:buyName,
-        phone:buyPhone||null, email:buyEmail||null
+        user_id:currentUser.id, name:sourceName,
+        phone:sourcePhone||null, email:sourceEmail||null
       }).select().single();
-      if(nc){ buyContactId=nc.id; contacts=[...contacts,nc]; }
+      if(nc){ sourceContactId=nc.id; contacts=[...contacts,nc]; }
     }
   }
 
-  // ── Upsert seller contact ─────────────────────────
-  const sellName=g('se-sell-name'), sellPhone=g('se-sell-phone'), sellEmail=g('se-sell-email');
-  let sellContactId = null;
-  if(sellName){
-    const existing = contacts.find(c=>c.name.toLowerCase()===sellName.toLowerCase());
+  // ── Upsert BUYER contact (Sold To) ───────────────
+  const buyerName=g('se-sell-name'), buyerPhone=g('se-sell-phone'), buyerEmail=g('se-sell-email');
+  let buyerContactId = null;
+  if(buyerName){
+    const existing = contacts.find(c=>c.name.toLowerCase()===buyerName.toLowerCase());
     if(existing){
-      sellContactId = existing.id;
+      buyerContactId = existing.id;
       const updates={};
-      if(sellPhone && !existing.phone) updates.phone=sellPhone;
-      if(sellEmail && !existing.email) updates.email=sellEmail;
+      if(buyerPhone && !existing.phone) updates.phone=buyerPhone;
+      if(buyerEmail && !existing.email) updates.email=buyerEmail;
       if(Object.keys(updates).length){
-        await db.from('contacts').update(updates).eq('id',sellContactId);
-        contacts=contacts.map(c=>c.id===sellContactId?{...c,...updates}:c);
+        await db.from('contacts').update(updates).eq('id',buyerContactId);
+        contacts=contacts.map(c=>c.id===buyerContactId?{...c,...updates}:c);
       }
     } else {
       const{data:nc}=await db.from('contacts').insert({
-        user_id:currentUser.id, name:sellName,
-        phone:sellPhone||null, email:sellEmail||null
+        user_id:currentUser.id, name:buyerName,
+        phone:buyerPhone||null, email:buyerEmail||null
       }).select().single();
-      if(nc){ sellContactId=nc.id; contacts=[...contacts,nc]; }
+      if(nc){ buyerContactId=nc.id; contacts=[...contacts,nc]; }
     }
   }
 
@@ -3368,11 +3370,11 @@ async function saveSoldEdit(){
     condition:document.getElementById('se-condition').value||null,
     box_papers:document.getElementById('se-box-papers').value||null,
     platform:getPlatforms('se-platform-checks'),
-    buy_name:buyName||null, buy_phone:buyPhone||null, buy_email:buyEmail||null,
-    sell_name:sellName||null, sell_phone:sellPhone||null, sell_email:sellEmail||null,
-    contact_id: buyContactId || sellContactId || null,
-    buyer_contact_id: buyContactId || null,
-    source_contact_id: sellContactId || null,
+    buy_name:sourceName||null, buy_phone:sourcePhone||null, buy_email:sourceEmail||null,
+    sell_name:buyerName||null, sell_phone:buyerPhone||null, sell_email:buyerEmail||null,
+    contact_id: buyerContactId || sourceContactId || null,
+    buyer_contact_id: buyerContactId || null,
+    source_contact_id: sourceContactId || null,
   };
   const{error}=await db.from('sold_inventory').update(row).eq('id',editingSoldWatchId);
   if(error){showToast('Error: '+error.message);return;}
