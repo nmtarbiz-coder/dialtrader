@@ -438,15 +438,15 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 }
 
 /* ── BOTTOM NAV (mobile) ── */
-#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--charcoal);border-top:2px solid var(--gold);z-index:500;padding-bottom:env(safe-area-inset-bottom);}
-.bnav-inner{display:flex;height:60px;align-items:stretch;}
-.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#777;cursor:pointer;font-family:'Raleway',sans-serif;font-size:0.5rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;padding:0;min-width:0;touch-action:manipulation;}
+#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--charcoal);border-top:2px solid var(--gold);z-index:500;padding-bottom:env(safe-area-inset-bottom);}
+.bnav-inner{display:flex;height:62px;align-items:stretch;}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#666;cursor:pointer;font-family:'Raleway',sans-serif;font-size:0.58rem;letter-spacing:0;text-transform:uppercase;font-weight:700;padding:0;min-width:0;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .bnav-btn.active{color:var(--gold);}
-.bnav-btn:active{background:rgba(255,255,255,0.05);}
-.bnav-icon{font-size:1.3rem;line-height:1;}
+.bnav-btn:active{opacity:0.6;}
+.bnav-icon{font-size:1.35rem;line-height:1;display:block;}
 #more-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:510;}
 #more-overlay.open{display:block;}
-#more-menu{display:none;position:fixed;bottom:60px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:520;padding-bottom:env(safe-area-inset-bottom);}
+#more-menu{display:none;position:fixed;bottom:62px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:520;padding-bottom:env(safe-area-inset-bottom);}
 #more-menu.open{display:block;}
 .more-item{display:flex;align-items:center;gap:0.75rem;padding:1rem 1.5rem;color:#ccc;font-family:'Raleway',sans-serif;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;}
 .more-item:active{background:rgba(201,168,76,0.1);color:var(--gold);}
@@ -457,7 +457,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
   .sidebar{display:none!important;}
   #bottom-nav{display:flex!important;}
   #app-screen.visible{flex-direction:column;}
-  .main-content{height:calc(100svh - 60px);overflow-y:auto;}
+  .main-content{height:calc(100svh - 62px);overflow-y:auto;}
   .page{padding:0.75rem 0.75rem 5rem;}
   .page-header{flex-direction:column;align-items:flex-start;gap:0.6rem;margin-bottom:1rem;}
   .page-header .btn-gold{width:100%;}
@@ -495,8 +495,10 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
   .contacts-detail-col.mobile-show{display:block;position:fixed;inset:0;z-index:400;background:var(--bg);overflow-y:auto;padding:1rem 1rem 5rem;}
 
   /* Help layout */
-  .help-layout{grid-template-columns:1fr;}
+  .help-layout{grid-template-columns:1fr;height:auto;}
   .help-sidebar{display:none;}
+  .help-content{padding:1rem 0.75rem;}
+  #help-mobile-picker{display:block!important;}
 
   /* Storefront layout */
   .sf-layout{grid-template-columns:1fr;}
@@ -1035,7 +1037,35 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
 
     <!-- HELP PAGE -->
     <div class="page" id="page-help" style="display:none">
-      <div class="page-header"><div><div class="page-title">Help &amp; Setup</div><div class="page-subtitle">Guides, tutorials, and resources to get the most out of DialTrader</div></div></div>
+      <div class="page-header"><div><div class="page-title">Help &amp; Setup</div><div class="page-subtitle">Guides, tutorials, and resources</div></div></div>
+
+      <!-- Mobile topic picker - only visible on mobile -->
+      <div id="help-mobile-picker" style="display:none;margin-bottom:1rem">
+        <select class="form-select" style="width:100%;font-size:0.85rem" onchange="showHelp(this.value);this.blur()">
+          <optgroup label="Getting Started">
+            <option value="welcome">Welcome to DialTrader</option>
+            <option value="plans">Membership Plans</option>
+            <option value="profile">Setting Up Your Profile</option>
+            <option value="first-watch">Adding Your First Watch</option>
+            <option value="import-data">Importing Existing Data</option>
+          </optgroup>
+          <optgroup label="Your Storefront">
+            <option value="storefront-intro">What Is the Storefront?</option>
+            <option value="vercel-deploy">Deploying on Vercel (Free)</option>
+            <option value="custom-domain">Using Your Own Domain</option>
+            <option value="storefront-themes">Themes &amp; Customization</option>
+          </optgroup>
+          <optgroup label="Features">
+            <option value="add-to-home">Add App Icon to Phone</option>
+            <option value="pipeline">The Deal Pipeline</option>
+            <option value="invoices">Creating Invoices</option>
+            <option value="photos">Photo Management</option>
+            <option value="crm">CRM &amp; Contacts</option>
+            <option value="tax">Tax Reporting</option>
+          </optgroup>
+        </select>
+      </div>
+
       <div class="help-layout">
         <div class="help-sidebar">
           <div class="help-nav-section">Getting Started</div>
@@ -3847,27 +3877,26 @@ const HELP_ARTICLES={
   'add-to-home':`<div class="help-article">
     <h1>Add DialTrader to Your Phone</h1>
     <div class="help-tag">Getting Started</div>
-    <p>DialTrader works like an app when you add it to your phone's home screen. Tap the icon and it opens full-screen — no browser bar, no typing the URL. Here's how to do it on iPhone or Android.</p>
+    <p>DialTrader works like an app when you add it to your home screen. Tap the icon and it opens full-screen — no browser bar, no typing the URL.</p>
 
-    <h2>iPhone — Safari</h2>
-    <div class="help-tip"><strong>Must use Safari.</strong> Chrome on iPhone cannot add to home screen — open app.dialtrader.com in Safari first.</div>
+    <h2>iPhone — Safari Only</h2>
+    <div class="help-warn"><strong>Chrome on iPhone cannot do this.</strong> Apple requires you to use Safari to add any website to your home screen. Chrome on iPhone simply doesn't have this feature — it's an Apple restriction, not a Chrome bug.</div>
     <div style="display:flex;flex-direction:column;gap:0.75rem;margin:1rem 0">
-      <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><strong>Open Safari</strong><span>Go to app.dialtrader.com in Safari (not Chrome).</span></div></div>
-      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><strong>Tap the Share button</strong><span>It's the box with an arrow pointing up — at the bottom of the screen on iPhone, or top-right on iPad.</span></div></div>
-      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><strong>Scroll down and tap "Add to Home Screen"</strong><span>It may be a few items down the share sheet. Tap it.</span></div></div>
-      <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><strong>Name it and tap Add</strong><span>You can rename it "DialTrader" or leave as-is. Tap Add in the top right.</span></div></div>
-      <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><strong>Done!</strong><span>The DialTrader icon appears on your home screen. Tap it to open the app full-screen.</span></div></div>
+      <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><strong>Open Safari</strong><span>Go to app.dialtrader.com in Safari. If you're reading this in Chrome right now, copy the URL and paste it into Safari.</span></div></div>
+      <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><strong>Tap the Share button</strong><span>The square icon with an arrow pointing up — it's in the bottom toolbar in Safari on iPhone.</span></div></div>
+      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><strong>Scroll down in the share sheet and tap "Add to Home Screen"</strong><span>Scroll past AirDrop, messages, and other options — "Add to Home Screen" is further down the list with a white icon.</span></div></div>
+      <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><strong>Tap Add</strong><span>The name will say DialTrader. Tap Add in the top-right corner of the dialog.</span></div></div>
+      <div class="help-step"><div class="help-step-num">5</div><div class="help-step-body"><strong>Done!</strong><span>A DialTrader icon now appears on your home screen. Tap it anytime to open the app full-screen — no browser bar.</span></div></div>
     </div>
+    <div class="help-tip"><strong>Tip:</strong> Once installed from your home screen, your login stays active so you're straight in every time.</div>
 
     <h2>Android — Chrome</h2>
     <div style="display:flex;flex-direction:column;gap:0.75rem;margin:1rem 0">
-      <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><strong>Open Chrome</strong><span>Go to app.dialtrader.com in Chrome.</span></div></div>
+      <div class="help-step"><div class="help-step-num">1</div><div class="help-step-body"><strong>Open Chrome</strong><span>Go to app.dialtrader.com.</span></div></div>
       <div class="help-step"><div class="help-step-num">2</div><div class="help-step-body"><strong>Tap the three-dot menu</strong><span>Top-right corner of Chrome.</span></div></div>
-      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><strong>Tap "Add to Home screen"</strong><span>Then tap Add on the confirmation popup.</span></div></div>
-      <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><strong>Done!</strong><span>DialTrader icon appears on your home screen. Opens full-screen like a native app.</span></div></div>
+      <div class="help-step"><div class="help-step-num">3</div><div class="help-step-body"><strong>Tap "Add to Home screen"</strong><span>Then tap Add on the confirmation. If you don't see this option, try tapping "Install app" instead — newer versions of Chrome renamed it.</span></div></div>
+      <div class="help-step"><div class="help-step-num">4</div><div class="help-step-body"><strong>Done!</strong><span>DialTrader icon appears on your home screen and opens full-screen.</span></div></div>
     </div>
-
-    <div class="help-tip"><strong>Tip:</strong> Once installed, you won't need to open a browser at all — just tap the icon like any other app. Your login stays active so you're in immediately.</div>
   </div>`,
 
   'pipeline':`<div class="help-article">
@@ -4130,6 +4159,9 @@ function showHelp(key){
   const area=document.getElementById('help-content-area');
   area.innerHTML=HELP_ARTICLES[key]||'<div class="help-article"><h1>Coming Soon</h1><p>This article is being written.</p></div>';
   area.scrollTop=0;
+  // Sync mobile dropdown
+  const picker=document.querySelector('#help-mobile-picker select');
+  if(picker) picker.value=key;
 }
 
 
@@ -4623,8 +4655,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 <!-- BOTTOM NAV -->
 <nav id="bottom-nav">
   <div class="bnav-inner">
-    <button class="bnav-btn active" id="bnav-dashboard" onclick="bNav('dashboard')"><span class="bnav-icon">📈</span>Dashboard</button>
-    <button class="bnav-btn" id="bnav-inventory" onclick="bNav('inventory')"><span class="bnav-icon">⌚</span>Inventory</button>
+    <button class="bnav-btn active" id="bnav-dashboard" onclick="bNav('dashboard')"><span class="bnav-icon">📈</span>Home</button>
+    <button class="bnav-btn" id="bnav-inventory" onclick="bNav('inventory')"><span class="bnav-icon">⌚</span>Watches</button>
     <button class="bnav-btn" id="bnav-contacts" onclick="bNav('contacts')"><span class="bnav-icon">👥</span>Contacts</button>
     <button class="bnav-btn" id="bnav-invoices" onclick="bNav('invoices')"><span class="bnav-icon">📄</span>Invoices</button>
     <button class="bnav-btn" id="bnav-more" onclick="toggleMore()"><span class="bnav-icon">☰</span>More</button>
