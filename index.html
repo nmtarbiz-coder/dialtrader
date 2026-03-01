@@ -438,25 +438,26 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 }
 
 /* ── BOTTOM NAV (mobile) ── */
-#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:56px;background:var(--charcoal);border-top:1px solid var(--gold);z-index:500;padding-bottom:env(safe-area-inset-bottom);}
-.bnav-inner{display:flex;height:56px;}
-.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:#888;cursor:pointer;font-family:'Raleway',sans-serif;font-size:0.52rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;}
+#bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--charcoal);border-top:2px solid var(--gold);z-index:500;padding-bottom:env(safe-area-inset-bottom);}
+.bnav-inner{display:flex;height:60px;align-items:stretch;}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#777;cursor:pointer;font-family:'Raleway',sans-serif;font-size:0.5rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;padding:0;min-width:0;touch-action:manipulation;}
 .bnav-btn.active{color:var(--gold);}
-.bnav-icon{font-size:1.2rem;line-height:1;}
+.bnav-btn:active{background:rgba(255,255,255,0.05);}
+.bnav-icon{font-size:1.3rem;line-height:1;}
 #more-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:510;}
 #more-overlay.open{display:block;}
-#more-menu{position:fixed;bottom:56px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:520;transform:translateY(100%);transition:transform 0.25s ease;padding-bottom:env(safe-area-inset-bottom);}
-#more-menu.open{transform:translateY(0);}
-.more-item{display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1.5rem;color:#ccc;font-family:'Raleway',sans-serif;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);}
-.more-item:hover{color:var(--gold);}
-.more-icon{font-size:1.1rem;width:1.5rem;text-align:center;}
+#more-menu{display:none;position:fixed;bottom:60px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:520;padding-bottom:env(safe-area-inset-bottom);}
+#more-menu.open{display:block;}
+.more-item{display:flex;align-items:center;gap:0.75rem;padding:1rem 1.5rem;color:#ccc;font-family:'Raleway',sans-serif;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;}
+.more-item:active{background:rgba(201,168,76,0.1);color:var(--gold);}
+.more-icon{font-size:1.2rem;width:1.5rem;text-align:center;}
 
 /* ── MOBILE RESPONSIVE ── */
-@media(max-width:768px){
+@media(max-width:900px){
   .sidebar{display:none!important;}
-  #bottom-nav{display:block;}
+  #bottom-nav{display:flex!important;}
   #app-screen.visible{flex-direction:column;}
-  .main-content{height:calc(100svh - 56px);overflow-y:auto;}
+  .main-content{height:calc(100svh - 60px);overflow-y:auto;}
   .page{padding:0.75rem 0.75rem 5rem;}
   .page-header{flex-direction:column;align-items:flex-start;gap:0.6rem;margin-bottom:1rem;}
   .page-header .btn-gold{width:100%;}
@@ -1688,8 +1689,7 @@ async function doSignOut(){await db.auth.signOut();}
 
 // ── DATA ──────────────────────────────────────────
 async function syncSoldContacts(){
-  // Backfill contacts from all sold watches — handles both buyer AND seller per watch
-  showToast('Syncing...');
+  showToast('Syncing contacts...');
   let created = 0, linked = 0;
 
   async function upsertContact(name, phone, email){
@@ -1697,7 +1697,7 @@ async function syncSoldContacts(){
     name = name.trim();
     let contact = contacts.find(c=>c.name?.toLowerCase()===name.toLowerCase());
     if(!contact){
-      const{data:nc,error}=await db.from('contacts').insert({
+      const{data:nc}=await db.from('contacts').insert({
         user_id:currentUser.id, name, phone:phone||null, email:email||null
       }).select().single();
       if(nc){ contact=nc; contacts=[...contacts,nc]; created++; }
@@ -1705,30 +1705,42 @@ async function syncSoldContacts(){
     return contact?.id||null;
   }
 
-  for(const w of soldWatches){
-    // Handle buyer
+  // ── Inventory: buy_name = Purchased From = SOURCE contact ──
+  for(const w of inventory){
     if(w.buy_name){
       const cid = await upsertContact(w.buy_name, w.buy_phone, w.buy_email);
-      if(cid && !w.contact_id){
-        await db.from('sold_inventory').update({contact_id:cid}).eq('id',w.id);
-        soldWatches=soldWatches.map(s=>s.id===w.id?{...s,contact_id:cid}:s);
+      if(cid && !w.source_contact_id){
+        await db.from('inventory').update({source_contact_id:cid, contact_id:cid}).eq('id',w.id);
+        inventory = inventory.map(x=>x.id===w.id?{...x,source_contact_id:cid,contact_id:cid}:x);
         linked++;
       }
     }
-    // Handle seller (stored on inventory side, may also be on sold record)
+  }
+
+  // ── Sold Inventory: buy_name = Purchased From = SOURCE, sell_name = Sold To = BUYER ──
+  for(const w of soldWatches){
+    // Source contact (Purchased From = buy_name on sold record)
+    if(w.buy_name){
+      const cid = await upsertContact(w.buy_name, w.buy_phone, w.buy_email);
+      if(cid && !w.source_contact_id){
+        await db.from('sold_inventory').update({source_contact_id:cid}).eq('id',w.id);
+        soldWatches = soldWatches.map(s=>s.id===w.id?{...s,source_contact_id:cid}:s);
+        linked++;
+      }
+    }
+    // Buyer contact (Sold To = sell_name on sold record)
     if(w.sell_name){
-      await upsertContact(w.sell_name, w.sell_phone, w.sell_email);
+      const cid = await upsertContact(w.sell_name, w.sell_phone, w.sell_email);
+      if(cid && !w.buyer_contact_id){
+        await db.from('sold_inventory').update({buyer_contact_id:cid, contact_id:cid}).eq('id',w.id);
+        soldWatches = soldWatches.map(s=>s.id===w.id?{...s,buyer_contact_id:cid,contact_id:cid}:s);
+        linked++;
+      }
     }
   }
 
-  // Also sync from active inventory contacts
-  for(const w of inventory){
-    if(w.buy_name) await upsertContact(w.buy_name, w.buy_phone, w.buy_email);
-    if(w.sell_name) await upsertContact(w.sell_name, w.sell_phone, w.sell_email);
-  }
-
   renderContacts(); updateNavBadges();
-  showToast(`Sync complete — ${created} new contact${created!==1?'s':''} created.`);
+  showToast(`Sync complete — ${created} new contact${created!==1?'s':''} created, ${linked} watch${linked!==1?'es':''} linked.`);
 }
 
 async function loadAllData(){
@@ -2125,9 +2137,8 @@ function openContactModal(){
   document.getElementById('contact-modal-title').textContent='Add Contact';
   document.getElementById('cf-delete-btn').style.display='none';
   ['cf-name','cf-phone','cf-email','cf-address','cf-city','cf-state','cf-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.querySelectorAll('input[name="cf-type"]').forEach(r=>r.checked=false);
-  document.getElementById('ctype-buyer').checked=true;
   document.getElementById('contact-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('cf-name').focus(),50);
 }
 function editContactModal(id){
   const c=contacts.find(x=>x.id===id);if(!c)return;
@@ -2141,19 +2152,13 @@ function editContactModal(id){
   document.getElementById('cf-city').value=c.city||'';
   document.getElementById('cf-state').value=c.state||'';
   document.getElementById('cf-notes').value=c.notes||'';
-  // Set contact type radio
-  const ctype=c.contact_type||'buyer';
-  const radioEl=document.getElementById('ctype-'+ctype);
-  if(radioEl)radioEl.checked=true; else document.getElementById('ctype-buyer').checked=true;
   document.getElementById('contact-modal').classList.add('open');
 }
 function closeContactModal(){document.getElementById('contact-modal').classList.remove('open');}
 async function saveContact(){
   const name=document.getElementById('cf-name').value.trim();
   if(!name){showToast('Name is required.');return;}
-  const typeEl=document.querySelector('input[name="cf-type"]:checked');
-  const contact_type=typeEl?typeEl.value:'buyer';
-  const row={user_id:currentUser.id,name,contact_type,phone:document.getElementById('cf-phone').value.trim()||null,email:document.getElementById('cf-email').value.trim()||null,address:document.getElementById('cf-address').value.trim()||null,city:document.getElementById('cf-city').value.trim()||null,state:document.getElementById('cf-state').value.trim()||null,notes:document.getElementById('cf-notes').value.trim()||null};
+  const row={user_id:currentUser.id,name,phone:document.getElementById('cf-phone').value.trim()||null,email:document.getElementById('cf-email').value.trim()||null,address:document.getElementById('cf-address').value.trim()||null,city:document.getElementById('cf-city').value.trim()||null,state:document.getElementById('cf-state').value.trim()||null,notes:document.getElementById('cf-notes').value.trim()||null};
   if(editingContactId){
     const{error}=await db.from('contacts').update(row).eq('id',editingContactId);
     if(error){showToast('Error: '+error.message);return;}
@@ -2448,7 +2453,7 @@ function openModal(){
 function editWatch(id){
   const w=inventory.find(x=>x.id===id);if(!w)return;
   editingId=id;
-  document.getElementById('modal-title').textContent='Edit Watch';
+  document.getElementById('modal-title').textContent='Edit: ' + [w.brand, w.model].filter(Boolean).join(' ');
   document.getElementById('btn-delete').style.display='inline-block';
   document.getElementById('tab-sell-btn').style.display='block';
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
@@ -4133,11 +4138,14 @@ function bNav(page){
   document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
   const btn=document.getElementById('bnav-'+page);
   if(btn)btn.classList.add('active');
+  closeMore();
   showPage(page);
 }
 function toggleMore(){
-  document.getElementById('more-overlay').classList.toggle('open');
-  document.getElementById('more-menu').classList.toggle('open');
+  const menu=document.getElementById('more-menu');
+  const overlay=document.getElementById('more-overlay');
+  if(menu.classList.contains('open')){closeMore();}
+  else{menu.classList.add('open');overlay.classList.add('open');}
 }
 function closeMore(){
   document.getElementById('more-overlay').classList.remove('open');
@@ -4269,6 +4277,8 @@ function checkAdminAccess(){
   if(currentUser&&currentUser.email===ADMIN_EMAIL){
     const el=document.getElementById('nav-admin');
     if(el)el.style.display='flex';
+    const moreAdmin=document.getElementById('more-admin');
+    if(moreAdmin)moreAdmin.style.display='flex';
     // Populate invite text
     const inv=document.getElementById('invite-text');
     if(inv)inv.textContent=`Hey! I'd love for you to test DialTrader — a watch trading app I've been building.\n\nSign up here: https://dialtrader.com\n\nIt tracks inventory, sold history, contacts, invoices, and has a public storefront. Would love your honest feedback!\n\n— Chase`;
@@ -4604,9 +4614,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
   <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
   <div class="more-item" onclick="closeMore();showPage('import')"><span class="more-icon">📥</span>Import / Export</div>
-  <div class="more-item" onclick="closeMore();showPage('storefront')"><span class="more-icon">🏪</span>My Storefront</div>
-  <div class="more-item" onclick="closeMore();showPage('help')"><span class="more-icon">❓</span>Help</div>
+  <div class="more-item" onclick="closeMore();showPage('storefront')"><span class="more-icon">🌐</span>My Storefront</div>
+  <div class="more-item" onclick="closeMore();showPage('help')"><span class="more-icon">❓</span>Help &amp; Setup</div>
   <div class="more-item" onclick="closeMore();showPage('settings')"><span class="more-icon">⚙️</span>Settings</div>
+  <div class="more-item" id="more-admin" style="display:none" onclick="closeMore();showPage('admin')"><span class="more-icon">🔑</span>Admin</div>
+  <div class="more-item" style="color:#888;border-top:1px solid rgba(255,255,255,0.1);margin-top:0.25rem" onclick="closeMore();doSignOut()"><span class="more-icon">↩</span>Sign Out</div>
 </div>
 <!-- BOTTOM NAV -->
 <nav id="bottom-nav">
