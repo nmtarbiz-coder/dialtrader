@@ -141,3 +141,18 @@ window.openCalendarModal = function(){
     loadCalendarsSafe();
   };
 };
+// =============================
+// PAGE SWITCH HOOK
+// =============================
+
+const originalShowPage = window.showPage;
+
+window.showPage = function(name) {
+  originalShowPage(name);
+
+  if (name === 'calendar' || name === 'dashboard') {
+    setTimeout(() => {
+      loadCalendarsSafe();
+    }, 50);
+  }
+};
