@@ -13,8 +13,8 @@
   // Wire/bank info is stored per-user in Settings → user_profiles.wire_info
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -1050,9 +1050,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="page-title">Calendar</div>
       <div class="page-subtitle">Events & reminders</div>
     </div>
-<div style="display:flex;gap:0.5rem;">
-  <button class="btn-outline" onclick="syncInventoryEvents()">Sync Inventory</button>
-  <button class="btn-gold" onclick="openCalendarModal()">+ Add Event</button>
+    <button class="btn-gold" onclick="openCalendarModal()">+ Add Event</button>
   </div>
 
   <div class="panel">
@@ -4693,87 +4691,34 @@ async function loadCalendars() {
     if (mainCalendar) mainCalendar.destroy();
 
     mainCalendar = new FullCalendar.Calendar(mainEl, {
-  initialView: 'dayGridMonth',
-  height: 650,
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-  },
-  events: events
-});
+      initialView: 'dayGridMonth',
+      height: 650,
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      events: events
+    });
 
-setTimeout(() => {
-  mainCalendar.render();
-}, 50);
-   
+    mainCalendar.render();
+  }
+
   // DASHBOARD WEEK VIEW
   const dashEl = document.getElementById('dashboard-calendar');
   if (dashEl) {
     if (dashboardCalendar) dashboardCalendar.destroy();
 
-   dashboardCalendar = new FullCalendar.Calendar(dashEl, {
-  initialView: 'dayGridWeek',
-  height: 350,
-  headerToolbar: false,
-  events: events
-});
+    dashboardCalendar = new FullCalendar.Calendar(dashEl, {
+      initialView: 'dayGridWeek',
+      height: 350,
+      headerToolbar: false,
+      events: events
+    });
 
-setTimeout(() => {
-  dashboardCalendar.render();
-}, 50);
-}
-async function syncInventoryEvents(){
-  if(!currentUser) return;
-
-  // Sync purchase events
-  for(const item of inventory){
-    if(!item.purchase_date) continue;
-
-    const { data: existing } = await db
-      .from('calendar_events')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .eq('related_watch_id', item.id)
-      .eq('event_type', 'purchase');
-
-    if(!existing || existing.length === 0){
-      await db.from('calendar_events').insert({
-        user_id: currentUser.id,
-        title: `${item.brand || ''} ${item.model || ''} Purchased`,
-        event_date: item.purchase_date,
-        event_type: 'purchase',
-        related_watch_id: item.id
-      });
-    }
+    dashboardCalendar.render();
   }
-
-  // Sync sold events
-  for(const item of soldWatches){
-    if(!item.sold_date) continue;
-
-    const { data: existing } = await db
-      .from('calendar_events')
-      .select('id')
-      .eq('user_id', currentUser.id)
-      .eq('related_watch_id', item.id)
-      .eq('event_type', 'sale');
-
-    if(!existing || existing.length === 0){
-      await db.from('calendar_events').insert({
-        user_id: currentUser.id,
-        title: `${item.brand || ''} ${item.model || ''} Sold`,
-        event_date: item.sold_date,
-        event_type: 'sale',
-        related_watch_id: item.id
-      });
-    }
-  }
-
-  alert('Inventory sync complete.');
-  loadCalendars();
 }
-
 </script>
 
 <!-- MORE MENU OVERLAY -->
