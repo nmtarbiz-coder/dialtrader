@@ -156,3 +156,9 @@ window.showPage = function(name) {
     }, 50);
   }
 };
+// Initialize calendar on first load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    loadCalendarsSafe();
+  }, 200);
+});
