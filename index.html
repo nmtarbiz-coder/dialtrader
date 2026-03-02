@@ -4691,35 +4691,33 @@ async function loadCalendars() {
     if (mainCalendar) mainCalendar.destroy();
 
     mainCalendar = new FullCalendar.Calendar(mainEl, {
-  initialView: 'dayGridMonth',
-  height: 650,
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-  },
-  events: events
-});
+      initialView: 'dayGridMonth',
+      height: 650,
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      events: events
+    });
 
-setTimeout(() => {
-  mainCalendar.render();
-}, 50);
-   
+    mainCalendar.render();
+  }
+
   // DASHBOARD WEEK VIEW
   const dashEl = document.getElementById('dashboard-calendar');
   if (dashEl) {
     if (dashboardCalendar) dashboardCalendar.destroy();
 
-   dashboardCalendar = new FullCalendar.Calendar(dashEl, {
-  initialView: 'dayGridWeek',
-  height: 350,
-  headerToolbar: false,
-  events: events
-});
+    dashboardCalendar = new FullCalendar.Calendar(dashEl, {
+      initialView: 'dayGridWeek',
+      height: 350,
+      headerToolbar: false,
+      events: events
+    });
 
-setTimeout(() => {
-  dashboardCalendar.render();
-}, 50);
+    dashboardCalendar.render();
+  }
 }
 </script>
 
