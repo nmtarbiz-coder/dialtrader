@@ -196,7 +196,4 @@ window.openCalendarModal = function(){
       return;
     }
 
-    document.body.removeChild(modal);
-    loadCalendarsSafe();
-  };
-};
+  
