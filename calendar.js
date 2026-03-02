@@ -86,47 +86,52 @@ window.openCalendarModal = function(){
   modal.style.justifyContent = 'center';
   modal.style.zIndex = '9999';
 
-  modal.innerHTML = `
-    <div style="
-      background: var(--panel);
-      padding: 2rem;
-      border-radius: 12px;
-      width: 420px;
-      max-width: 95%;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.05);
-    ">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-        <h3 style="margin:0;font-weight:600;">Add Event</h3>
-        <button id="cal-cancel-top" style="
-          background:none;
-          border:none;
-          color:var(--text2);
-          font-size:1.2rem;
-          cursor:pointer;
-        ">✕</button>
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:0.75rem;">
-        <input id="cal-title" placeholder="Title"
-          style="padding:0.6rem;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:var(--panel2);color:var(--text);">
-
-        <textarea id="cal-desc" placeholder="Description (optional)"
-          style="padding:0.6rem;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:var(--panel2);color:var(--text);min-height:80px;"></textarea>
-
-        <input type="date" id="cal-date"
-          style="padding:0.6rem;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:var(--panel2);color:var(--text);">
-      </div>
-
-      <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;">
-        <button id="cal-cancel"
-          class="btn-outline">Cancel</button>
-
-        <button id="cal-save"
-          class="btn-gold">Save Event</button>
-      </div>
+ modal.innerHTML = `
+  <div style="
+    background:#1c1c1c;
+    padding:2rem;
+    border-radius:14px;
+    width:420px;
+    max-width:95%;
+    box-shadow:0 25px 60px rgba(0,0,0,0.6);
+    border:1px solid rgba(201,168,76,0.25);
+    color:#fff;
+  ">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+      <h3 style="margin:0;font-weight:600;color:#fff;">Add Event</h3>
+      <button id="cal-cancel-top" style="
+        background:none;
+        border:none;
+        color:#aaa;
+        font-size:1.2rem;
+        cursor:pointer;
+      ">✕</button>
     </div>
-  `;
+
+    <div style="display:flex;flex-direction:column;gap:0.85rem;">
+      <input id="cal-title" placeholder="Title"
+        style="padding:0.7rem;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#2a2a2a;color:#fff;">
+
+      <textarea id="cal-desc" placeholder="Description (optional)"
+        style="padding:0.7rem;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#2a2a2a;color:#fff;min-height:80px;"></textarea>
+
+      <input type="date" id="cal-date"
+        style="padding:0.7rem;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:#2a2a2a;color:#fff;">
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.5rem;">
+      <button id="cal-cancel"
+        style="padding:0.6rem 1rem;border-radius:8px;border:1px solid #555;background:#2a2a2a;color:#fff;cursor:pointer;">
+        Cancel
+      </button>
+
+      <button id="cal-save"
+        style="padding:0.6rem 1.2rem;border-radius:8px;border:none;background:#c9a84c;color:#000;font-weight:600;cursor:pointer;">
+        Save Event
+      </button>
+    </div>
+  </div>
+`;
 
   document.body.appendChild(modal);
 
