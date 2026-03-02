@@ -13,9 +13,35 @@
   // Wire/bank info is stored per-user in Settings → user_profiles.wire_info
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <style>
+<style>
+.fc {
+  font-family: inherit;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.fc .fc-daygrid-day-number {
+  color: #1A1A1A;
+  font-weight: 500;
+}
+
+.fc .fc-daygrid-event {
+  background-color: #B8943A;
+  border: none;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background-color: rgba(184,148,58,0.12);
+}
+</style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#F5F2ED;--surface:#FFFFFF;--surface2:#EEEBE5;--border:#DDD8D0;--border2:#CCC8C0;
