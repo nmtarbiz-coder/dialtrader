@@ -165,35 +165,4 @@ window.openCalendarModal = function(){
     loadCalendarsSafe();
   };
 };
-
-  document.body.appendChild(modal);
-
-  document.getElementById('cal-cancel').onclick = () => {
-    document.body.removeChild(modal);
-  };
-
-  document.getElementById('cal-save').onclick = async () => {
-    const title = document.getElementById('cal-title').value.trim();
-    const description = document.getElementById('cal-desc').value.trim();
-    const event_date = document.getElementById('cal-date').value;
-
-    if(!title || !event_date){
-      alert("Title and date required.");
-      return;
-    }
-
-    const { error } = await db.from('calendar_events').insert({
-      user_id: currentUser.id,
-      title,
-      description,
-      event_date,
-      event_type: 'manual'
-    });
-
-    if(error){
-      alert("Error saving event.");
-      console.error(error);
-      return;
-    }
-
-  
+ 
