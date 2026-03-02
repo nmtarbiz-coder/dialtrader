@@ -4664,22 +4664,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 });
 
-  // DASHBOARD WEEK VIEW
-  const dashEl = document.getElementById('dashboard-calendar');
-  if (dashEl) {
-    if (dashboardCalendar) dashboardCalendar.destroy();
-
-    dashboardCalendar = new FullCalendar.Calendar(dashEl, {
-      initialView: 'dayGridWeek',
-      height: 350,
-      headerToolbar: false,
-      events: events
-    });
-
-    dashboardCalendar.render();
-  }
-}
-</script>
+ </script>
 
 <script src="calendar.js"></script>
 
