@@ -1,11 +1,12 @@
 // =============================
-// CALENDAR MODULE
+// CALENDAR MODULE (FIXED)
 // =============================
 
 let mainCalendar = null;
 let dashboardCalendar = null;
 
-window.loadCalendarsSafe = async function() {
+// Safe loader
+window.loadCalendarsSafe = async function () {
   if (!window.db || !window.currentUser) return;
 
   const { data, error } = await db
@@ -25,9 +26,16 @@ window.loadCalendarsSafe = async function() {
     allDay: true
   }));
 
+  // =============================
+  // MAIN CALENDAR PAGE
+  // =============================
+
   const mainEl = document.getElementById('main-calendar');
   if (mainEl) {
-    if (mainCalendar) mainCalendar.destroy();
+    if (mainCalendar) {
+      mainCalendar.destroy();
+      mainCalendar = null;
+    }
 
     mainCalendar = new FullCalendar.Calendar(mainEl, {
       initialView: 'dayGridMonth',
@@ -41,11 +49,23 @@ window.loadCalendarsSafe = async function() {
     });
 
     mainCalendar.render();
+
+    // Force layout recalculation
+    setTimeout(() => {
+      mainCalendar.updateSize();
+    }, 100);
   }
+
+  // =============================
+  // DASHBOARD WEEK VIEW
+  // =============================
 
   const dashEl = document.getElementById('dashboard-calendar');
   if (dashEl) {
-    if (dashboardCalendar) dashboardCalendar.destroy();
+    if (dashboardCalendar) {
+      dashboardCalendar.destroy();
+      dashboardCalendar = null;
+    }
 
     dashboardCalendar = new FullCalendar.Calendar(dashEl, {
       initialView: 'dayGridWeek',
@@ -55,13 +75,19 @@ window.loadCalendarsSafe = async function() {
     });
 
     dashboardCalendar.render();
+
+    // Force layout recalculation
+    setTimeout(() => {
+      dashboardCalendar.updateSize();
+    }, 100);
   }
 };
+
 // =============================
 // BASIC EVENT MODAL
 // =============================
 
-window.openCalendarModal = function(){
+window.openCalendarModal = function () {
 
   const modal = document.createElement('div');
   modal.style.position = 'fixed';
@@ -118,7 +144,7 @@ window.openCalendarModal = function(){
     const description = document.getElementById('cal-desc').value.trim();
     const event_date = document.getElementById('cal-date').value;
 
-    if(!title || !event_date){
+    if (!title || !event_date) {
       alert("Title and date required.");
       return;
     }
@@ -131,7 +157,7 @@ window.openCalendarModal = function(){
       event_type: 'manual'
     });
 
-    if(error){
+    if (error) {
       console.error(error);
       alert("Error saving event.");
       return;
@@ -141,24 +167,29 @@ window.openCalendarModal = function(){
     loadCalendarsSafe();
   };
 };
+
 // =============================
-// PAGE SWITCH HOOK
+// PAGE SWITCH HOOK (FIXED)
 // =============================
 
 const originalShowPage = window.showPage;
 
-window.showPage = function(name) {
+window.showPage = function (name) {
   originalShowPage(name);
 
   if (name === 'calendar' || name === 'dashboard') {
     setTimeout(() => {
       loadCalendarsSafe();
-    }, 50);
+    }, 150); // Slightly longer delay ensures page is visible
   }
 };
-// Initialize calendar on first load
+
+// =============================
+// INITIAL LOAD
+// =============================
+
 document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     loadCalendarsSafe();
-  }, 200);
+  }, 300);
 });
