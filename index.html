@@ -636,6 +636,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="nav-item" onclick="showPage('import')"><span class="nav-icon">📥</span>Import / Export</div>
     <div class="nav-item" onclick="showPage('tax')"><span class="nav-icon">💰</span>Tax Report</div>
     <div class="nav-item" onclick="showPage('calendar')"><span class="nav-icon">📅</span>Calendar</div>
+    <div class="nav-item" onclick="showPage('tasks')"><span class="nav-icon">✅</span>Tasks<span class="nav-badge" id="nav-task-count" style="display:none">0</span></div>
     <div class="nav-divider"></div>
     <div class="nav-item" onclick="showPage('storefront')"><span class="nav-icon">🌐</span>My Storefront</div>
     <div class="nav-item" onclick="showPage('help')"><span class="nav-icon">❓</span>Help &amp; Setup</div>
@@ -679,16 +680,13 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
         <div class="panel" id="task-panel">
           <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
             <span>Tasks</span>
-            <button class="btn-gold btn-sm" onclick="openTaskModal()" style="font-size:0.65rem;padding:0.25rem 0.6rem">+ Add</button>
-          </div>
-          <div style="display:flex;gap:0;margin-bottom:1rem;border:1px solid var(--border);border-radius:6px;overflow:hidden">
-            <button class="task-tab active" id="ttab-all"      onclick="setTaskTab('all')"      style="flex:1">All</button>
-            <button class="task-tab"        id="ttab-todo"     onclick="setTaskTab('todo')"     style="flex:1;border-left:1px solid var(--border)">To Do</button>
-            <button class="task-tab"        id="ttab-progress" onclick="setTaskTab('progress')" style="flex:1;border-left:1px solid var(--border)">Active</button>
-            <button class="task-tab"        id="ttab-done"     onclick="setTaskTab('done')"     style="flex:1;border-left:1px solid var(--border)">Done</button>
+            <div style="display:flex;gap:0.4rem;align-items:center">
+              <button class="btn-outline btn-sm" onclick="showPage('tasks')" style="font-size:0.6rem;padding:0.2rem 0.5rem">View All →</button>
+              <button class="btn-gold btn-sm" onclick="openTaskModal()" style="font-size:0.65rem;padding:0.25rem 0.6rem">+ Add</button>
+            </div>
           </div>
           <div id="task-list"></div>
-          <div id="task-empty" style="display:none;text-align:center;padding:2rem 0;color:var(--text3);font-size:0.78rem">No tasks yet — tap + Add to create one</div>
+          <div id="task-empty" style="display:none;text-align:center;padding:1.5rem 0;color:var(--text3);font-size:0.78rem">No tasks yet — tap + Add to create one</div>
         </div>
       </div>
     </div>
@@ -1128,6 +1126,32 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
 
       <div class="card" style="padding:1rem">
         <div id="main-calendar"></div>
+      </div>
+    </div>
+
+
+    <!-- TASKS PAGE -->
+    <div class="page" id="page-tasks" style="display:none">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--text)">Tasks</div>
+          <div style="font-size:0.7rem;color:var(--text3);margin-top:0.2rem" id="tasks-subtitle">Loading...</div>
+        </div>
+        <button class="btn-gold" onclick="openTaskModal()" style="font-size:0.7rem;padding:0.45rem 1rem">+ New Task</button>
+      </div>
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border);overflow:hidden;max-width:400px">
+        <button class="task-tab active" id="ptab-all"      onclick="setTaskTab('all','page')"      style="flex:1">All</button>
+        <button class="task-tab"        id="ptab-todo"     onclick="setTaskTab('todo','page')"     style="flex:1;border-left:1px solid var(--border)">To Do</button>
+        <button class="task-tab"        id="ptab-progress" onclick="setTaskTab('progress','page')" style="flex:1;border-left:1px solid var(--border)">Active</button>
+        <button class="task-tab"        id="ptab-done"     onclick="setTaskTab('done','page')"     style="flex:1;border-left:1px solid var(--border)">Done</button>
+        <button class="task-tab"        id="ptab-archived" onclick="setTaskTab('archived','page')" style="flex:1;border-left:1px solid var(--border)">Archived</button>
+      </div>
+      <!-- Full task list -->
+      <div id="tasks-page-list"></div>
+      <div id="tasks-page-empty" style="display:none;text-align:center;padding:3rem 0;color:var(--text3)">
+        <div style="font-size:2rem;margin-bottom:0.75rem">✓</div>
+        <div style="font-size:0.88rem">No tasks here — add one with the button above</div>
       </div>
     </div>
 
@@ -1794,7 +1818,7 @@ async function showApp(){
   document.getElementById('app-screen').classList.remove('visible');
   const profileComplete=await loadUserProfile();
   await loadAllData();
-  renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();
+  renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();renderTasksPage();
   document.getElementById('loading-screen').classList.remove('visible');
   document.getElementById('app-screen').classList.add('visible');
   showPage('dashboard');
@@ -1953,7 +1977,9 @@ function renderInventory(){
     const sub=[w.ref,w.serial?'SN:'+w.serial:'',w.dial_color,w.case_size].filter(Boolean).join(' · ');
     const plat=Array.isArray(w.platform)?w.platform.join(', '):(w.platform||'—');
     const si=w.stage_index!=null?w.stage_index:null;
-    const stageBadge=si!=null?`<div style="margin-top:0.4rem"><span class="stage-badge stage-${si}"><span class="stage-dot"></span>${STAGES[si]}</span></div>`:'';
+    const inPostSale=si!=null&&si>=5&&si<=8;
+    const saleBanner=inPostSale?`<div style="display:inline-block;font-size:0.48rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:#000;background:var(--gold);padding:0.1rem 0.4rem;margin-top:0.3rem;margin-right:0.3rem;">SALE IN PROGRESS</div>`:'';
+    const stageBadge=si!=null?`<div style="margin-top:0.4rem">${saleBanner}<span class="stage-badge stage-${si}"><span class="stage-dot"></span>${STAGES[si]}</span></div>`:'';
     return`<div class="inv-row" onclick="editWatch('${w.id}')">
       <div><div class="inv-row-brand">${w.brand||''}${w.year?' · '+w.year:''}</div><div class="inv-row-model">${w.model||''}</div><div class="inv-row-sub">${sub||'—'}</div>${stageBadge}</div>
       <div class="inv-row-val gold">${fmt(b)}</div>
@@ -2628,13 +2654,13 @@ const STAGES=[
   'In Hand — Cleaning / Service',
   'Photography / Prep for Listing',
   'Listed — Active on Platforms',
-  'Offer Accepted — Pending Auth',
-  'Authentication — Shipped to Auth',
-  'Awaiting Payment from Buyer',
-  'Shipped to Buyer',
-  'Closed / Complete',
+  'Sale Agreed — Awaiting Shipment',
+  'Sent to Authentication',
+  'Authentication Complete — Awaiting Payment',
+  'Payment Received — Shipping to Buyer',
+  'Paid & Done — Closing Out',
 ];
-const STAGE_ICONS=['💳','📦','🔧','📸','🏷️','🤝','🔍','⏳','🚚','✅'];
+const STAGE_ICONS=['💳','📦','🔧','📸','🏷️','🤝','🔐','💰','🚚','✅'];
 
 function buildStageSelector(selectedIdx){
   const el=document.getElementById('f-stage-selector');if(!el)return;
@@ -2728,6 +2754,16 @@ async function saveWatch(){
   await db.from('inventory').update({photo_urls:photoUrls}).eq('id',savedId);
   const idx=inventory.findIndex(w=>w.id===savedId);if(idx!==-1)inventory[idx].photo_urls=photoUrls;
   btn.disabled=false;btn.textContent='Save Watch';
+  // If stage 9 (Paid & Done) — auto-complete sale and move to Sold History
+  if(data.stageIndex===9&&editingId){
+    closeModal();
+    if(confirm('Stage is “Paid & Done”. Move this watch to Sold History now?')){
+      await completeSale(savedId);
+    }else{
+      refreshAll();showToast('Watch updated.');
+    }
+    return;
+  }
   closeModal();refreshAll();showToast(editingId?'Watch updated.':'Watch added.');
 }
 
@@ -2748,7 +2784,6 @@ async function markAsSold(){
   const sellName=g('f-sell-name-sell')||row.sell_name||'';
   const sellPhone=g('f-sell-phone-sell')||row.sell_phone||'';
   const sellEmail=g('f-sell-email-sell')||row.sell_email||'';
-  // Auto-create buyer contact (separate from source contact)
   let buyerContactId=null;
   if(sellName){
     const existing=contacts.find(c=>c.name.toLowerCase()===sellName.toLowerCase());
@@ -2758,41 +2793,62 @@ async function markAsSold(){
       if(nc){contacts.unshift(nc);buyerContactId=nc.id;updateNavBadges();}
     }
   }
-  const sourceContactId = row.source_contact_id || row.contact_id || null;
-  const soldRow={
-    user_id:currentUser.id,
-    source_contact_id:sourceContactId,
-    buyer_contact_id:buyerContactId,
-    contact_id:buyerContactId||sourceContactId||null,
-    brand:row.brand,model:row.model,ref:row.ref,year:row.year,serial:row.serial,
-    purchase_date:row.purchase_date,
-    sale_date:document.getElementById('f-sale-date').value||new Date().toISOString().split('T')[0],
-    purchase_price:row.purchase_price,tax:row.tax,shipping_in:row.shipping_in,other_fees:row.other_fees,
+  // Move to stage 5 "Sale Agreed" — stays in inventory, shows Sold on storefront
+  const updates={
+    stage_index:5,
     sold_price:soldPrice,
+    sale_date:document.getElementById('f-sale-date').value||new Date().toISOString().split('T')[0],
     platform_fee:parseFloat(document.getElementById('f-platform-fee').value)||0,
     payment_fee:parseFloat(document.getElementById('f-payment-fee').value)||0,
     shipping_out:parseFloat(document.getElementById('f-shipping-out').value)||0,
-    platform:getPlatforms('f-sale-platform-checks').length?getPlatforms('f-sale-platform-checks'):row.platform,
-    notes:row.notes,condition:row.condition,box_papers:row.box_papers,
+    sell_name:sellName,sell_phone:sellPhone,sell_email:sellEmail,
+    buyer_contact_id:buyerContactId,
+  };
+  if(getPlatforms('f-sale-platform-checks').length) updates.platform=getPlatforms('f-sale-platform-checks');
+  const{error}=await db.from('inventory').update(updates).eq('id',editingId);
+  if(error){showToast('Error: '+error.message);return;}
+  const idx=inventory.findIndex(w=>w.id===editingId);
+  if(idx!==-1) inventory[idx]={...inventory[idx],...updates};
+  closeModal();refreshAll();
+  showToast(`${row.brand} ${row.model} marked Sale Agreed — still in pipeline.`);
+}
+
+// Called when stage advances to 9 "Paid & Done" — moves watch to Sold History
+async function completeSale(watchId){
+  const row=inventory.find(w=>w.id===watchId);if(!row)return;
+  if(!row.sold_price){showToast('No sale price recorded. Edit the watch first.');return;}
+  const sourceContactId=row.source_contact_id||row.contact_id||null;
+  const soldRow={
+    user_id:currentUser.id,
+    source_contact_id:sourceContactId,
+    buyer_contact_id:row.buyer_contact_id||null,
+    contact_id:row.buyer_contact_id||sourceContactId||null,
+    brand:row.brand,model:row.model,ref:row.ref,year:row.year,serial:row.serial,
+    purchase_date:row.purchase_date,
+    sale_date:row.sale_date||new Date().toISOString().split('T')[0],
+    purchase_price:row.purchase_price,tax:row.tax,shipping_in:row.shipping_in,other_fees:row.other_fees,
+    sold_price:row.sold_price,
+    platform_fee:row.platform_fee||0,payment_fee:row.payment_fee||0,shipping_out:row.shipping_out||0,
+    platform:row.platform,notes:row.notes,condition:row.condition,box_papers:row.box_papers,
     case_size:row.case_size,case_material:row.case_material,movement:row.movement,
     dial_color:row.dial_color,bezel_color:row.bezel_color,bracelet_type:row.bracelet_type,bracelet_color:row.bracelet_color,
     buy_name:row.buy_name,buy_phone:row.buy_phone,buy_email:row.buy_email,buy_location:row.buy_location,
-    sell_name:sellName,sell_phone:sellPhone,sell_email:sellEmail,sell_location:row.sell_location||'',
+    sell_name:row.sell_name,sell_phone:row.sell_phone,sell_email:row.sell_email,sell_location:row.sell_location||'',
     photo_urls:row.photo_urls||[],
   };
   const[ins,del]=await Promise.all([
     db.from('sold_inventory').insert(soldRow).select().single(),
-    db.from('inventory').delete().eq('id',editingId)
+    db.from('inventory').delete().eq('id',watchId)
   ]);
   if(ins.error){showToast('Error: '+ins.error.message);return;}
   soldWatches.unshift(ins.data);
-  inventory=inventory.filter(w=>w.id!==editingId);
+  inventory=inventory.filter(w=>w.id!==watchId);
   const p=soldNetProfit(ins.data);
-  closeModal();refreshAll();populateContactDropdowns();
-  showToast(`${row.brand} ${row.model} sold · Profit: ${fmt(p)}`);
+  refreshAll();populateContactDropdowns();
+  showToast(`${row.brand} ${row.model} complete! Profit: ${fmt(p)} — moved to Sold History.`);
 }
 
-function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();}
+function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();renderTasks();renderTasksPage();updateTaskBadge();}
 
 // ── SWATCHES ──────────────────────────────────────
 const DIAL_COLORS=[{hex:'#1a1a1a',name:'Black'},{hex:'#2c3e6b',name:'Blue'},{hex:'#1e4d3b',name:'Green'},{hex:'#f5f0e8',name:'White/Cream'},{hex:'#c9a84c',name:'Gold/Champagne'},{hex:'#8b7355',name:'Brown/Chocolate'},{hex:'#7b3f3f',name:'Burgundy/Wine'},{hex:'#9e9e9e',name:'Silver/Grey'},{hex:'#4a7fa5',name:'Slate Blue'},{hex:'#2d5a3d',name:'Olive Green'},{hex:'#d4a5a5',name:'Pink/Rose'},{hex:'#f2f2f2',name:'Panda/White'}];
@@ -4875,129 +4931,200 @@ async function deleteCalendarEvent(id) {
 
 // ── TASKS ──────────────────────────────────────────────────────────────────────────────
 
+// ── TASKS ─────────────────────────────────────────────────────────────────
 let tasks = [];
 let taskTab = 'all';
+const TASK_DONE_LIMIT = 25;
+
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 async function loadTasks() {
   try {
     const { data } = await db.from('tasks').select('*')
-      .eq('user_id', currentUser.id)
-      .order('created_at', { ascending: false });
+      .eq('user_id', currentUser.id).order('created_at', { ascending: false });
     tasks = data || [];
-  } catch(e) {
-    try { tasks = JSON.parse(localStorage.getItem('dt_tasks') || '[]'); } catch(e2) { tasks = []; }
+  } catch(e) { tasks = []; }
+  await autoArchiveOldDone();
+  renderTasks(); renderTasksPage(); updateTaskBadge();
+}
+
+async function autoArchiveOldDone() {
+  var doneTasks = tasks.filter(t => t.status === 'done');
+  if (doneTasks.length <= TASK_DONE_LIMIT) return;
+  doneTasks.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  var toArchive = doneTasks.slice(TASK_DONE_LIMIT);
+  for (var t of toArchive) {
+    t.status = 'archived';
+    try { await db.from('tasks').update({status:'archived'}).eq('id', t.id); } catch(e) {}
   }
-  renderTasks();
 }
 
-function saveTasks() {
-  try { localStorage.setItem('dt_tasks', JSON.stringify(tasks)); } catch(e) {}
+function updateTaskBadge() {
+  var active = tasks.filter(t => t.status==='todo'||t.status==='progress').length;
+  var badge = document.getElementById('nav-task-count');
+  if(badge){ badge.textContent=active; badge.style.display=active>0?'inline-flex':'none'; }
 }
 
-function setTaskTab(tab) {
+function setTaskTab(tab, context) {
   taskTab = tab;
-  document.querySelectorAll('.task-tab').forEach(b => b.classList.remove('active'));
-  var el = document.getElementById('ttab-' + tab);
-  if (el) el.classList.add('active');
-  renderTasks();
+  ['ttab','ptab'].forEach(prefix => {
+    ['all','todo','progress','done','archived'].forEach(t => {
+      var el = document.getElementById(prefix+'-'+t);
+      if(el) el.classList.toggle('active', t===tab);
+    });
+  });
+  renderTasks(); renderTasksPage();
 }
 
-function escHtml(s) {
-  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function buildTaskItem(t, fullPage) {
+  var LABELS = {todo:'To Do',progress:'In Progress',done:'Done',archived:'Archived'};
+  var isDone = t.status==='done'||t.status==='archived';
+  var editBtn = fullPage ? '<button class="task-delete" onclick="openEditTaskModal(''+t.id+'')" title="Edit" style="opacity:1;font-size:0.8rem;margin-right:2px">✎</button>' : '';
+  return '<div class="task-item" id="task-'+t.id+'">'
+    +'<button class="task-status-btn '+t.status+'" onclick="cycleTask(''+t.id+'')" title="Click to advance status"></button>'
+    +'<div class="task-body" style="cursor:pointer" onclick="'+(fullPage?'openEditTaskModal(''+t.id+'')':'showPage('tasks')')+'">'
+    +'<div class="task-title-text'+(isDone?' done':'')+'">'+ escHtml(t.title) +'</div>'
+    +(t.notes?'<div class="task-note">'+escHtml(t.notes)+'</div>':'')
+    +'<div class="task-status-label '+t.status+'">'+(LABELS[t.status]||t.status)+'</div>'
+    +'</div>'
+    +editBtn
+    +'<button class="task-delete" onclick="deleteTask(''+t.id+'')" title="Delete">✕</button>'
+    +'</div>';
 }
 
 function renderTasks() {
   var list = document.getElementById('task-list');
   var empty = document.getElementById('task-empty');
-  if (!list) return;
-  var ORDER = { todo:0, progress:1, done:2 };
-  var LABELS = { todo:'To Do', progress:'In Progress', done:'Done' };
-  var filtered = tasks.filter(function(t){ return taskTab==='all' || t.status===taskTab; });
-  filtered.sort(function(a,b){ return (ORDER[a.status]||0)-(ORDER[b.status]||0); });
-  if (!filtered.length) {
-    list.innerHTML = '';
-    if (empty) empty.style.display = 'block';
-    return;
+  if(!list) return;
+  var active = tasks.filter(t=>t.status==='todo'||t.status==='progress');
+  active.sort((a,b)=>({todo:0,progress:1}[a.status]||0)-({todo:0,progress:1}[b.status]||0));
+  var recentDone = tasks.filter(t=>t.status==='done').slice(0,3);
+  var shown = [...active.slice(0,5), ...recentDone];
+  if(!shown.length){ list.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  list.innerHTML = shown.map(t=>buildTaskItem(t,false)).join('');
+}
+
+function renderTasksPage() {
+  var list = document.getElementById('tasks-page-list');
+  var empty = document.getElementById('tasks-page-empty');
+  if(!list) return;
+  var filtered = taskTab==='all' ? tasks.filter(t=>t.status!=='archived') : tasks.filter(t=>t.status===taskTab);
+  var ORDER = {todo:0,progress:1,done:2,archived:3};
+  filtered.sort((a,b)=>{
+    var od=(ORDER[a.status]||0)-(ORDER[b.status]||0);
+    return od!==0?od:new Date(b.created_at)-new Date(a.created_at);
+  });
+  var sub = document.getElementById('tasks-subtitle');
+  if(sub){
+    var ac=tasks.filter(t=>t.status==='todo'||t.status==='progress').length;
+    var dc=tasks.filter(t=>t.status==='done').length;
+    sub.textContent=ac+' active · '+dc+' completed';
   }
-  if (empty) empty.style.display = 'none';
-  list.innerHTML = filtered.map(function(t) {
-    return '<div class="task-item" id="task-'+t.id+'">'
-      +'<button class="task-status-btn '+t.status+'" onclick="cycleTask(\''+t.id+'\')" title="Click to advance status"></button>'
-      +'<div class="task-body">'
-      +'<div class="task-title-text'+(t.status==='done'?' done':'')+'">'+ escHtml(t.title) +'</div>'
-      +(t.notes ? '<div class="task-note">'+escHtml(t.notes)+'</div>' : '')
-      +'<div class="task-status-label '+t.status+'">'+LABELS[t.status]+'</div>'
-      +'</div>'
-      +'<button class="task-delete" onclick="deleteTask(\''+t.id+'\')" title="Delete">✕</button>'
-      +'</div>';
-  }).join('');
+  if(!filtered.length){ list.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  var activeItems=filtered.filter(t=>t.status==='todo'||t.status==='progress');
+  var doneItems=filtered.filter(t=>t.status==='done');
+  var archivedItems=filtered.filter(t=>t.status==='archived');
+  var html='';
+  if(activeItems.length) html+=activeItems.map(t=>buildTaskItem(t,true)).join('');
+  if(doneItems.length){
+    if(activeItems.length) html+='<div style="font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);padding:1rem 0 0.5rem;border-top:1px solid var(--border);margin-top:0.5rem">Completed</div>';
+    html+=doneItems.map(t=>buildTaskItem(t,true)).join('');
+  }
+  if(archivedItems.length&&taskTab==='archived'){
+    html+='<div style="font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);padding:1rem 0 0.5rem;border-top:1px solid var(--border);margin-top:0.5rem">Archived (auto)</div>';
+    html+=archivedItems.map(t=>buildTaskItem(t,true)).join('');
+  }
+  list.innerHTML=html;
 }
 
 async function cycleTask(id) {
-  var NEXT = { todo:'progress', progress:'done', done:'todo' };
-  var t = tasks.find(function(x){ return x.id===id; });
-  if (!t) return;
-  t.status = NEXT[t.status] || 'todo';
-  renderTasks();
-  saveTasks();
-  try { await db.from('tasks').update({ status: t.status }).eq('id', id); } catch(e) {}
+  var NEXT={todo:'progress',progress:'done',done:'todo',archived:'todo'};
+  var t=tasks.find(x=>x.id===id); if(!t)return;
+  t.status=NEXT[t.status]||'todo';
+  if(t.status==='done') await autoArchiveOldDone();
+  renderTasks(); renderTasksPage(); updateTaskBadge();
+  try { await db.from('tasks').update({status:t.status}).eq('id',id); } catch(e){}
 }
 
 async function deleteTask(id) {
-  tasks = tasks.filter(function(t){ return t.id!==id; });
-  renderTasks();
-  saveTasks();
-  try { await db.from('tasks').delete().eq('id', id); } catch(e) {}
+  if(!confirm('Delete this task?')) return;
+  tasks=tasks.filter(t=>t.id!==id);
+  renderTasks(); renderTasksPage(); updateTaskBadge();
+  try { await db.from('tasks').delete().eq('id',id); } catch(e){}
 }
 
-function openTaskModal() {
-  var overlay = document.createElement('div');
-  overlay.id = 'task-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999';
-  overlay.innerHTML = '<div style="background:var(--charcoal);border:1px solid var(--border);padding:2rem;border-radius:12px;width:420px;max-width:95%;box-shadow:0 20px 50px rgba(0,0,0,0.5)">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">'
-    +'<div style="font-family:\'Playfair Display\',serif;font-size:1.2rem;color:var(--text)">New Task</div>'
-    +'<button onclick="document.getElementById(\'task-overlay\').remove()" style="background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer">✕</button>'
+function openTaskModal(editId) {
+  var existing=editId?tasks.find(t=>t.id===editId):null;
+  var overlay=document.createElement('div');
+  overlay.id='task-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+  var initStatus=existing?(existing.status==='archived'?'done':existing.status):'todo';
+  overlay.innerHTML='<div style="background:#1a1a1a;border:1px solid var(--border2);padding:2rem;width:500px;max-width:100%;box-shadow:0 30px 80px rgba(0,0,0,0.6)">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">'
+    +'<div style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--text)">'+(existing?'Edit Task':'New Task')+'</div>'
+    +'<button onclick="document.getElementById('task-overlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer;line-height:1">✕</button>'
     +'</div>'
-    +'<div style="margin-bottom:0.75rem"><label class="form-label">Task *</label>'
-    +'<input class="form-input" id="task-title-input" placeholder="e.g. List Rolex on Chrono24..."></div>'
-    +'<div style="margin-bottom:0.75rem"><label class="form-label">Notes (optional)</label>'
-    +'<textarea class="form-textarea" id="task-notes-input" placeholder="Any details..." style="min-height:60px"></textarea></div>'
-    +'<div style="margin-bottom:1.25rem"><label class="form-label">Status</label>'
-    +'<select class="form-select" id="task-status-input">'
-    +'<option value="todo">To Do</option>'
-    +'<option value="progress">In Progress</option>'
-    +'<option value="done">Done</option>'
-    +'</select></div>'
-    +'<div style="display:flex;justify-content:flex-end;gap:0.5rem">'
-    +'<button class="btn-outline" onclick="document.getElementById(\'task-overlay\').remove()">Cancel</button>'
-    +'<button class="btn-gold" onclick="saveTask(this)">Save Task</button>'
-    +'</div></div>';
+    +'<div style="margin-bottom:1rem"><label class="form-label">Task Title *</label>'
+    +'<input class="form-input" id="task-title-input" placeholder="e.g. List Rolex on Chrono24..." value="'+escHtml(existing?existing.title:'')+'"></div>'
+    +'<div style="margin-bottom:1.25rem"><label class="form-label">Notes</label>'
+    +'<textarea class="form-textarea" id="task-notes-input" placeholder="Add any details, links, or reminders..." style="min-height:100px;resize:vertical">'+escHtml(existing?existing.notes||'':'')+'</textarea></div>'
+    +'<div style="margin-bottom:1.5rem"><label class="form-label">Status</label>'
+    +'<div style="display:flex;gap:0.5rem;margin-top:0.5rem">'
+    +'<div id="tstat-todo" onclick="setModalStatus('todo')" style="flex:1;text-align:center;padding:0.55rem;border:1px solid var(--border);cursor:pointer;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;transition:all 0.15s">To Do</div>'
+    +'<div id="tstat-progress" onclick="setModalStatus('progress')" style="flex:1;text-align:center;padding:0.55rem;border:1px solid var(--border);cursor:pointer;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;transition:all 0.15s">Active</div>'
+    +'<div id="tstat-done" onclick="setModalStatus('done')" style="flex:1;text-align:center;padding:0.55rem;border:1px solid var(--border);cursor:pointer;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;transition:all 0.15s">Done</div>'
+    +'</div></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center">'
+    +(existing?'<button onclick="deleteTask(''+existing.id+'');document.getElementById('task-overlay').remove()" style="background:none;border:1px solid #c0392b;color:#e74c3c;padding:0.4rem 0.8rem;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;cursor:pointer">Delete</button>':'<span></span>')
+    +'<div style="display:flex;gap:0.5rem">'
+    +'<button class="btn-outline" onclick="document.getElementById('task-overlay').remove()">Cancel</button>'
+    +'<button class="btn-gold" id="task-save-btn" onclick="saveTask(this,''+(existing?existing.id:'')+'')">Save Task</button>'
+    +'</div></div>'
+    +'</div>';
   document.body.appendChild(overlay);
-  setTimeout(function(){ var el=document.getElementById('task-title-input'); if(el)el.focus(); }, 50);
+  setModalStatus(initStatus);
+  setTimeout(function(){var el=document.getElementById('task-title-input');if(el){el.focus();el.setSelectionRange(9999,9999);}},50);
 }
 
-async function saveTask(btn) {
-  var title = document.getElementById('task-title-input').value.trim();
-  var notes = document.getElementById('task-notes-input').value.trim();
-  var status = document.getElementById('task-status-input').value;
-  if (!title) { showToast('Task title is required.'); return; }
-  btn.disabled = true; btn.textContent = 'Saving...';
-  var newTask = {
-    id: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(),
-    user_id: currentUser.id,
-    title: title, notes: notes || null, status: status,
-    created_at: new Date().toISOString()
-  };
-  try {
-    var res = await db.from('tasks').insert(newTask).select().single();
-    if (!res.error && res.data) newTask.id = res.data.id;
-  } catch(e) {}
-  tasks.unshift(newTask);
-  saveTasks();
-  var o = document.getElementById('task-overlay'); if(o) o.remove();
-  showToast('Task saved.');
-  renderTasks();
+function openEditTaskModal(id){openTaskModal(id);}
+
+function setModalStatus(s) {
+  ['todo','progress','done'].forEach(function(v){
+    var el=document.getElementById('tstat-'+v); if(!el)return;
+    if(v===s){el.style.borderColor='var(--gold)';el.style.background='rgba(201,168,76,0.12)';el.style.color='var(--gold)';}
+    else{el.style.borderColor='var(--border)';el.style.background='none';el.style.color='var(--text3)';}
+  });
+  var h=document.getElementById('task-status-hidden');
+  if(!h){h=document.createElement('input');h.type='hidden';h.id='task-status-hidden';document.body.appendChild(h);}
+  h.value=s;
+}
+
+async function saveTask(btn, editId) {
+  var title=document.getElementById('task-title-input').value.trim();
+  var notes=document.getElementById('task-notes-input').value.trim();
+  var statusEl=document.getElementById('task-status-hidden');
+  var status=statusEl?statusEl.value:'todo';
+  if(!title){showToast('Task title is required.');return;}
+  btn.disabled=true; btn.textContent='Saving...';
+  if(editId){
+    var t=tasks.find(x=>x.id===editId);
+    if(t){t.title=title;t.notes=notes||null;t.status=status;}
+    try{await db.from('tasks').update({title,notes:notes||null,status}).eq('id',editId);}catch(e){}
+  } else {
+    var newTask={
+      id:(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(),
+      user_id:currentUser.id,title:title,notes:notes||null,status:status,
+      created_at:new Date().toISOString()
+    };
+    try{var res=await db.from('tasks').insert(newTask).select().single();if(!res.error&&res.data)newTask.id=res.data.id;}catch(e){}
+    tasks.unshift(newTask);
+    if(status==='done') await autoArchiveOldDone();
+  }
+  var o=document.getElementById('task-overlay');if(o)o.remove();
+  showToast(editId?'Task updated.':'Task saved.');
+  renderTasks();renderTasksPage();updateTaskBadge();
 }
 
 </script>
@@ -5007,6 +5134,7 @@ async function saveTask(btn) {
 <div id="more-menu">
   <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
   <div class="more-item" onclick="closeMore();showPage('calendar')"><span class="more-icon">📅</span>Calendar</div>
+  <div class="more-item" onclick="closeMore();showPage('tasks')"><span class="more-icon">✅</span>Tasks</div>
   <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
   <div class="more-item" onclick="closeMore();showPage('import')"><span class="more-icon">📥</span>Import / Export</div>
   <div class="more-item" onclick="closeMore();showPage('storefront')"><span class="more-icon">🌐</span>My Storefront</div>
