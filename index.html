@@ -2235,7 +2235,13 @@ function renderInventory(){
       <div class="inv-row-val">${w.listed_price?fmt(w.listed_price):'—'}</div>
       <div class="inv-row-val ${profit!=null?(profit>=0?'green':'red'):'muted'}">${profit!=null?fmt(profit):'—'}</div>
       <div class="inv-row-val"><span class="days-pill ${pillCls}">${d!==null?d+'d':'—'}</span></div>
-      <div class="inv-row-val muted">${plat}</div>
+      <div class="inv-row-val muted" style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+        <span>${plat}</span>
+        <span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end">
+          <button onclick="event.stopPropagation();moveInvToCollection('${w.id}')" style="background:rgba(184,148,58,0.15);border:1px solid var(--gold2);color:var(--gold2);padding:2px 6px;font-size:0.55rem;cursor:pointer;letter-spacing:0.05em;white-space:nowrap">💎 My Collection</button>
+          <button onclick="event.stopPropagation();moveInvToConsignment('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 6px;font-size:0.55rem;cursor:pointer;letter-spacing:0.05em;white-space:nowrap">🤝 Consignment</button>
+        </span>
+      </div>
     </div>`;
   }).join('');
 }
@@ -2273,6 +2279,7 @@ function renderSold(){
       <td>
         <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.6rem" onclick="event.stopPropagation();openSoldEditModal('${s.id}')">✏️ Edit</button>
         <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.6rem;margin-top:0.2rem" onclick="event.stopPropagation();unsellWatch('${s.id}')" title="Move back to inventory">↩ Unsell</button>
+        <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.6rem;margin-top:0.2rem;border-color:var(--gold2);color:var(--gold2)" onclick="event.stopPropagation();moveSoldToCollection('${s.id}')" title="Move to personal collection">💎 Keep It</button>
       </td>
     </tr>`;
   }).join('');
@@ -4047,9 +4054,11 @@ function renderCollection(){
         ${w.purchase_date?`<div style="grid-column:1/-1"><span style="color:var(--text2)">Purchased:</span> ${w.purchase_date}</div>`:''}
         ${w.notes?`<div style="grid-column:1/-1;color:var(--text2);font-style:italic;font-size:0.68rem;border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.25rem">${w.notes}</div>`:''}
       </div>
-      <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:0.5rem">
+      <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;flex-wrap:wrap">
         <button onclick="openCollectionModal('${w.id}')" style="flex:1;background:none;border:1px solid var(--border);color:var(--text2);padding:5px;font-size:0.65rem;cursor:pointer">Edit</button>
-        <button onclick="deleteCollWatch('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:5px 10px;font-size:0.65rem;cursor:pointer">Delete</button>
+        <button onclick="moveCollToInventory('${w.id}')" style="flex:1;background:rgba(184,148,58,0.1);border:1px solid var(--gold2);color:var(--gold2);padding:5px;font-size:0.65rem;cursor:pointer">📦 To Inventory</button>
+        <button onclick="moveCollToConsignment('${w.id}')" style="flex:1;background:none;border:1px solid var(--border);color:var(--text2);padding:5px;font-size:0.65rem;cursor:pointer">🤝 Consign</button>
+        <button onclick="deleteCollWatch('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:5px 10px;font-size:0.65rem;cursor:pointer">✕</button>
       </div>
     </div>`).join('');
 }
@@ -4267,6 +4276,224 @@ async function deleteCons(id){
   showToast('Deleted.');await loadConsignments();renderConsignments();
 }
 // ── END NEW FEATURES ──────────────────────────────
+
+// ══════════════════════════════════════════════════
+//  MOVE BETWEEN BUCKETS
+// ══════════════════════════════════════════════════
+
+// Helper — build a collection row from any watch object
+function watchToCollectionRow(w, source){
+  return {
+    user_id: currentUser.id,
+    brand: w.brand, model: w.model,
+    reference: w.ref||w.reference||null,
+    serial_number: w.serial||w.serial_number||null,
+    year: w.year||null,
+    purchase_price: w.purchase_price||null,
+    purchase_date: w.purchase_date||null,
+    estimated_value: w.listed_price||w.msrp||w.purchase_price||null,
+    condition: w.condition||null,
+    box_papers: w.box_papers||null,
+    notes: (w.notes?w.notes+'\n':'') + `[Moved from ${source} on ${new Date().toLocaleDateString()}]`
+  };
+}
+
+// Helper — build an inventory row from any watch object
+function watchToInventoryRow(w, source){
+  return {
+    user_id: currentUser.id,
+    brand: w.brand, model: w.model,
+    ref: w.ref||w.reference||null,
+    serial: w.serial||w.serial_number||null,
+    year: w.year||null,
+    purchase_date: w.purchase_date||null,
+    purchase_price: w.purchase_price||null,
+    tax: w.tax||null, shipping_in: w.shipping_in||null, other_fees: w.other_fees||null,
+    listed_price: null, msrp: w.msrp||null,
+    condition: w.condition||null, box_papers: w.box_papers||null,
+    case_size: w.case_size||null, case_material: w.case_material||null,
+    movement: w.movement||null, dial_color: w.dial_color||null,
+    bezel_color: w.bezel_color||null, bracelet_type: w.bracelet_type||null,
+    bracelet_color: w.bracelet_color||null,
+    photo_urls: w.photo_urls||[],
+    notes: (w.notes?w.notes+'\n':'') + `[Moved from ${source} on ${new Date().toLocaleDateString()}]`
+  };
+}
+
+// ── INVENTORY → COLLECTION ────────────────────────
+async function moveInvToCollection(id){
+  const w=inventory.find(x=>x.id===id);if(!w)return;
+  if(!confirm(`Move "${w.brand} ${w.model}" to your personal collection?\nIt will be removed from inventory.`))return;
+  const[ins,del]=await Promise.all([
+    db.from('personal_collection').insert(watchToCollectionRow(w,'Inventory')).select().single(),
+    db.from('inventory').delete().eq('id',id)
+  ]);
+  if(ins.error){showToast('Error: '+ins.error.message);return;}
+  inventory=inventory.filter(x=>x.id!==id);
+  myCollection.unshift(ins.data);
+  refreshAll();renderCollection();
+  document.getElementById('nav-coll-count').textContent=myCollection.length;
+  document.getElementById('nav-coll-count').style.display='';
+  showToast(`${w.brand} ${w.model} moved to your collection.`);
+}
+
+// ── INVENTORY → CONSIGNMENT ───────────────────────
+async function moveInvToConsignment(id){
+  const w=inventory.find(x=>x.id===id);if(!w)return;
+  // Pre-fill the consignment modal with watch data, type = out
+  consTab='out';
+  openConsModal();
+  setTimeout(()=>{
+    document.getElementById('cons-type').value='out';
+    document.getElementById('cons-brand').value=w.brand||'';
+    document.getElementById('cons-model').value=w.model||'';
+    document.getElementById('cons-ref').value=w.ref||'';
+    document.getElementById('cons-price').value=w.listed_price||'';
+    document.getElementById('cons-notes').value=`Watch ID from inventory: ${id}`;
+    // Store inv id so we can remove it when saved
+    document.getElementById('cons-modal').dataset.fromInventoryId=id;
+  },50);
+}
+
+// Override saveConsignment to handle inventory removal if coming from inventory
+const _origSaveCons=saveConsignment;
+saveConsignment=async function(){
+  const fromInvId=document.getElementById('cons-modal').dataset.fromInventoryId;
+  await _origSaveCons();
+  if(fromInvId&&document.getElementById('cons-modal').style.display==='none'){
+    // Consignment saved — ask if they want to remove from inventory
+    if(confirm('Remove this watch from active inventory now that it\'s on consignment?')){
+      await db.from('inventory').delete().eq('id',fromInvId);
+      inventory=inventory.filter(x=>x.id!==fromInvId);
+      refreshAll();showToast('Watch removed from inventory and logged as consignment.');
+    }
+    document.getElementById('cons-modal').dataset.fromInventoryId='';
+  }
+};
+
+// ── SOLD → COLLECTION ────────────────────────────
+async function moveSoldToCollection(id){
+  const s=soldWatches.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`Move "${s.brand} ${s.model}" to your personal collection?\nIt will be removed from sold history.`))return;
+  const[ins,del]=await Promise.all([
+    db.from('personal_collection').insert(watchToCollectionRow(s,'Sold History')).select().single(),
+    db.from('sold_inventory').delete().eq('id',id)
+  ]);
+  if(ins.error){showToast('Error: '+ins.error.message);return;}
+  soldWatches=soldWatches.filter(x=>x.id!==id);
+  myCollection.unshift(ins.data);
+  refreshAll();renderCollection();
+  document.getElementById('nav-coll-count').textContent=myCollection.length;
+  document.getElementById('nav-coll-count').style.display='';
+  showToast(`${s.brand} ${s.model} moved to your collection.`);
+}
+
+// ── COLLECTION → INVENTORY ────────────────────────
+async function moveCollToInventory(id){
+  const w=myCollection.find(x=>x.id===id);if(!w)return;
+  if(!confirm(`Move "${w.brand} ${w.model}" to inventory for sale?\nIt will be removed from your collection.`))return;
+  const[ins,del]=await Promise.all([
+    db.from('inventory').insert(watchToInventoryRow(w,'Personal Collection')).select().single(),
+    db.from('personal_collection').delete().eq('id',id)
+  ]);
+  if(ins.error){showToast('Error: '+ins.error.message);return;}
+  inventory.unshift(ins.data);
+  myCollection=myCollection.filter(x=>x.id!==id);
+  refreshAll();renderCollection();
+  const badge=document.getElementById('nav-coll-count');
+  if(myCollection.length){badge.textContent=myCollection.length;}else badge.style.display='none';
+  showToast(`${w.brand} ${w.model} moved to inventory.`);
+}
+
+// ── COLLECTION → CONSIGNMENT ─────────────────────
+async function moveCollToConsignment(id){
+  const w=myCollection.find(x=>x.id===id);if(!w)return;
+  openConsModal();
+  setTimeout(()=>{
+    document.getElementById('cons-type').value='out';
+    document.getElementById('cons-brand').value=w.brand||'';
+    document.getElementById('cons-model').value=w.model||'';
+    document.getElementById('cons-ref').value=w.reference||'';
+    document.getElementById('cons-notes').value=`From personal collection. Collection ID: ${id}`;
+    document.getElementById('cons-modal').dataset.fromCollectionId=id;
+  },50);
+}
+
+// Patch saveConsignment for collection removal too
+const _origSaveCons2=saveConsignment;
+saveConsignment=async function(){
+  const fromCollId=document.getElementById('cons-modal').dataset.fromCollectionId;
+  await _origSaveCons2();
+  if(fromCollId&&document.getElementById('cons-modal').style.display==='none'){
+    if(confirm('Remove this watch from your personal collection now that it\'s on consignment?')){
+      await db.from('personal_collection').delete().eq('id',fromCollId);
+      myCollection=myCollection.filter(x=>x.id!==fromCollId);
+      renderCollection();showToast('Watch removed from collection and logged as consignment.');
+    }
+    document.getElementById('cons-modal').dataset.fromCollectionId='';
+  }
+};
+
+// ── CONSIGNMENT → INVENTORY ───────────────────────
+// Add "Return to Inventory" button to consignment rows (patched into renderConsignments)
+const _origRenderCons=renderConsignments;
+renderConsignments=function(){
+  _origRenderCons();
+  // Patch action buttons to add Return to Inventory option
+  const list=document.getElementById('cons-list');
+  if(!list)return;
+  // Find all rows and add return button after del button
+  const filtered=allConsignments.filter(c=>c.type===consTab&&c.status==='active');
+  if(!filtered.length)return;
+  // Re-render with extra button
+  const STATUS_COLORS={active:'var(--gold2)',sold:'var(--green)',returned:'var(--text2)'};
+  list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+    <thead><tr style="background:var(--surface);border-bottom:1px solid var(--border)">
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Watch</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">${consTab==='holding'?'Owner':'Holder'}</th>
+      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Price</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Split</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Status</th>
+      <th style="padding:0.75rem 1rem;text-align:center;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Actions</th>
+    </tr></thead>
+    <tbody>${allConsignments.filter(c=>c.type===consTab).map((c,i)=>`<tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--bg)':'background:var(--surface)'}">
+      <td style="padding:0.75rem 1rem">
+        <div style="font-weight:500">${c.brand||''} ${c.model||''}</div>
+        ${c.reference?`<div style="font-size:0.68rem;color:var(--text2)">${c.reference}</div>`:''}
+        ${c.notes?`<div style="font-size:0.67rem;color:var(--text2);font-style:italic;margin-top:0.2rem">${c.notes}</div>`:''}
+      </td>
+      <td style="padding:0.75rem 1rem;font-weight:500">${c.other_party||'—'}</td>
+      <td style="padding:0.75rem 1rem;text-align:right">${c.agreed_price?'$'+(+c.agreed_price).toLocaleString():'—'}</td>
+      <td style="padding:0.75rem 1rem;color:var(--gold2)">${c.split_terms||'—'}</td>
+      <td style="padding:0.75rem 1rem"><span style="font-size:0.65rem;color:${STATUS_COLORS[c.status]||'var(--text2)'};text-transform:uppercase;letter-spacing:0.08em">${c.status||'active'}</span></td>
+      <td style="padding:0.75rem 1rem;text-align:center;white-space:nowrap;display:flex;flex-direction:column;gap:3px;align-items:center">
+        <button onclick="openConsModal('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.65rem;cursor:pointer;width:100%">Edit</button>
+        ${c.status==='active'?`<button onclick="returnConsToInventory('${c.id}')" style="background:rgba(184,148,58,0.1);border:1px solid var(--gold2);color:var(--gold2);padding:3px 10px;font-size:0.65rem;cursor:pointer;width:100%">📦 Return to Inv</button>`:''}
+        <button onclick="deleteCons('${c.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:3px 10px;font-size:0.65rem;cursor:pointer;width:100%">Delete</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+};
+
+async function returnConsToInventory(id){
+  const c=allConsignments.find(x=>x.id===id);if(!c)return;
+  if(!confirm(`Return "${c.brand} ${c.model}" to inventory?`))return;
+  const invRow=watchToInventoryRow({
+    brand:c.brand,model:c.model,ref:c.reference,
+    notes:`Returned from consignment with ${c.other_party}`
+  },'Consignment');
+  const[ins,upd]=await Promise.all([
+    db.from('inventory').insert(invRow).select().single(),
+    db.from('consignments').update({status:'returned'}).eq('id',id)
+  ]);
+  if(ins.error){showToast('Error: '+ins.error.message);return;}
+  inventory.unshift(ins.data);
+  const idx=allConsignments.findIndex(x=>x.id===id);
+  if(idx>=0)allConsignments[idx].status='returned';
+  refreshAll();renderConsignments();
+  showToast(`${c.brand} ${c.model} returned to inventory.`);
+}
+// ── END MOVE FUNCTIONS ────────────────────────────
 let currentInvoiceTab='sent';
 function switchInvoiceTab(tab){
   currentInvoiceTab=tab;
