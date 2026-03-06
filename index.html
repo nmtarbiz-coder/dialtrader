@@ -333,6 +333,26 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .invoice-status.partial{background:var(--gold-dim);color:var(--gold);}
 
 /* MODAL */
+.task-tab{background:none;border:none;padding:0.4rem 0.2rem;font-family:'Raleway',sans-serif;font-size:0.52rem;letter-spacing:0.06em;text-transform:uppercase;font-weight:700;color:var(--text3);cursor:pointer;width:100%;}
+.task-tab.active{background:var(--gold);color:#000;}
+.task-tab:hover:not(.active){color:var(--text);}
+.task-item{display:flex;align-items:flex-start;gap:0.6rem;padding:0.65rem 0;border-bottom:1px solid var(--border);}
+.task-item:last-child{border-bottom:none;}
+.task-status-btn{flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;padding:0;}
+.task-status-btn.progress{border-color:var(--gold);background:rgba(201,168,76,0.15);}
+.task-status-btn.progress::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--gold);display:block;}
+.task-status-btn.done{border-color:var(--green);background:var(--green);}
+.task-status-btn.done::after{content:'✓';font-size:0.65rem;color:#fff;font-weight:900;line-height:1;}
+.task-body{flex:1;min-width:0;}
+.task-title-text{font-size:0.82rem;font-weight:600;color:var(--text);line-height:1.3;}
+.task-title-text.done{text-decoration:line-through;color:var(--text3);}
+.task-note{font-size:0.65rem;color:var(--text3);margin-top:0.2rem;line-height:1.4;}
+.task-status-label{font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;margin-top:0.2rem;}
+.task-status-label.todo{color:var(--text3);}
+.task-status-label.progress{color:var(--gold);}
+.task-status-label.done{color:var(--green);}
+.task-delete{flex-shrink:0;background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.85rem;padding:2px 4px;opacity:0;transition:opacity 0.15s;}
+.task-item:hover .task-delete{opacity:1;}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center;padding:1rem;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border2);width:600px;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);}
@@ -600,6 +620,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>Dashboard</div>
     <div class="nav-item" onclick="showPage('inventory')"><span class="nav-icon">🕐</span>Inventory<span class="nav-badge" id="nav-inv-count">0</span></div>
     <div class="nav-item" onclick="showPage('sold')"><span class="nav-icon">✅</span>Sold History</div>
+    <div class="nav-item" onclick="showPage('tasks')"><span class="nav-icon">✅</span>Tasks<span class="nav-badge" id="nav-task-count" style="display:none">0</span></div>
     <div class="sidebar-section-label">Business</div>
     <div class="nav-item" onclick="showPage('contacts')"><span class="nav-icon">👤</span>Contacts<span class="nav-badge" id="nav-contact-count">0</span></div>
     <div class="nav-item" onclick="showPage('invoices')"><span class="nav-icon">📄</span>Invoices<span class="nav-badge" id="nav-invoice-count">0</span></div>
@@ -652,6 +673,13 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
           <div class="panel-title">Current Inventory</div>
           <table class="mini-table"><thead><tr><th>Watch</th><th>Cost Basis</th><th>Break Even</th><th>Days Held</th></tr></thead><tbody id="dash-inv-body"></tbody></table>
         </div>
+<div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Tasks</span>
+            <div style="display:flex;gap:0.4rem;align-items:center">
+              <button class="btn-outline btn-sm" onclick="showPage('tasks')" style="font-size:0.6rem;padding:0.2rem 0.5rem">View All →</button>
+              <button class="btn-gold btn-sm" onclick="openTaskModal()" style="font-size:0.65rem;padding:0.25rem 0.6rem">+ Add</button>
+            </div>
+          </div>
         <div class="panel">
           <div class="panel-title">Profit by Brand</div>
           <div id="dash-brand-bars"></div>
@@ -1384,6 +1412,31 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
   </div>
 </div>
     <!-- HELP PAGE -->
+<div class="page" id="page-tasks" style="display:none">
+      <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+        <div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--text)">Tasks</div>
+          <div style="font-size:0.7rem;color:var(--text3);margin-top:0.2rem" id="tasks-subtitle">Loading...</div>
+        </div>
+        <button class="btn-gold" onclick="openTaskModal()" style="font-size:0.7rem;padding:0.45rem 1rem">+ New Task</button>
+      </div>
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:0;margin-bottom:1.5rem;border:1px solid var(--border);overflow:hidden;max-width:400px">
+        <button class="task-tab active" id="ptab-all"      onclick="setTaskTab('all','page')"      style="flex:1">All</button>
+        <button class="task-tab"        id="ptab-todo"     onclick="setTaskTab('todo','page')"     style="flex:1;border-left:1px solid var(--border)">To Do</button>
+        <button class="task-tab"        id="ptab-progress" onclick="setTaskTab('progress','page')" style="flex:1;border-left:1px solid var(--border)">Active</button>
+        <button class="task-tab"        id="ptab-done"     onclick="setTaskTab('done','page')"     style="flex:1;border-left:1px solid var(--border)">Done</button>
+        <button class="task-tab"        id="ptab-archived" onclick="setTaskTab('archived','page')" style="flex:1;border-left:1px solid var(--border)">Archived</button>
+      </div>
+      <!-- Full task list -->
+      <div id="tasks-page-list"></div>
+      <div id="tasks-page-empty" style="display:none;text-align:center;padding:3rem 0;color:var(--text3)">
+        <div style="font-size:2rem;margin-bottom:0.75rem">✓</div>
+        <div style="font-size:0.88rem">No tasks here — add one with the button above</div>
+      </div>
+    </div>
+
+
     <div class="page" id="page-help" style="display:none">
       <div class="page-header"><div><div class="page-title">Help &amp; Setup</div><div class="page-subtitle">Guides, tutorials, and resources</div></div></div>
 
@@ -2047,7 +2100,7 @@ async function showApp(){
   document.getElementById('app-screen').classList.remove('visible');
   const profileComplete=await loadUserProfile();
   await loadAllData();
-  renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();
+  renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();renderTasksPage();
   await loadExpenses();renderExpenses();
   await loadMileage();renderMileage();
   await loadGoals();renderGoals();
@@ -2153,6 +2206,7 @@ function showPage(name){
   if(name==='contacts')renderContacts();
   if(name==='invoices')renderInvoices();
   if(name==='tax')renderTaxReport();
+  if(name==='tasks'){renderTasks();renderTasksPage();}
   if(name==='expenses')renderExpenses();
   if(name==='mileage')renderMileage();
   if(name==='goals')renderGoals();
@@ -3073,7 +3127,7 @@ async function markAsSold(){
   showToast(`${row.brand} ${row.model} sold · Profit: ${fmt(p)}`);
 }
 
-function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();}
+function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();renderTasks();renderTasksPage();updateTaskBadge();}
 
 // ── SWATCHES ──────────────────────────────────────
 const DIAL_COLORS=[{hex:'#1a1a1a',name:'Black'},{hex:'#2c3e6b',name:'Blue'},{hex:'#1e4d3b',name:'Green'},{hex:'#f5f0e8',name:'White/Cream'},{hex:'#c9a84c',name:'Gold/Champagne'},{hex:'#8b7355',name:'Brown/Chocolate'},{hex:'#7b3f3f',name:'Burgundy/Wine'},{hex:'#9e9e9e',name:'Silver/Grey'},{hex:'#4a7fa5',name:'Slate Blue'},{hex:'#2d5a3d',name:'Olive Green'},{hex:'#d4a5a5',name:'Pink/Rose'},{hex:'#f2f2f2',name:'Panda/White'}];
@@ -3530,6 +3584,273 @@ function exportTaxCSV(){
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download=`dialtrader-tax-${filterYear}-${new Date().toISOString().split('T')[0]}.csv`;a.click();
 }
+
+let tasks = [];
+let taskTab = 'all';
+const TASK_DONE_LIMIT = 25;
+
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function loadTasks() {
+  try {
+    const { data } = await db.from('tasks').select('*')
+      .eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    tasks = data || [];
+  } catch(e) { tasks = []; }
+  await autoArchiveOldDone();
+  renderTasks(); renderTasksPage(); updateTaskBadge();
+}
+
+async function autoArchiveOldDone() {
+  var doneTasks = tasks.filter(t => t.status === 'done');
+  if (doneTasks.length <= TASK_DONE_LIMIT) return;
+  doneTasks.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  var toArchive = doneTasks.slice(TASK_DONE_LIMIT);
+  for (var t of toArchive) {
+    t.status = 'archived';
+    try { await db.from('tasks').update({status:'archived'}).eq('id', t.id); } catch(e) {}
+  }
+}
+
+function updateTaskBadge() {
+  var active = tasks.filter(t => t.status==='todo'||t.status==='progress').length;
+  var badge = document.getElementById('nav-task-count');
+  if(badge){ badge.textContent=active; badge.style.display=active>0?'inline-flex':'none'; }
+}
+
+function setTaskTab(tab, context) {
+  taskTab = tab;
+  ['ttab','ptab'].forEach(prefix => {
+    ['all','todo','progress','done','archived'].forEach(t => {
+      var el = document.getElementById(prefix+'-'+t);
+      if(el) el.classList.toggle('active', t===tab);
+    });
+  });
+  renderTasks(); renderTasksPage();
+}
+
+function buildTaskItem(t, fullPage) {
+  var LABELS = {todo:'To Do',progress:'In Progress',done:'Done',archived:'Archived'};
+  var isDone = t.status==='done'||t.status==='archived';
+  var tid = t.id;
+  var editBtn = fullPage ? '<button class="task-delete" onclick="openEditTaskModal(\''+tid+'\')" title="Edit" style="opacity:1;font-size:0.8rem;margin-right:2px">&#9998;</button>' : '';
+  var clickAction = fullPage ? 'openEditTaskModal(\''+tid+'\')' : 'showPage(\'tasks\')';
+  return '<div class="task-item" id="task-'+tid+'">'
+    +'<button class="task-status-btn '+t.status+'" onclick="cycleTask(\''+tid+'\')" title="Click to advance status"></button>'
+    +'<div class="task-body" style="cursor:pointer" onclick="'+clickAction+'">'
+    +'<div class="task-title-text'+(isDone?' done':'')+'">'+ escHtml(t.title) +'</div>'
+    +(t.notes?'<div class="task-note">'+escHtml(t.notes)+'</div>':'')
+    +'<div class="task-status-label '+t.status+'">'+(LABELS[t.status]||t.status)+'</div>'
+    +'</div>'
+    +editBtn
+    +'<button class="task-delete" onclick="deleteTask(\''+tid+'\')" title="Delete">&#x2715;</button>'
+    +'</div>';
+}
+
+function renderTasks() {
+  var list = document.getElementById('task-list');
+  var empty = document.getElementById('task-empty');
+  if(!list) return;
+  var active = tasks.filter(t=>t.status==='todo'||t.status==='progress');
+  active.sort((a,b)=>({todo:0,progress:1}[a.status]||0)-({todo:0,progress:1}[b.status]||0));
+  var recentDone = tasks.filter(t=>t.status==='done').slice(0,3);
+  var shown = [...active.slice(0,5), ...recentDone];
+  if(!shown.length){ list.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  list.innerHTML = shown.map(t=>buildTaskItem(t,false)).join('');
+}
+
+function renderTasksPage() {
+  var list = document.getElementById('tasks-page-list');
+  var empty = document.getElementById('tasks-page-empty');
+  if(!list) return;
+  var filtered = taskTab==='all' ? tasks.filter(t=>t.status!=='archived') : tasks.filter(t=>t.status===taskTab);
+  var ORDER = {todo:0,progress:1,done:2,archived:3};
+  filtered.sort((a,b)=>{
+    var od=(ORDER[a.status]||0)-(ORDER[b.status]||0);
+    return od!==0?od:new Date(b.created_at)-new Date(a.created_at);
+  });
+  var sub = document.getElementById('tasks-subtitle');
+  if(sub){
+    var ac=tasks.filter(t=>t.status==='todo'||t.status==='progress').length;
+    var dc=tasks.filter(t=>t.status==='done').length;
+    sub.textContent=ac+' active · '+dc+' completed';
+  }
+  if(!filtered.length){ list.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  var activeItems=filtered.filter(t=>t.status==='todo'||t.status==='progress');
+  var doneItems=filtered.filter(t=>t.status==='done');
+  var archivedItems=filtered.filter(t=>t.status==='archived');
+  var html='';
+  if(activeItems.length) html+=activeItems.map(t=>buildTaskItem(t,true)).join('');
+  if(doneItems.length){
+    if(activeItems.length) html+='<div style="font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);padding:1rem 0 0.5rem;border-top:1px solid var(--border);margin-top:0.5rem">Completed</div>';
+    html+=doneItems.map(t=>buildTaskItem(t,true)).join('');
+  }
+  if(archivedItems.length&&taskTab==='archived'){
+    html+='<div style="font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text3);padding:1rem 0 0.5rem;border-top:1px solid var(--border);margin-top:0.5rem">Archived (auto)</div>';
+    html+=archivedItems.map(t=>buildTaskItem(t,true)).join('');
+  }
+  list.innerHTML=html;
+}
+
+async function cycleTask(id) {
+  var NEXT={todo:'progress',progress:'done',done:'todo',archived:'todo'};
+  var t=tasks.find(x=>x.id===id); if(!t)return;
+  t.status=NEXT[t.status]||'todo';
+  if(t.status==='done') await autoArchiveOldDone();
+  renderTasks(); renderTasksPage(); updateTaskBadge();
+  try { await db.from('tasks').update({status:t.status}).eq('id',id); } catch(e){}
+}
+
+async function deleteTask(id) {
+  if(!confirm('Delete this task?')) return;
+  tasks=tasks.filter(t=>t.id!==id);
+  renderTasks(); renderTasksPage(); updateTaskBadge();
+  try { await db.from('tasks').delete().eq('id',id); } catch(e){}
+}
+
+function openTaskModal(editId) {
+  var existing = editId ? tasks.find(function(t){return t.id===editId;}) : null;
+  var initStatus = existing ? (existing.status==='archived' ? 'done' : existing.status) : 'todo';
+  var eid = existing ? existing.id : '';
+
+  // Build HTML using an array to avoid quote escaping nightmares
+  var h = [];
+  h.push('<div style="background:#1a1a1a;border:1px solid var(--border2);padding:2rem;width:500px;max-width:100%;box-shadow:0 30px 80px rgba(0,0,0,0.6)">');
+  h.push('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">');
+  h.push('<div style="font-family:\'Playfair Display\',serif;font-size:1.25rem;color:var(--text)">' + (existing ? 'Edit Task' : 'New Task') + '</div>');
+  h.push('<button id="task-close-btn" style="background:none;border:none;color:var(--text2);font-size:1.3rem;cursor:pointer;line-height:1">&#x2715;</button>');
+  h.push('</div>');
+  h.push('<div style="margin-bottom:1rem"><label class="form-label">Task Title *</label>');
+  h.push('<input class="form-input" id="task-title-input" placeholder="e.g. List Rolex on Chrono24..." value="' + escHtml(existing ? existing.title : '') + '"></div>');
+  h.push('<div style="margin-bottom:1.25rem"><label class="form-label">Notes</label>');
+  h.push('<textarea class="form-textarea" id="task-notes-input" placeholder="Add any details, links, or reminders..." style="min-height:100px;resize:vertical">' + escHtml(existing ? (existing.notes||'') : '') + '</textarea></div>');
+  h.push('<div style="margin-bottom:1.5rem"><label class="form-label">Status</label>');
+  h.push('<div style="display:flex;gap:0.5rem;margin-top:0.5rem">');
+  h.push('<div id="tstat-todo" style="flex:1;text-align:center;padding:0.55rem;border:1px solid var(--border);cursor:pointer;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700">To Do</div>');
+  h.push('<div id="tstat-progress" style="flex:1;text-align:center;padding:0.55rem;border:1px solid var(--border);cursor:pointer;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700">Active</div>');
+  h.push('<div id="tstat-done" style="flex:1;text-align:center;padding:0.55rem;border:1px solid var(--border);cursor:pointer;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700">Done</div>');
+  h.push('</div></div>');
+  h.push('<div style="display:flex;justify-content:space-between;align-items:center">');
+  h.push(existing ? '<button id="task-delete-btn" style="background:none;border:1px solid #c0392b;color:#e74c3c;padding:0.4rem 0.8rem;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;cursor:pointer">Delete</button>' : '<span></span>');
+  h.push('<div style="display:flex;gap:0.5rem">');
+  h.push('<button id="task-cancel-btn" class="btn-outline">Cancel</button>');
+  h.push('<button id="task-save-btn" class="btn-gold">Save Task</button>');
+  h.push('</div></div></div>');
+
+  var overlay = document.createElement('div');
+  overlay.id = 'task-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;z-index:9999;padding:1rem';
+  overlay.innerHTML = h.join('');
+  document.body.appendChild(overlay);
+
+  // Wire up buttons via JS — no inline onclick quoting needed
+  var closeBtn = document.getElementById('task-close-btn');
+  var cancelBtn = document.getElementById('task-cancel-btn');
+  var saveBtn = document.getElementById('task-save-btn');
+  var delBtn = document.getElementById('task-delete-btn');
+  if (closeBtn) closeBtn.onclick = function(){ overlay.remove(); };
+  if (cancelBtn) cancelBtn.onclick = function(){ overlay.remove(); };
+  if (saveBtn) saveBtn.onclick = function(){ saveTask(saveBtn, eid); };
+  if (delBtn) delBtn.onclick = function(){ deleteTask(eid); overlay.remove(); };
+
+  // Wire status buttons
+  ['todo','progress','done'].forEach(function(s){
+    var el = document.getElementById('tstat-'+s);
+    if (el) el.onclick = function(){ setModalStatus(s); };
+  });
+
+  setModalStatus(initStatus);
+  setTimeout(function(){
+    var el = document.getElementById('task-title-input');
+    if (el){ el.focus(); el.setSelectionRange(9999,9999); }
+  }, 50);
+}
+
+function openEditTaskModal(id){openTaskModal(id);}
+
+function setModalStatus(s) {
+  ['todo','progress','done'].forEach(function(v){
+    var el=document.getElementById('tstat-'+v); if(!el)return;
+    if(v===s){el.style.borderColor='var(--gold)';el.style.background='rgba(201,168,76,0.12)';el.style.color='var(--gold)';}
+    else{el.style.borderColor='var(--border)';el.style.background='none';el.style.color='var(--text3)';}
+  });
+  var h=document.getElementById('task-status-hidden');
+  if(!h){h=document.createElement('input');h.type='hidden';h.id='task-status-hidden';document.body.appendChild(h);}
+  h.value=s;
+}
+
+async function saveTask(btn, editId) {
+  var title=document.getElementById('task-title-input').value.trim();
+  var notes=document.getElementById('task-notes-input').value.trim();
+  var statusEl=document.getElementById('task-status-hidden');
+  var status=statusEl?statusEl.value:'todo';
+  if(!title){showToast('Task title is required.');return;}
+  btn.disabled=true; btn.textContent='Saving...';
+  if(editId){
+    var t=tasks.find(x=>x.id===editId);
+    if(t){t.title=title;t.notes=notes||null;t.status=status;}
+    try{await db.from('tasks').update({title,notes:notes||null,status}).eq('id',editId);}catch(e){}
+  } else {
+    var newTask={
+      id:(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(),
+      user_id:currentUser.id,title:title,notes:notes||null,status:status,
+      created_at:new Date().toISOString()
+    };
+    try{var res=await db.from('tasks').insert(newTask).select().single();if(!res.error&&res.data)newTask.id=res.data.id;}catch(e){}
+    tasks.unshift(newTask);
+    if(status==='done') await autoArchiveOldDone();
+  }
+  var o=document.getElementById('task-overlay');if(o)o.remove();
+  showToast(editId?'Task updated.':'Task saved.');
+  renderTasks();renderTasksPage();updateTaskBadge();
+}
+
+</script>
+
+<!-- MORE MENU OVERLAY -->
+<div id="more-overlay" onclick="toggleMore()"></div>
+<div id="more-menu">
+  <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
+  <div class="more-item" onclick="closeMore();showPage('calendar')"><span class="more-icon">📅</span>Calendar</div>
+  <div class="more-item" onclick="closeMore();showPage('tasks')"><span class="more-icon">✅</span>Tasks</div>
+  <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
+  <div class="more-item" onclick="closeMore();showPage('import')"><span class="more-icon">📥</span>Import / Export</div>
+  <div class="more-item" onclick="closeMore();showPage('storefront')"><span class="more-icon">🌐</span>My Storefront</div>
+  <div class="more-item" onclick="closeMore();showPage('help')"><span class="more-icon">❓</span>Help &amp; Setup</div>
+  <div class="more-item" onclick="closeMore();showPage('settings')"><span class="more-icon">⚙️</span>Settings</div>
+  <div class="more-item" id="more-admin" style="display:none" onclick="closeMore();showPage('admin')"><span class="more-icon">🔑</span>Admin</div>
+  <div class="more-item" style="color:#888;border-top:1px solid rgba(255,255,255,0.1);margin-top:0.25rem" onclick="closeMore();doSignOut()"><span class="more-icon">↩</span>Sign Out</div>
+</div>
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav">
+  <div class="bnav-inner">
+    <button class="bnav-btn active" id="bnav-dashboard" onclick="bNav('dashboard')">
+      <svg class="bnav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="bnav-btn" id="bnav-inventory" onclick="bNav('inventory')">
+      <svg class="bnav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="3" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="21"/><line x1="3" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="21" y2="12"/></svg>
+      <span>Stock</span>
+    </button>
+    <button class="bnav-btn" id="bnav-contacts" onclick="bNav('contacts')">
+      <svg class="bnav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>People</span>
+    </button>
+    <button class="bnav-btn" id="bnav-invoices" onclick="bNav('invoices')">
+      <svg class="bnav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>Bills</span>
+    </button>
+    <button class="bnav-btn" id="bnav-more" onclick="toggleMore()">
+      <svg class="bnav-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <span>More</span>
+    </button>
+  </div>
+</nav>
+
+</body>
+</html>
 
 // ══════════════════════════════════════════════════
 //  EXPENSES
