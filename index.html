@@ -1411,19 +1411,19 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
   <div class="page-header">
     <div>
       <div class="page-title">Calendar</div>
-      <div class="page-subtitle">Events & reminders</div>
+      <div class="page-subtitle">Events &amp; reminders</div>
     </div>
     <div style="display:flex;gap:0.75rem;">
-  <button class="btn-outline" onclick="syncInventoryEvents()">Sync Inventory</button>
-  <button class="btn-gold" onclick="openCalendarEventModal()">+ Add Event</button>
-</div>
-
+      <button class="btn-outline" onclick="syncInventoryEvents()">Sync Inventory</button>
+      <button class="btn-gold" onclick="openCalendarEventModal()">+ Add Event</button>
+    </div>
+  </div>
   <div class="panel">
     <div id="main-calendar"></div>
   </div>
 </div>
     <!-- HELP PAGE -->
-<div class="page" id="page-tasks" style="display:none">
+<div class="page" id="page-tasks">
       <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
         <div>
           <div style="font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--text)">Tasks</div>
@@ -2258,7 +2258,7 @@ function showPage(name){
   if(name==='settings')populateSettingsPage();
   if(name==='help'){showHelp(currentHelpArticle);}
   if(name==='storefront')initStorefrontPage();
-  
+  if(name==='calendar')setTimeout(initCalendar,50);
 }
 
 // ── HELPERS ───────────────────────────────────────
@@ -2286,7 +2286,7 @@ function renderDashboard(){
   document.getElementById('stat-roi-val').textContent=fmtPct(avgROI);
   document.querySelectorAll('.hero-stat').forEach(s=>s.classList.add('loaded'));
   renderTasks();
-  setTimeout(initDashCalendar,100);
+  initDashCalendar();
 }
 
 // ── INVENTORY ─────────────────────────────────────
@@ -6303,14 +6303,15 @@ async function initCalendar() {
 
 async function initDashCalendar() {
   if (typeof FullCalendar === 'undefined') return;
-  const el = document.getElementById('dash-calendar');
+  const el = document.getElementById('dashboard-calendar');
   if (!el) return;
   if (_fcDash) { _fcDash.destroy(); _fcDash = null; }
   const events = await buildCalendarEvents();
   _fcDash = new FullCalendar.Calendar(el, {
     initialView: 'dayGridWeek',
-    height: 240,
-    headerToolbar: false,
+    height: 320,
+    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,dayGridWeek,timeGridDay' },
+    buttonText: { today: 'Today', month: 'Month', week: 'Week', day: 'Day' },
     events: events,
     eventClick: function(info) {
       const e = info.event;
@@ -6353,6 +6354,7 @@ async function buildCalendarEvents() {
 async function syncInventoryToCalendar() {
   showToast('Syncing watches to calendar...');
   await initCalendar();
+  await initDashCalendar();
   showToast('Calendar synced.');
 }
 
