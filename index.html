@@ -13,7 +13,6 @@
   // Wire/bank info is stored per-user in Settings → user_profiles.wire_info
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <style>
 .fc {
@@ -2203,14 +2202,23 @@ async function syncSoldContacts(){
 }
 
 async function loadAllData(){
-  const[invRes,soldRes,contactRes,invoiceRes,receivedRes]=await Promise.all([
-    db.from('inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-    db.from('sold_inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-    db.from('contacts').select('*').eq('user_id',currentUser.id).order('name',{ascending:true}),
-    db.from('invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-    db.from('received_invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
-  ]);
-  inventory=invRes.data||[];soldWatches=soldRes.data||[];contacts=contactRes.data||[];invoices=invoiceRes.data||[];receivedInvoices=receivedRes.data||[];
+  try{
+    const[invRes,soldRes,contactRes,invoiceRes,receivedRes]=await Promise.all([
+      db.from('inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      db.from('sold_inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      db.from('contacts').select('*').eq('user_id',currentUser.id).order('name',{ascending:true}),
+      db.from('invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+      db.from('received_invoices').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
+    ]);
+    inventory=invRes.data||[];soldWatches=soldRes.data||[];contacts=contactRes.data||[];invoices=invoiceRes.data||[];receivedInvoices=receivedRes.data||[];
+  }catch(e){
+    console.warn('loadAllData error, trying individually:',e.message);
+    try{const r=await db.from('inventory').select('*').eq('user_id',currentUser.id);inventory=r.data||[];}catch(e2){inventory=[];}
+    try{const r=await db.from('sold_inventory').select('*').eq('user_id',currentUser.id);soldWatches=r.data||[];}catch(e2){soldWatches=[];}
+    try{const r=await db.from('contacts').select('*').eq('user_id',currentUser.id);contacts=r.data||[];}catch(e2){contacts=[];}
+    try{const r=await db.from('invoices').select('*').eq('user_id',currentUser.id);invoices=r.data||[];}catch(e2){invoices=[];}
+    try{const r=await db.from('received_invoices').select('*').eq('user_id',currentUser.id);receivedInvoices=r.data||[];}catch(e2){receivedInvoices=[];}
+  }
   try{await loadTrash();}catch(e){}
   updateNavBadges();populateContactDropdowns();
 }
@@ -5099,12 +5107,10 @@ let userProfile={
 };
 
 async function loadUserProfile(){
-  const{data}=await db.from('user_profiles').select('*').eq('user_id',currentUser.id).single();
-  if(data){
-    userProfile={...userProfile,...data};
-    updateSidebarProfile();
-    return data.profile_complete;
-  }
+  try{
+    const{data}=await db.from('user_profiles').select('*').eq('user_id',currentUser.id).single();
+    if(data){userProfile={...userProfile,...data};updateSidebarProfile();return data.profile_complete;}
+  }catch(e){console.warn('loadUserProfile error:',e.message);}
   return false;
 }
 
