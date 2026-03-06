@@ -669,25 +669,22 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
       </div>
       <div class="dash-grid">
         <div class="panel">
-          <div class="panel-title">Current Inventory</div>
-          <table class="mini-table"><thead><tr><th>Watch</th><th>Cost Basis</th><th>Break Even</th><th>Days Held</th></tr></thead><tbody id="dash-inv-body"></tbody></table>
+          <div class="panel-title">This Week</div>
+          <div id="dashboard-calendar"></div>
         </div>
-<div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
+        <div class="panel">
+          <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center">
             <span>Tasks</span>
             <div style="display:flex;gap:0.4rem;align-items:center">
               <button class="btn-outline btn-sm" onclick="showPage('tasks')" style="font-size:0.6rem;padding:0.2rem 0.5rem">View All →</button>
               <button class="btn-gold btn-sm" onclick="openTaskModal()" style="font-size:0.65rem;padding:0.25rem 0.6rem">+ Add</button>
             </div>
           </div>
-        <div class="panel">
-          <div class="panel-title">Profit by Brand</div>
-          <div id="dash-brand-bars"></div>
+          <div id="dash-task-list"></div>
+          <div id="task-empty" style="display:none;text-align:center;padding:1.5rem 0;color:var(--text3);font-size:0.78rem">No tasks yet — tap + Add to create one</div>
         </div>
       </div>
-	<div class="panel" style="margin-top:1.5rem;">
-  <div class="panel-title">This Week</div>
-  <div id="dashboard-calendar"></div>
-</div>  
+      
     </div>
 
     <!-- INVENTORY -->
@@ -2273,17 +2270,8 @@ function renderDashboard(){
   document.getElementById('stat-inv-sub').textContent=fmt(cap)+' deployed';
   document.getElementById('stat-roi-val').textContent=fmtPct(avgROI);
   document.querySelectorAll('.hero-stat').forEach(s=>s.classList.add('loaded'));
-  document.getElementById('dash-inv-body').innerHTML=inventory.slice(0,6).map(w=>{
-    const b=costBasis(w),d=daysHeld(w.purchase_date);
-    const pc=d!==null?d+'d':'—',pillCls=d>60?'warn':d>30?'':'ok';
-    return`<tr><td><div class="brand-badge">${w.brand||'?'}</div><div style="font-size:0.8rem;margin-top:0.3rem">${w.model||''}</div></td><td>${fmt(b)}</td><td>${w.listed_price?fmt(w.listed_price):'—'}</td><td><span class="days-pill ${pillCls}">${pc}</span></td></tr>`;
-  }).join('');
-  const bmap={};soldWatches.forEach(s=>{const b=s.brand||'Unknown';bmap[b]=(bmap[b]||0)+soldNetProfit(s);});
-  const sorted=Object.entries(bmap).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const max=sorted.length?Math.max(...sorted.map(e=>Math.abs(e[1]))):1;
-  document.getElementById('dash-brand-bars').innerHTML=sorted.map(([brand,profit])=>
-    `<div class="brand-row"><div class="brand-name">${brand}</div><div class="brand-bar-wrap"><div class="brand-bar" style="width:${Math.abs(profit)/max*100}%"></div></div><div class="brand-profit">${fmt(profit)}</div></div>`
-  ).join('');
+  renderTasks();
+  setTimeout(initDashCalendar,100);
 }
 
 // ── INVENTORY ─────────────────────────────────────
@@ -3678,7 +3666,7 @@ function buildTaskItem(t, fullPage) {
 }
 
 function renderTasks() {
-  var list = document.getElementById('task-list');
+  var list = document.getElementById('dash-task-list') || document.getElementById('task-list');
   var empty = document.getElementById('task-empty');
   if(!list) return;
   var active = tasks.filter(t=>t.status==='todo'||t.status==='progress');
