@@ -2101,12 +2101,12 @@ async function showApp(){
   const profileComplete=await loadUserProfile();
   await loadAllData();
   renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();renderTasksPage();
-  await loadExpenses();renderExpenses();
-  await loadMileage();renderMileage();
-  await loadGoals();renderGoals();
-  await loadCollection();renderCollection();
-  await loadWishlist();renderWishlist();
-  await loadConsignments();setConsTab('holding');
+  try{await loadExpenses();renderExpenses();}catch(e){console.warn('Expenses table not set up yet:',e.message);}
+  try{await loadMileage();renderMileage();}catch(e){console.warn('Mileage table not set up yet:',e.message);}
+  try{await loadGoals();renderGoals();}catch(e){console.warn('Goals table not set up yet:',e.message);}
+  try{await loadCollection();renderCollection();}catch(e){console.warn('Collection table not set up yet:',e.message);}
+  try{await loadWishlist();renderWishlist();}catch(e){console.warn('Wishlist table not set up yet:',e.message);}
+  try{await loadConsignments();setConsTab('holding');}catch(e){console.warn('Consignments table not set up yet:',e.message);}
   document.getElementById('loading-screen').classList.remove('visible');
   document.getElementById('app-screen').classList.add('visible');
   showPage('dashboard');
@@ -3871,8 +3871,7 @@ const EXP_CAT_ICONS = {
 };
 
 async function loadExpenses(){
-  const{data,error}=await db.from('business_expenses').select('*').eq('user_id',currentUser.id).order('date',{ascending:false});
-  allExpenses=data||[];
+  try{const{data}=await db.from('business_expenses').select('*').eq('user_id',currentUser.id).order('date',{ascending:false});allExpenses=data||[];}catch(e){allExpenses=[];}
   updateExpenseBadge();
 }
 
@@ -4140,8 +4139,7 @@ let allMileage=[];let editingMileageId=null;
 const IRS_RATE=0.70;
 
 async function loadMileage(){
-  const{data}=await db.from('mileage_log').select('*').eq('user_id',currentUser.id).order('date',{ascending:false});
-  allMileage=data||[];
+  try{const{data}=await db.from('mileage_log').select('*').eq('user_id',currentUser.id).order('date',{ascending:false});allMileage=data||[];}catch(e){allMileage=[];}
 }
 
 function renderMileage(){
@@ -4257,8 +4255,7 @@ let allGoals=[];let editingGoalId=null;
 const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 async function loadGoals(){
-  const{data}=await db.from('profit_goals').select('*').eq('user_id',currentUser.id);
-  allGoals=data||[];
+  try{const{data}=await db.from('profit_goals').select('*').eq('user_id',currentUser.id);allGoals=data||[];}catch(e){allGoals=[];}
 }
 
 function renderGoals(){
@@ -4341,8 +4338,7 @@ async function saveGoal(){
 let myCollection=[];let editingCollId=null;
 
 async function loadCollection(){
-  const{data}=await db.from('personal_collection').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
-  myCollection=data||[];
+  try{const{data}=await db.from('personal_collection').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});myCollection=data||[];}catch(e){myCollection=[];}
   const badge=document.getElementById('nav-coll-count');
   if(myCollection.length){badge.textContent=myCollection.length;badge.style.display='';}else badge.style.display='none';
 }
@@ -4428,8 +4424,7 @@ let allWishes=[];let editingWishId=null;
 const PRIORITY_LABELS={high:'🔴 High',medium:'🟡 Medium',low:'🟢 Low'};
 
 async function loadWishlist(){
-  const{data}=await db.from('want_list').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
-  allWishes=data||[];
+  try{const{data}=await db.from('want_list').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});allWishes=data||[];}catch(e){allWishes=[];}
   const badge=document.getElementById('nav-wish-count');
   if(allWishes.length){badge.textContent=allWishes.length;badge.style.display='';}else badge.style.display='none';
 }
@@ -4508,8 +4503,7 @@ async function deleteWish(id){
 let allConsignments=[];let editingConsId=null;let consTab='holding';
 
 async function loadConsignments(){
-  const{data}=await db.from('consignments').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
-  allConsignments=data||[];
+  try{const{data}=await db.from('consignments').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});allConsignments=data||[];}catch(e){allConsignments=[];}
   const active=allConsignments.filter(c=>c.status==='active');
   const badge=document.getElementById('nav-cons-count');
   if(active.length){badge.textContent=active.length;badge.style.display='';}else badge.style.display='none';
