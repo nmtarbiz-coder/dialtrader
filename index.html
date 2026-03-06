@@ -2095,18 +2095,33 @@ async function initAuth(){
 }
 function showAuthScreen(){document.getElementById('loading-screen').classList.remove('visible');document.getElementById('app-screen').classList.remove('visible');document.getElementById('auth-screen').classList.add('visible');}
 async function showApp(){
+  // Hard timeout — if something hangs, force the app visible after 8 seconds
+  const forceShow=setTimeout(()=>{
+    console.warn('showApp timeout — forcing app visible');
+    document.getElementById('loading-screen').classList.remove('visible');
+    document.getElementById('app-screen').classList.add('visible');
+    showPage('dashboard');
+  }, 8000);
+
+  try{
   document.getElementById('auth-screen').classList.remove('visible');
   document.getElementById('loading-screen').classList.add('visible');
   document.getElementById('app-screen').classList.remove('visible');
+  console.log('showApp: loading profile...');
   const profileComplete=await loadUserProfile();
+  console.log('showApp: loading data...');
   await loadAllData();
+  console.log('showApp: rendering core...');
   renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();renderTasksPage();
-  try{await loadExpenses();renderExpenses();}catch(e){console.warn('Expenses table not set up yet:',e.message);}
-  try{await loadMileage();renderMileage();}catch(e){console.warn('Mileage table not set up yet:',e.message);}
-  try{await loadGoals();renderGoals();}catch(e){console.warn('Goals table not set up yet:',e.message);}
-  try{await loadCollection();renderCollection();}catch(e){console.warn('Collection table not set up yet:',e.message);}
-  try{await loadWishlist();renderWishlist();}catch(e){console.warn('Wishlist table not set up yet:',e.message);}
-  try{await loadConsignments();setConsTab('holding');}catch(e){console.warn('Consignments table not set up yet:',e.message);}
+  console.log('showApp: loading extras...');
+  try{await loadExpenses();renderExpenses();}catch(e){console.warn('Expenses:',e.message);}
+  try{await loadMileage();renderMileage();}catch(e){console.warn('Mileage:',e.message);}
+  try{await loadGoals();renderGoals();}catch(e){console.warn('Goals:',e.message);}
+  try{await loadCollection();renderCollection();}catch(e){console.warn('Collection:',e.message);}
+  try{await loadWishlist();renderWishlist();}catch(e){console.warn('Wishlist:',e.message);}
+  try{await loadConsignments();setConsTab('holding');}catch(e){console.warn('Consignments:',e.message);}
+  console.log('showApp: done, showing app.');
+  clearTimeout(forceShow);
   document.getElementById('loading-screen').classList.remove('visible');
   document.getElementById('app-screen').classList.add('visible');
   showPage('dashboard');
@@ -2116,6 +2131,13 @@ async function showApp(){
   if(sidebarIcon&&typeof LOGO_SVG!=='undefined'){
     const sized=LOGO_SVG.replace(/width="600"/,'width="160"').replace(/height="700"/,'height="187"');
     sidebarIcon.innerHTML=sized;
+  }
+  }catch(err){
+    console.error('showApp fatal error:',err);
+    clearTimeout(forceShow);
+    document.getElementById('loading-screen').classList.remove('visible');
+    document.getElementById('app-screen').classList.add('visible');
+    showPage('dashboard');
   }
 }
 function switchAuthTab(tab){document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));document.querySelector(`.auth-tab[onclick="switchAuthTab('${tab}')"]`).classList.add('active');document.getElementById('auth-'+tab).classList.add('active');}
