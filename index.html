@@ -607,10 +607,15 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="nav-item" onclick="showPage('import')"><span class="nav-icon">📥</span>Import / Export</div>
     <div class="nav-item" onclick="showPage('tax')"><span class="nav-icon">💰</span>Tax Report</div>
     <div class="nav-item" onclick="showPage('expenses')"><span class="nav-icon">🧾</span>Expenses<span class="nav-badge" id="nav-exp-count" style="display:none">0</span></div>
+    <div class="nav-item" onclick="showPage('mileage')"><span class="nav-icon">🚗</span>Mileage</div>
+    <div class="nav-item" onclick="showPage('goals')"><span class="nav-icon">🎯</span>Profit Goals</div>
     <div class="nav-divider"></div>
-	<div class="nav-item" onclick="showPage('calendar')">
-  <span class="nav-icon">📅</span>Calendar
-</div>
+    <div class="sidebar-section-label">Watches</div>
+    <div class="nav-item" onclick="showPage('collection')"><span class="nav-icon">💎</span>My Collection<span class="nav-badge" id="nav-coll-count" style="display:none">0</span></div>
+    <div class="nav-item" onclick="showPage('wishlist')"><span class="nav-icon">🔍</span>Want List<span class="nav-badge" id="nav-wish-count" style="display:none">0</span></div>
+    <div class="nav-item" onclick="showPage('consignment')"><span class="nav-icon">🤝</span>Consignment<span class="nav-badge" id="nav-cons-count" style="display:none">0</span></div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" onclick="showPage('calendar')"><span class="nav-icon">📅</span>Calendar</div>
     <div class="nav-item" onclick="showPage('storefront')"><span class="nav-icon">🌐</span>My Storefront</div>
     <div class="nav-item" onclick="showPage('help')"><span class="nav-icon">❓</span>Help &amp; Setup</div>
     <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span>Settings</div>
@@ -1063,6 +1068,202 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <button class="btn-gold" onclick="saveExpense()" id="exp-save-btn">Save Expense</button>
         </div>
         <div id="exp-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <!-- MILEAGE PAGE -->
+    <div class="page" id="page-mileage" style="display:none">
+      <div class="page-header">
+        <div><div class="page-title">Mileage <span>Tracker</span></div><div class="page-subtitle">Track business drives for tax deductions · $0.70/mile (2025 IRS rate)</div></div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="mil-year-filter" onchange="renderMileage()"><option value="all">All Years</option></select>
+          <button class="btn-outline" onclick="exportMileageCSV()">⬆ Export CSV</button>
+          <button class="btn-outline" onclick="printMileage()">🖨 Print</button>
+          <button class="btn-gold" onclick="openMileageModal()">+ Add Trip</button>
+        </div>
+      </div>
+      <div id="mil-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:1.5rem;"></div>
+      <div class="card" style="padding:0;overflow:hidden"><div id="mil-list" style="overflow-x:auto;"></div></div>
+      <div class="empty-state" id="mil-empty" style="display:none"><h3>No trips logged yet</h3><p>Click <strong>+ Add Trip</strong> to start tracking mileage.</p></div>
+    </div>
+    <div class="modal-overlay" id="mileage-modal" style="display:none" onclick="if(event.target===this)closeMileageModal()">
+      <div class="modal-box" style="max-width:480px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="mil-modal-title">Add Trip</div><button class="modal-close" onclick="closeMileageModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div style="grid-column:1/-1"><label class="form-label">Purpose *</label><input class="form-input" id="mil-purpose" placeholder="e.g. Dallas Watch Show, pickup from seller"></div>
+          <div><label class="form-label">Date *</label><input class="form-input" id="mil-date" type="date"></div>
+          <div><label class="form-label">Miles *</label><input class="form-input" id="mil-miles" type="number" step="0.1" min="0" placeholder="0.0"></div>
+          <div><label class="form-label">Category</label>
+            <select class="form-select" id="mil-category">
+              <option>Watch Show / Event</option><option>Buyer / Seller Meetup</option><option>Bank / Wire Transfer</option><option>Shipping / Post Office</option><option>Supply Run</option><option>Other Business</option>
+            </select>
+          </div>
+          <div><label class="form-label">From</label><input class="form-input" id="mil-from" placeholder="e.g. Conway, AR"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="mil-notes" rows="2" placeholder="Optional..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeMileageModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveMileage()" id="mil-save-btn">Save Trip</button>
+        </div>
+        <div id="mil-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <!-- PROFIT GOALS PAGE -->
+    <div class="page" id="page-goals" style="display:none">
+      <div class="page-header">
+        <div><div class="page-title">Profit <span>Goals</span></div><div class="page-subtitle">Set monthly and yearly targets — track actual vs goal</div></div>
+        <div style="display:flex;gap:0.5rem;align-items:center">
+          <select class="filter-select" id="goal-year-select" onchange="renderGoals()"><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option></select>
+          <button class="btn-gold" onclick="openGoalModal()">+ Set Goal</button>
+        </div>
+      </div>
+      <div id="goals-content"></div>
+    </div>
+    <div class="modal-overlay" id="goal-modal" style="display:none" onclick="if(event.target===this)closeGoalModal()">
+      <div class="modal-box" style="max-width:420px;width:95%">
+        <div class="modal-header"><div class="modal-title">Set Profit Goal</div><button class="modal-close" onclick="closeGoalModal()">✕</button></div>
+        <div style="padding:1.5rem;display:grid;gap:1rem">
+          <div><label class="form-label">Year *</label><select class="form-select" id="goal-year"><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option></select></div>
+          <div><label class="form-label">Period</label>
+            <select class="form-select" id="goal-period">
+              <option value="year">Full Year</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <div><label class="form-label">Target Profit ($) *</label><input class="form-input" id="goal-amount" type="number" min="0" placeholder="e.g. 5000"></div>
+          <div><label class="form-label">Notes</label><input class="form-input" id="goal-notes" placeholder="Optional reminder..."></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeGoalModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveGoal()">Save Goal</button>
+        </div>
+        <div id="goal-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <!-- PERSONAL COLLECTION PAGE -->
+    <div class="page" id="page-collection" style="display:none">
+      <div class="page-header">
+        <div><div class="page-title">My <span>Collection</span></div><div class="page-subtitle">Personal watches — not for sale</div></div>
+        <button class="btn-gold" onclick="openCollectionModal()">+ Add Watch</button>
+      </div>
+      <div id="coll-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;"></div>
+      <div class="empty-state" id="coll-empty" style="display:none"><h3>No personal watches yet</h3><p>Click <strong>+ Add Watch</strong> to add a watch to your collection.</p></div>
+    </div>
+    <div class="modal-overlay" id="collection-modal" style="display:none" onclick="if(event.target===this)closeCollectionModal()">
+      <div class="modal-box" style="max-width:580px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="coll-modal-title">Add to Collection</div><button class="modal-close" onclick="closeCollectionModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div><label class="form-label">Brand *</label><input class="form-input" id="coll-brand" placeholder="Rolex"></div>
+          <div><label class="form-label">Model *</label><input class="form-input" id="coll-model" placeholder="Submariner"></div>
+          <div><label class="form-label">Reference</label><input class="form-input" id="coll-ref" placeholder="126610LN"></div>
+          <div><label class="form-label">Serial Number</label><input class="form-input" id="coll-serial" placeholder=""></div>
+          <div><label class="form-label">Year</label><input class="form-input" id="coll-year" type="number" placeholder="2023"></div>
+          <div><label class="form-label">Purchase Price ($)</label><input class="form-input" id="coll-cost" type="number" placeholder="0.00"></div>
+          <div><label class="form-label">Purchase Date</label><input class="form-input" id="coll-date" type="date"></div>
+          <div><label class="form-label">Est. Current Value ($)</label><input class="form-input" id="coll-value" type="number" placeholder="0.00"></div>
+          <div><label class="form-label">Condition</label>
+            <select class="form-select" id="coll-condition">
+              <option value="">— Select —</option><option>Mint / Unworn</option><option>Excellent</option><option>Very Good</option><option>Good</option><option>Fair</option>
+            </select>
+          </div>
+          <div><label class="form-label">Box & Papers</label>
+            <select class="form-select" id="coll-papers">
+              <option value="">— Select —</option><option>Full Set</option><option>Box Only</option><option>Papers Only</option><option>None</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="coll-notes" rows="2" placeholder="Service history, story, where you bought it..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeCollectionModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveCollectionWatch()" id="coll-save-btn">Save Watch</button>
+        </div>
+        <div id="coll-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <!-- WANT LIST PAGE -->
+    <div class="page" id="page-wishlist" style="display:none">
+      <div class="page-header">
+        <div><div class="page-title">Want <span>List</span></div><div class="page-subtitle">Watches you're hunting — target prices and notes</div></div>
+        <button class="btn-gold" onclick="openWishModal()">+ Add Watch</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden"><div id="wish-list" style="overflow-x:auto;"></div></div>
+      <div class="empty-state" id="wish-empty" style="display:none"><h3>Want list is empty</h3><p>Click <strong>+ Add Watch</strong> to start tracking watches you want to source.</p></div>
+    </div>
+    <div class="modal-overlay" id="wish-modal" style="display:none" onclick="if(event.target===this)closeWishModal()">
+      <div class="modal-box" style="max-width:500px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="wish-modal-title">Add to Want List</div><button class="modal-close" onclick="closeWishModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div><label class="form-label">Brand *</label><input class="form-input" id="wish-brand" placeholder="Rolex"></div>
+          <div><label class="form-label">Model *</label><input class="form-input" id="wish-model" placeholder="Daytona"></div>
+          <div><label class="form-label">Reference</label><input class="form-input" id="wish-ref" placeholder="116500LN"></div>
+          <div><label class="form-label">Priority</label>
+            <select class="form-select" id="wish-priority">
+              <option value="high">🔴 High — Actively Looking</option><option value="medium">🟡 Medium — Would Buy Right</option><option value="low">🟢 Low — If Price is Right</option>
+            </select>
+          </div>
+          <div><label class="form-label">Max Buy Price ($)</label><input class="form-input" id="wish-max-price" type="number" placeholder="0"></div>
+          <div><label class="form-label">Target Sell Price ($)</label><input class="form-input" id="wish-sell-price" type="number" placeholder="0"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="wish-notes" rows="2" placeholder="Specific variants, condition requirements, where you've seen them..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeWishModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveWish()" id="wish-save-btn">Save</button>
+        </div>
+        <div id="wish-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <!-- CONSIGNMENT PAGE -->
+    <div class="page" id="page-consignment" style="display:none">
+      <div class="page-header">
+        <div><div class="page-title">Consignment <span>Tracker</span></div><div class="page-subtitle">Watches you hold for others, or others hold for you</div></div>
+        <button class="btn-gold" onclick="openConsModal()">+ Add Consignment</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:1.5rem">
+        <div style="background:var(--surface);padding:1.25rem;cursor:pointer;text-align:center" id="cons-tab-holding" onclick="setConsTab('holding')">
+          <div style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text2);margin-bottom:0.3rem">I'm Holding</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--gold2)" id="cons-holding-count">—</div>
+          <div style="font-size:0.65rem;color:var(--text2)">watches for others</div>
+        </div>
+        <div style="background:var(--surface);padding:1.25rem;cursor:pointer;text-align:center" id="cons-tab-out" onclick="setConsTab('out')">
+          <div style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text2);margin-bottom:0.3rem">Out on Consignment</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--gold2)" id="cons-out-count">—</div>
+          <div style="font-size:0.65rem;color:var(--text2)">my watches with others</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden"><div id="cons-list" style="overflow-x:auto;"></div></div>
+      <div class="empty-state" id="cons-empty" style="display:none"><h3>No consignments yet</h3><p>Click <strong>+ Add Consignment</strong> to start tracking.</p></div>
+    </div>
+    <div class="modal-overlay" id="cons-modal" style="display:none" onclick="if(event.target===this)closeConsModal()">
+      <div class="modal-box" style="max-width:560px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="cons-modal-title">Add Consignment</div><button class="modal-close" onclick="closeConsModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div style="grid-column:1/-1"><label class="form-label">Type *</label>
+            <select class="form-select" id="cons-type">
+              <option value="holding">I'm holding for someone else</option><option value="out">My watch is with someone else</option>
+            </select>
+          </div>
+          <div><label class="form-label">Brand *</label><input class="form-input" id="cons-brand" placeholder="Rolex"></div>
+          <div><label class="form-label">Model *</label><input class="form-input" id="cons-model" placeholder="Submariner"></div>
+          <div><label class="form-label">Reference</label><input class="form-input" id="cons-ref" placeholder="126610LN"></div>
+          <div><label class="form-label">Other Party *</label><input class="form-input" id="cons-party" placeholder="Name of owner / holder"></div>
+          <div><label class="form-label">Agreed Price ($)</label><input class="form-input" id="cons-price" type="number" placeholder="0"></div>
+          <div><label class="form-label">My Cut / Split</label><input class="form-input" id="cons-split" placeholder="e.g. 50% or $500 flat"></div>
+          <div><label class="form-label">Start Date</label><input class="form-input" id="cons-start" type="date"></div>
+          <div><label class="form-label">Status</label>
+            <select class="form-select" id="cons-status">
+              <option value="active">Active</option><option value="sold">Sold / Settled</option><option value="returned">Returned</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1"><label class="form-label">Terms / Notes</label><textarea class="form-textarea" id="cons-notes" rows="2" placeholder="Agreed terms, contact info, any special conditions..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeConsModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveConsignment()" id="cons-save-btn">Save</button>
+        </div>
+        <div id="cons-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
       </div>
     </div>
 
@@ -1848,6 +2049,11 @@ async function showApp(){
   await loadAllData();
   renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();
   await loadExpenses();renderExpenses();
+  await loadMileage();renderMileage();
+  await loadGoals();renderGoals();
+  await loadCollection();renderCollection();
+  await loadWishlist();renderWishlist();
+  await loadConsignments();setConsTab('holding');
   document.getElementById('loading-screen').classList.remove('visible');
   document.getElementById('app-screen').classList.add('visible');
   showPage('dashboard');
@@ -1948,6 +2154,11 @@ function showPage(name){
   if(name==='invoices')renderInvoices();
   if(name==='tax')renderTaxReport();
   if(name==='expenses')renderExpenses();
+  if(name==='mileage')renderMileage();
+  if(name==='goals')renderGoals();
+  if(name==='collection')renderCollection();
+  if(name==='wishlist')renderWishlist();
+  if(name==='consignment')renderConsignments();
   if(name==='settings')populateSettingsPage();
   if(name==='help'){showHelp(currentHelpArticle);}
   if(name==='storefront')initStorefrontPage();
@@ -3593,6 +3804,469 @@ function printExpenses(){
   const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
 // ── END EXPENSES ──────────────────────────────────
+
+// ══════════════════════════════════════════════════
+//  MILEAGE TRACKER
+// ══════════════════════════════════════════════════
+let allMileage=[];let editingMileageId=null;
+const IRS_RATE=0.70;
+
+async function loadMileage(){
+  const{data}=await db.from('mileage_log').select('*').eq('user_id',currentUser.id).order('date',{ascending:false});
+  allMileage=data||[];
+}
+
+function renderMileage(){
+  const yr=document.getElementById('mil-year-filter').value;
+  const years=[...new Set(allMileage.map(m=>m.date?new Date(m.date).getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
+  const sel=document.getElementById('mil-year-filter');const cur=sel.value;
+  sel.innerHTML='<option value="all">All Years</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');sel.value=cur;
+  const filtered=yr==='all'?allMileage:allMileage.filter(m=>m.date&&new Date(m.date).getFullYear()==yr);
+  const empty=document.getElementById('mil-empty');const list=document.getElementById('mil-list');
+  if(!filtered.length){empty.style.display='block';list.parentElement.style.display='none';document.getElementById('mil-summary').innerHTML='';return;}
+  empty.style.display='none';list.parentElement.style.display='';
+  const totalMiles=filtered.reduce((s,m)=>s+(+m.miles||0),0);
+  const totalDeduction=totalMiles*IRS_RATE;
+  document.getElementById('mil-summary').innerHTML=`
+    <div style="background:var(--surface);padding:1.25rem;text-align:center"><div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text2);margin-bottom:0.3rem">Total Miles</div><div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--gold2)">${totalMiles.toFixed(1)}</div></div>
+    <div style="background:var(--surface);padding:1.25rem;text-align:center"><div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text2);margin-bottom:0.3rem">IRS Rate</div><div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--gold2)">$${IRS_RATE}/mi</div></div>
+    <div style="background:var(--charcoal);padding:1.25rem;text-align:center;border-left:3px solid var(--gold2)"><div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text2);margin-bottom:0.3rem">Tax Deduction</div><div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--gold2)">$${totalDeduction.toFixed(2)}</div></div>
+    <div style="background:var(--surface);padding:1.25rem;text-align:center"><div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text2);margin-bottom:0.3rem">Trips Logged</div><div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--gold2)">${filtered.length}</div></div>`;
+  list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+    <thead><tr style="background:var(--surface);border-bottom:1px solid var(--border)">
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Date</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Purpose</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Category</th>
+      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Miles</th>
+      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Deduction</th>
+      <th style="padding:0.75rem 1rem;text-align:center;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Actions</th>
+    </tr></thead>
+    <tbody>${filtered.map((m,i)=>`<tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--bg)':'background:var(--surface)'}">
+      <td style="padding:0.75rem 1rem;white-space:nowrap;color:var(--text2)">${m.date||'—'}</td>
+      <td style="padding:0.75rem 1rem"><div style="font-weight:500">${m.purpose||'—'}</div>${m.notes?`<div style="font-size:0.68rem;color:var(--text2)">${m.notes}</div>`:''}</td>
+      <td style="padding:0.75rem 1rem"><span style="font-size:0.65rem;background:rgba(184,148,58,0.1);color:var(--gold2);padding:2px 8px">${m.category||'—'}</span></td>
+      <td style="padding:0.75rem 1rem;text-align:right;font-weight:600">${(+m.miles||0).toFixed(1)}</td>
+      <td style="padding:0.75rem 1rem;text-align:right;color:var(--green)">$${((+m.miles||0)*IRS_RATE).toFixed(2)}</td>
+      <td style="padding:0.75rem 1rem;text-align:center;white-space:nowrap">
+        <button onclick="openMileageModal('${m.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.65rem;cursor:pointer;margin-right:4px">Edit</button>
+        <button onclick="deleteMileage('${m.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:3px 10px;font-size:0.65rem;cursor:pointer">Del</button>
+      </td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr style="border-top:2px solid var(--gold2);background:var(--charcoal)">
+      <td colspan="3" style="padding:0.85rem 1rem;font-size:0.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em">${filtered.length} trips</td>
+      <td style="padding:0.85rem 1rem;text-align:right;font-weight:700;color:var(--gold2)">${totalMiles.toFixed(1)} mi</td>
+      <td style="padding:0.85rem 1rem;text-align:right;font-weight:700;color:var(--green)">$${totalDeduction.toFixed(2)}</td>
+      <td></td>
+    </tr></tfoot>
+  </table>`;
+}
+
+function openMileageModal(id){
+  editingMileageId=id||null;
+  document.getElementById('mil-modal-msg').textContent='';
+  document.getElementById('mil-modal-title').textContent=id?'Edit Trip':'Add Trip';
+  if(id){const m=allMileage.find(x=>x.id===id);if(!m)return;
+    document.getElementById('mil-purpose').value=m.purpose||'';
+    document.getElementById('mil-date').value=m.date||'';
+    document.getElementById('mil-miles').value=m.miles||'';
+    document.getElementById('mil-category').value=m.category||'Watch Show / Event';
+    document.getElementById('mil-from').value=m.from_location||'';
+    document.getElementById('mil-notes').value=m.notes||'';
+  } else {
+    document.getElementById('mil-purpose').value='';
+    document.getElementById('mil-date').value=new Date().toISOString().split('T')[0];
+    document.getElementById('mil-miles').value='';
+    document.getElementById('mil-from').value='Conway, AR';
+    document.getElementById('mil-notes').value='';
+  }
+  document.getElementById('mileage-modal').style.display='flex';
+}
+function closeMileageModal(){document.getElementById('mileage-modal').style.display='none';editingMileageId=null;}
+
+async function saveMileage(){
+  const purpose=document.getElementById('mil-purpose').value.trim();
+  const miles=parseFloat(document.getElementById('mil-miles').value);
+  const date=document.getElementById('mil-date').value;
+  const msg=document.getElementById('mil-modal-msg');
+  if(!purpose||!miles||!date){msg.style.color='var(--red)';msg.textContent='Please fill in purpose, date and miles.';return;}
+  const btn=document.getElementById('mil-save-btn');btn.disabled=true;btn.textContent='Saving...';
+  const row={user_id:currentUser.id,purpose,miles,date,category:document.getElementById('mil-category').value,from_location:document.getElementById('mil-from').value.trim()||null,notes:document.getElementById('mil-notes').value.trim()||null};
+  const{error}=editingMileageId?await db.from('mileage_log').update(row).eq('id',editingMileageId):await db.from('mileage_log').insert(row);
+  btn.disabled=false;btn.textContent='Save Trip';
+  if(error){msg.style.color='var(--red)';msg.textContent='Error: '+error.message;return;}
+  showToast(editingMileageId?'Trip updated!':'Trip logged!');closeMileageModal();await loadMileage();renderMileage();
+}
+async function deleteMileage(id){
+  if(!confirm('Delete this trip?'))return;
+  await db.from('mileage_log').delete().eq('id',id);
+  showToast('Trip deleted.');await loadMileage();renderMileage();
+}
+function exportMileageCSV(){
+  const yr=document.getElementById('mil-year-filter').value;
+  const f=yr==='all'?allMileage:allMileage.filter(m=>m.date&&new Date(m.date).getFullYear()==yr);
+  if(!f.length){showToast('No data to export.');return;}
+  const csv=['date,purpose,category,from,miles,deduction,notes',...f.map(m=>[m.date,m.purpose,m.category,m.from_location||'',(+m.miles||0).toFixed(1),((+m.miles||0)*IRS_RATE).toFixed(2),m.notes||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`mileage-${yr}-${new Date().toISOString().split('T')[0]}.csv`;a.click();
+}
+function printMileage(){
+  const yr=document.getElementById('mil-year-filter').value;
+  const f=yr==='all'?allMileage:allMileage.filter(m=>m.date&&new Date(m.date).getFullYear()==yr);
+  if(!f.length){showToast('No data to print.');return;}
+  const totalMiles=f.reduce((s,m)=>s+(+m.miles||0),0);
+  const html=`<!DOCTYPE html><html><head><title>Mileage Log</title><style>body{font-family:Arial,sans-serif;font-size:12px;padding:2rem;max-width:900px;margin:0 auto}h1{font-size:1.3rem}table{width:100%;border-collapse:collapse;margin-top:1rem}th{background:#f5f5f5;padding:6px 8px;text-align:left;font-size:0.7rem;text-transform:uppercase;border-bottom:1px solid #ddd}td{padding:6px 8px;border-bottom:1px solid #eee}.total{font-weight:700;background:#fffbf0;border-top:2px solid #B8943A}</style></head><body>
+  <h1>Mileage Log — ${yr==='all'?'All Years':yr}</h1><p style="color:#666;font-size:0.8rem">Tolliver Timepieces / NXT Enterprises LLC · IRS Rate: $${IRS_RATE}/mile · Generated ${new Date().toLocaleDateString()}</p>
+  <table><thead><tr><th>Date</th><th>Purpose</th><th>Category</th><th>From</th><th style="text-align:right">Miles</th><th style="text-align:right">Deduction</th></tr></thead>
+  <tbody>${f.map(m=>`<tr><td>${m.date||''}</td><td>${m.purpose||''}</td><td>${m.category||''}</td><td>${m.from_location||''}</td><td style="text-align:right">${(+m.miles||0).toFixed(1)}</td><td style="text-align:right">$${((+m.miles||0)*IRS_RATE).toFixed(2)}</td></tr>`).join('')}</tbody>
+  <tfoot><tr class="total"><td colspan="4">TOTAL (${f.length} trips)</td><td style="text-align:right">${totalMiles.toFixed(1)} mi</td><td style="text-align:right">$${(totalMiles*IRS_RATE).toFixed(2)}</td></tr></tfoot>
+  </table><script>window.onload=()=>window.print()<\/script></body></html>`;
+  const w=window.open('','_blank');w.document.write(html);w.document.close();
+}
+
+// ══════════════════════════════════════════════════
+//  PROFIT GOALS
+// ══════════════════════════════════════════════════
+let allGoals=[];let editingGoalId=null;
+const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+async function loadGoals(){
+  const{data}=await db.from('profit_goals').select('*').eq('user_id',currentUser.id);
+  allGoals=data||[];
+}
+
+function renderGoals(){
+  const year=parseInt(document.getElementById('goal-year-select').value);
+  const yearSold=soldWatches.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()===year);
+  const yearExpenses=allExpenses.filter(e=>e.date&&new Date(e.date).getFullYear()===year);
+  const totalExpAmt=yearExpenses.reduce((s,e)=>s+(+e.amount||0),0);
+
+  // Monthly actuals
+  const monthlyProfit={};
+  yearSold.forEach(s=>{const m=new Date(s.sale_date).getMonth()+1;monthlyProfit[m]=(monthlyProfit[m]||0)+soldNetProfit(s);});
+
+  const yearGoal=allGoals.find(g=>g.year===year&&g.period==='year');
+  const yearActual=Object.values(monthlyProfit).reduce((s,v)=>s+v,0)-totalExpAmt;
+  const yearTarget=yearGoal?+yearGoal.amount:0;
+  const yearPct=yearTarget>0?Math.min(100,(yearActual/yearTarget)*100):0;
+
+  let html=`<div class="card" style="margin-bottom:1.5rem;padding:1.5rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div><div style="font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text2)">${year} Annual Goal</div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.8rem;color:${yearActual>=0?'var(--green)':'var(--red)'}">$${yearActual.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}<span style="font-size:1rem;color:var(--text2)"> / ${yearTarget?'$'+yearTarget.toLocaleString():'No goal set'}</span></div>
+      </div>
+      <button onclick="openGoalModal('year',${year})" style="background:none;border:1px solid var(--border);color:var(--text2);padding:4px 12px;font-size:0.65rem;cursor:pointer">${yearGoal?'Edit Goal':'Set Goal'}</button>
+    </div>
+    ${yearTarget>0?`<div style="background:var(--border);border-radius:2px;height:8px;overflow:hidden"><div style="height:100%;background:${yearPct>=100?'var(--green)':'var(--gold2)'};width:${yearPct}%;transition:width 0.6s ease"></div></div>
+    <div style="font-size:0.65rem;color:var(--text2);margin-top:0.4rem">${yearPct.toFixed(1)}% of goal · ${yearActual<yearTarget?'$'+(yearTarget-yearActual).toFixed(2)+' to go':'🎉 Goal reached!'}</div>`:''}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem">`;
+
+  for(let m=1;m<=12;m++){
+    const actual=monthlyProfit[m]||0;
+    const goal=allGoals.find(g=>g.year===year&&g.period===String(m));
+    const target=goal?+goal.amount:0;
+    const pct=target>0?Math.min(100,(actual/target)*100):0;
+    const now=new Date();const isFuture=year>now.getFullYear()||(year===now.getFullYear()&&m>now.getMonth()+1);
+    html+=`<div class="card" style="padding:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+        <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">${MONTH_NAMES[m-1]}</div>
+        <button onclick="openGoalModal('${m}',${year})" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;font-size:0.6rem;cursor:pointer">${goal?'Edit':'Set'}</button>
+      </div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.3rem;color:${actual>0?'var(--green)':isFuture?'var(--text2)':'var(--red)'}">$${actual.toFixed(0)}</div>
+      ${target>0?`<div style="font-size:0.62rem;color:var(--text2);margin-bottom:0.5rem">goal: $${target.toLocaleString()}</div>
+      <div style="background:var(--border);border-radius:2px;height:5px;overflow:hidden"><div style="height:100%;background:${pct>=100?'var(--green)':'var(--gold2)'};width:${pct}%"></div></div>`:`<div style="font-size:0.62rem;color:var(--text2)">no goal set</div>`}
+      ${goal&&goal.notes?`<div style="font-size:0.62rem;color:var(--text2);margin-top:0.4rem;font-style:italic">${goal.notes}</div>`:''}
+    </div>`;
+  }
+  html+='</div>';
+  document.getElementById('goals-content').innerHTML=html;
+}
+
+function openGoalModal(period,year){
+  editingGoalId=null;
+  document.getElementById('goal-modal-msg').textContent='';
+  const existing=allGoals.find(g=>g.year===year&&g.period===String(period));
+  if(existing)editingGoalId=existing.id;
+  document.getElementById('goal-year').value=year||new Date().getFullYear();
+  document.getElementById('goal-period').value=period||'year';
+  document.getElementById('goal-amount').value=existing?existing.amount:'';
+  document.getElementById('goal-notes').value=existing?existing.notes||'':'';
+  document.getElementById('goal-modal').style.display='flex';
+}
+function closeGoalModal(){document.getElementById('goal-modal').style.display='none';editingGoalId=null;}
+
+async function saveGoal(){
+  const year=parseInt(document.getElementById('goal-year').value);
+  const period=document.getElementById('goal-period').value;
+  const amount=parseFloat(document.getElementById('goal-amount').value);
+  const notes=document.getElementById('goal-notes').value.trim();
+  const msg=document.getElementById('goal-modal-msg');
+  if(!year||!amount){msg.style.color='var(--red)';msg.textContent='Please enter year and target amount.';return;}
+  const row={user_id:currentUser.id,year,period,amount,notes:notes||null};
+  const{error}=editingGoalId?await db.from('profit_goals').update(row).eq('id',editingGoalId):await db.from('profit_goals').insert(row);
+  if(error){msg.style.color='var(--red)';msg.textContent='Error: '+error.message;return;}
+  showToast('Goal saved!');closeGoalModal();await loadGoals();renderGoals();
+}
+
+// ══════════════════════════════════════════════════
+//  PERSONAL COLLECTION
+// ══════════════════════════════════════════════════
+let myCollection=[];let editingCollId=null;
+
+async function loadCollection(){
+  const{data}=await db.from('personal_collection').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+  myCollection=data||[];
+  const badge=document.getElementById('nav-coll-count');
+  if(myCollection.length){badge.textContent=myCollection.length;badge.style.display='';}else badge.style.display='none';
+}
+
+function renderCollection(){
+  const grid=document.getElementById('coll-grid');const empty=document.getElementById('coll-empty');
+  if(!myCollection.length){empty.style.display='block';grid.innerHTML='';return;}
+  empty.style.display='none';
+  const totalCost=myCollection.reduce((s,w)=>s+(+w.purchase_price||0),0);
+  const totalVal=myCollection.reduce((s,w)=>s+(+w.estimated_value||0),0);
+  grid.innerHTML=myCollection.map(w=>`
+    <div class="card" style="padding:0;overflow:hidden;cursor:default">
+      <div style="background:var(--charcoal);padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold2);margin-bottom:0.2rem">${w.brand||''}</div>
+            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400">${w.model||''}</div>
+            ${w.reference?`<div style="font-size:0.7rem;color:var(--text2);margin-top:0.15rem">${w.reference}</div>`:''}
+          </div>
+          <span style="font-size:0.55rem;background:rgba(184,148,58,0.15);color:var(--gold2);padding:3px 8px;letter-spacing:0.1em;text-transform:uppercase">Personal</span>
+        </div>
+      </div>
+      <div style="padding:1rem 1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.72rem">
+        ${w.year?`<div><span style="color:var(--text2)">Year:</span> ${w.year}</div>`:''}
+        ${w.serial_number?`<div><span style="color:var(--text2)">Serial:</span> ${w.serial_number}</div>`:''}
+        ${w.condition?`<div><span style="color:var(--text2)">Condition:</span> ${w.condition}</div>`:''}
+        ${w.box_papers?`<div><span style="color:var(--text2)">Papers:</span> ${w.box_papers}</div>`:''}
+        ${w.purchase_price?`<div><span style="color:var(--text2)">Paid:</span> $${(+w.purchase_price).toLocaleString()}</div>`:''}
+        ${w.estimated_value?`<div><span style="color:var(--text2)">Est. Value:</span> <span style="color:var(--green)">$${(+w.estimated_value).toLocaleString()}</span></div>`:''}
+        ${w.purchase_date?`<div style="grid-column:1/-1"><span style="color:var(--text2)">Purchased:</span> ${w.purchase_date}</div>`:''}
+        ${w.notes?`<div style="grid-column:1/-1;color:var(--text2);font-style:italic;font-size:0.68rem;border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.25rem">${w.notes}</div>`:''}
+      </div>
+      <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:0.5rem">
+        <button onclick="openCollectionModal('${w.id}')" style="flex:1;background:none;border:1px solid var(--border);color:var(--text2);padding:5px;font-size:0.65rem;cursor:pointer">Edit</button>
+        <button onclick="deleteCollWatch('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:5px 10px;font-size:0.65rem;cursor:pointer">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function openCollectionModal(id){
+  editingCollId=id||null;
+  document.getElementById('coll-modal-msg').textContent='';
+  document.getElementById('coll-modal-title').textContent=id?'Edit Watch':'Add to Collection';
+  if(id){const w=myCollection.find(x=>x.id===id);if(!w)return;
+    document.getElementById('coll-brand').value=w.brand||'';document.getElementById('coll-model').value=w.model||'';
+    document.getElementById('coll-ref').value=w.reference||'';document.getElementById('coll-serial').value=w.serial_number||'';
+    document.getElementById('coll-year').value=w.year||'';document.getElementById('coll-cost').value=w.purchase_price||'';
+    document.getElementById('coll-date').value=w.purchase_date||'';document.getElementById('coll-value').value=w.estimated_value||'';
+    document.getElementById('coll-condition').value=w.condition||'';document.getElementById('coll-papers').value=w.box_papers||'';
+    document.getElementById('coll-notes').value=w.notes||'';
+  } else {
+    ['coll-brand','coll-model','coll-ref','coll-serial','coll-year','coll-cost','coll-date','coll-value','coll-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('coll-condition').value='';document.getElementById('coll-papers').value='';
+  }
+  document.getElementById('collection-modal').style.display='flex';
+}
+function closeCollectionModal(){document.getElementById('collection-modal').style.display='none';editingCollId=null;}
+
+async function saveCollectionWatch(){
+  const brand=document.getElementById('coll-brand').value.trim();
+  const model=document.getElementById('coll-model').value.trim();
+  const msg=document.getElementById('coll-modal-msg');
+  if(!brand||!model){msg.style.color='var(--red)';msg.textContent='Brand and model are required.';return;}
+  const btn=document.getElementById('coll-save-btn');btn.disabled=true;btn.textContent='Saving...';
+  const row={user_id:currentUser.id,brand,model,reference:document.getElementById('coll-ref').value.trim()||null,serial_number:document.getElementById('coll-serial').value.trim()||null,year:document.getElementById('coll-year').value||null,purchase_price:parseFloat(document.getElementById('coll-cost').value)||null,purchase_date:document.getElementById('coll-date').value||null,estimated_value:parseFloat(document.getElementById('coll-value').value)||null,condition:document.getElementById('coll-condition').value||null,box_papers:document.getElementById('coll-papers').value||null,notes:document.getElementById('coll-notes').value.trim()||null};
+  const{error}=editingCollId?await db.from('personal_collection').update(row).eq('id',editingCollId):await db.from('personal_collection').insert(row);
+  btn.disabled=false;btn.textContent='Save Watch';
+  if(error){msg.style.color='var(--red)';msg.textContent='Error: '+error.message;return;}
+  showToast(editingCollId?'Watch updated!':'Added to collection!');closeCollectionModal();await loadCollection();renderCollection();
+}
+async function deleteCollWatch(id){
+  if(!confirm('Remove this watch from your collection?'))return;
+  await db.from('personal_collection').delete().eq('id',id);
+  showToast('Watch removed.');await loadCollection();renderCollection();
+}
+
+// ══════════════════════════════════════════════════
+//  WANT LIST / WISHLIST
+// ══════════════════════════════════════════════════
+let allWishes=[];let editingWishId=null;
+const PRIORITY_LABELS={high:'🔴 High',medium:'🟡 Medium',low:'🟢 Low'};
+
+async function loadWishlist(){
+  const{data}=await db.from('want_list').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+  allWishes=data||[];
+  const badge=document.getElementById('nav-wish-count');
+  if(allWishes.length){badge.textContent=allWishes.length;badge.style.display='';}else badge.style.display='none';
+}
+
+function renderWishlist(){
+  const list=document.getElementById('wish-list');const empty=document.getElementById('wish-empty');
+  if(!allWishes.length){empty.style.display='block';list.parentElement.style.display='none';return;}
+  empty.style.display='none';list.parentElement.style.display='';
+  list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+    <thead><tr style="background:var(--surface);border-bottom:1px solid var(--border)">
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Watch</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Priority</th>
+      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Max Buy</th>
+      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Target Sell</th>
+      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Est. Profit</th>
+      <th style="padding:0.75rem 1rem;text-align:center;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Actions</th>
+    </tr></thead>
+    <tbody>${allWishes.map((w,i)=>{
+      const profit=(+w.target_sell_price||0)-(+w.max_buy_price||0);
+      return`<tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--bg)':'background:var(--surface)'}">
+        <td style="padding:0.75rem 1rem">
+          <div style="font-weight:500">${w.brand||''} ${w.model||''}</div>
+          ${w.reference?`<div style="font-size:0.68rem;color:var(--text2)">${w.reference}</div>`:''}
+          ${w.notes?`<div style="font-size:0.67rem;color:var(--text2);font-style:italic;margin-top:0.2rem">${w.notes}</div>`:''}
+        </td>
+        <td style="padding:0.75rem 1rem"><span style="font-size:0.72rem">${PRIORITY_LABELS[w.priority]||w.priority||'—'}</span></td>
+        <td style="padding:0.75rem 1rem;text-align:right">${w.max_buy_price?'$'+(+w.max_buy_price).toLocaleString():'—'}</td>
+        <td style="padding:0.75rem 1rem;text-align:right">${w.target_sell_price?'$'+(+w.target_sell_price).toLocaleString():'—'}</td>
+        <td style="padding:0.75rem 1rem;text-align:right;color:${profit>0?'var(--green)':'var(--text2)'};font-weight:600">${w.max_buy_price&&w.target_sell_price?(profit>0?'+':'')+' $'+profit.toLocaleString():'—'}</td>
+        <td style="padding:0.75rem 1rem;text-align:center;white-space:nowrap">
+          <button onclick="openWishModal('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.65rem;cursor:pointer;margin-right:4px">Edit</button>
+          <button onclick="deleteWish('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:3px 10px;font-size:0.65rem;cursor:pointer">Del</button>
+        </td>
+      </tr>`;}).join('')}
+    </tbody>
+  </table>`;
+}
+
+function openWishModal(id){
+  editingWishId=id||null;
+  document.getElementById('wish-modal-msg').textContent='';
+  document.getElementById('wish-modal-title').textContent=id?'Edit Want':'Add to Want List';
+  if(id){const w=allWishes.find(x=>x.id===id);if(!w)return;
+    document.getElementById('wish-brand').value=w.brand||'';document.getElementById('wish-model').value=w.model||'';
+    document.getElementById('wish-ref').value=w.reference||'';document.getElementById('wish-priority').value=w.priority||'high';
+    document.getElementById('wish-max-price').value=w.max_buy_price||'';document.getElementById('wish-sell-price').value=w.target_sell_price||'';
+    document.getElementById('wish-notes').value=w.notes||'';
+  } else {
+    ['wish-brand','wish-model','wish-ref','wish-max-price','wish-sell-price','wish-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('wish-priority').value='high';
+  }
+  document.getElementById('wish-modal').style.display='flex';
+}
+function closeWishModal(){document.getElementById('wish-modal').style.display='none';editingWishId=null;}
+
+async function saveWish(){
+  const brand=document.getElementById('wish-brand').value.trim();const model=document.getElementById('wish-model').value.trim();
+  const msg=document.getElementById('wish-modal-msg');
+  if(!brand||!model){msg.style.color='var(--red)';msg.textContent='Brand and model required.';return;}
+  const btn=document.getElementById('wish-save-btn');btn.disabled=true;btn.textContent='Saving...';
+  const row={user_id:currentUser.id,brand,model,reference:document.getElementById('wish-ref').value.trim()||null,priority:document.getElementById('wish-priority').value,max_buy_price:parseFloat(document.getElementById('wish-max-price').value)||null,target_sell_price:parseFloat(document.getElementById('wish-sell-price').value)||null,notes:document.getElementById('wish-notes').value.trim()||null};
+  const{error}=editingWishId?await db.from('want_list').update(row).eq('id',editingWishId):await db.from('want_list').insert(row);
+  btn.disabled=false;btn.textContent='Save';
+  if(error){msg.style.color='var(--red)';msg.textContent='Error: '+error.message;return;}
+  showToast('Want list updated!');closeWishModal();await loadWishlist();renderWishlist();
+}
+async function deleteWish(id){
+  if(!confirm('Remove from want list?'))return;
+  await db.from('want_list').delete().eq('id',id);
+  showToast('Removed.');await loadWishlist();renderWishlist();
+}
+
+// ══════════════════════════════════════════════════
+//  CONSIGNMENT TRACKER
+// ══════════════════════════════════════════════════
+let allConsignments=[];let editingConsId=null;let consTab='holding';
+
+async function loadConsignments(){
+  const{data}=await db.from('consignments').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+  allConsignments=data||[];
+  const active=allConsignments.filter(c=>c.status==='active');
+  const badge=document.getElementById('nav-cons-count');
+  if(active.length){badge.textContent=active.length;badge.style.display='';}else badge.style.display='none';
+}
+
+function setConsTab(tab){
+  consTab=tab;
+  ['holding','out'].forEach(t=>{
+    const el=document.getElementById('cons-tab-'+t);
+    el.style.borderBottom=t===tab?'3px solid var(--gold2)':'3px solid transparent';
+  });
+  renderConsignments();
+}
+
+function renderConsignments(){
+  const filtered=allConsignments.filter(c=>c.type===consTab);
+  const holding=allConsignments.filter(c=>c.type==='holding'&&c.status==='active').length;
+  const out=allConsignments.filter(c=>c.type==='out'&&c.status==='active').length;
+  document.getElementById('cons-holding-count').textContent=holding;
+  document.getElementById('cons-out-count').textContent=out;
+  const list=document.getElementById('cons-list');const empty=document.getElementById('cons-empty');
+  if(!filtered.length){empty.style.display='block';list.parentElement.style.display='none';return;}
+  empty.style.display='none';list.parentElement.style.display='';
+  const STATUS_COLORS={active:'var(--gold2)',sold:'var(--green)',returned:'var(--text2)'};
+  list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+    <thead><tr style="background:var(--surface);border-bottom:1px solid var(--border)">
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Watch</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">${consTab==='holding'?'Owner':'Holder'}</th>
+      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Price</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Split</th>
+      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Status</th>
+      <th style="padding:0.75rem 1rem;text-align:center;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Actions</th>
+    </tr></thead>
+    <tbody>${filtered.map((c,i)=>`<tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--bg)':'background:var(--surface)'}">
+      <td style="padding:0.75rem 1rem">
+        <div style="font-weight:500">${c.brand||''} ${c.model||''}</div>
+        ${c.reference?`<div style="font-size:0.68rem;color:var(--text2)">${c.reference}</div>`:''}
+        ${c.notes?`<div style="font-size:0.67rem;color:var(--text2);font-style:italic;margin-top:0.2rem">${c.notes}</div>`:''}
+      </td>
+      <td style="padding:0.75rem 1rem;font-weight:500">${c.other_party||'—'}</td>
+      <td style="padding:0.75rem 1rem;text-align:right">${c.agreed_price?'$'+(+c.agreed_price).toLocaleString():'—'}</td>
+      <td style="padding:0.75rem 1rem;color:var(--gold2)">${c.split_terms||'—'}</td>
+      <td style="padding:0.75rem 1rem"><span style="font-size:0.65rem;color:${STATUS_COLORS[c.status]||'var(--text2)'};text-transform:uppercase;letter-spacing:0.08em">${c.status||'active'}</span></td>
+      <td style="padding:0.75rem 1rem;text-align:center;white-space:nowrap">
+        <button onclick="openConsModal('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.65rem;cursor:pointer;margin-right:4px">Edit</button>
+        <button onclick="deleteCons('${c.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:3px 10px;font-size:0.65rem;cursor:pointer">Del</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function openConsModal(id){
+  editingConsId=id||null;
+  document.getElementById('cons-modal-msg').textContent='';
+  document.getElementById('cons-modal-title').textContent=id?'Edit Consignment':'Add Consignment';
+  if(id){const c=allConsignments.find(x=>x.id===id);if(!c)return;
+    document.getElementById('cons-type').value=c.type||'holding';document.getElementById('cons-brand').value=c.brand||'';
+    document.getElementById('cons-model').value=c.model||'';document.getElementById('cons-ref').value=c.reference||'';
+    document.getElementById('cons-party').value=c.other_party||'';document.getElementById('cons-price').value=c.agreed_price||'';
+    document.getElementById('cons-split').value=c.split_terms||'';document.getElementById('cons-start').value=c.start_date||'';
+    document.getElementById('cons-status').value=c.status||'active';document.getElementById('cons-notes').value=c.notes||'';
+  } else {
+    ['cons-brand','cons-model','cons-ref','cons-party','cons-price','cons-split','cons-notes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('cons-type').value=consTab;document.getElementById('cons-status').value='active';
+    document.getElementById('cons-start').value=new Date().toISOString().split('T')[0];
+  }
+  document.getElementById('cons-modal').style.display='flex';
+}
+function closeConsModal(){document.getElementById('cons-modal').style.display='none';editingConsId=null;}
+
+async function saveConsignment(){
+  const brand=document.getElementById('cons-brand').value.trim();const model=document.getElementById('cons-model').value.trim();const party=document.getElementById('cons-party').value.trim();
+  const msg=document.getElementById('cons-modal-msg');
+  if(!brand||!model||!party){msg.style.color='var(--red)';msg.textContent='Brand, model and other party required.';return;}
+  const btn=document.getElementById('cons-save-btn');btn.disabled=true;btn.textContent='Saving...';
+  const row={user_id:currentUser.id,type:document.getElementById('cons-type').value,brand,model,reference:document.getElementById('cons-ref').value.trim()||null,other_party:party,agreed_price:parseFloat(document.getElementById('cons-price').value)||null,split_terms:document.getElementById('cons-split').value.trim()||null,start_date:document.getElementById('cons-start').value||null,status:document.getElementById('cons-status').value,notes:document.getElementById('cons-notes').value.trim()||null};
+  const{error}=editingConsId?await db.from('consignments').update(row).eq('id',editingConsId):await db.from('consignments').insert(row);
+  btn.disabled=false;btn.textContent='Save';
+  if(error){msg.style.color='var(--red)';msg.textContent='Error: '+error.message;return;}
+  showToast('Consignment saved!');closeConsModal();await loadConsignments();renderConsignments();
+}
+async function deleteCons(id){
+  if(!confirm('Delete this consignment?'))return;
+  await db.from('consignments').delete().eq('id',id);
+  showToast('Deleted.');await loadConsignments();renderConsignments();
+}
+// ── END NEW FEATURES ──────────────────────────────
 let currentInvoiceTab='sent';
 function switchInvoiceTab(tab){
   currentInvoiceTab=tab;
