@@ -3839,6 +3839,8 @@ async function saveTask(btn, editId) {
 
 </script>
 
+
+
 <!-- MORE MENU OVERLAY -->
 <div id="more-overlay" onclick="toggleMore()"></div>
 <div id="more-menu">
@@ -3879,9 +3881,7 @@ async function saveTask(btn, editId) {
   </div>
 </nav>
 
-</body>
-</html>
-
+<script>
 // ══════════════════════════════════════════════════
 //  EXPENSES
 // ══════════════════════════════════════════════════
@@ -6317,8 +6317,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     sidebarIcon.innerHTML=sized;
   }
 });
-
- </script>
+</script>
 
 <script>
 async function initCalendar() {
@@ -6467,29 +6466,6 @@ async function deleteCalendarEvent(id) {
 
 // ── TASKS ─────────────────────────────────────────────────────────────────
 </script>
-
-<!-- MORE MENU OVERLAY -->
-<div id="more-overlay" onclick="toggleMore()"></div>
-<div id="more-menu">
-  <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
-  <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
-  <div class="more-item" onclick="closeMore();showPage('import')"><span class="more-icon">📥</span>Import / Export</div>
-  <div class="more-item" onclick="closeMore();showPage('storefront')"><span class="more-icon">🌐</span>My Storefront</div>
-  <div class="more-item" onclick="closeMore();showPage('help')"><span class="more-icon">❓</span>Help &amp; Setup</div>
-  <div class="more-item" onclick="closeMore();showPage('settings')"><span class="more-icon">⚙️</span>Settings</div>
-  <div class="more-item" id="more-admin" style="display:none" onclick="closeMore();showPage('admin')"><span class="more-icon">🔑</span>Admin</div>
-  <div class="more-item" style="color:#888;border-top:1px solid rgba(255,255,255,0.1);margin-top:0.25rem" onclick="closeMore();doSignOut()"><span class="more-icon">↩</span>Sign Out</div>
-</div>
-<!-- BOTTOM NAV -->
-<nav id="bottom-nav">
-  <div class="bnav-inner">
-    <button class="bnav-btn active" id="bnav-dashboard" onclick="bNav('dashboard')"><span class="bnav-icon">📈</span>Home</button>
-    <button class="bnav-btn" id="bnav-inventory" onclick="bNav('inventory')"><span class="bnav-icon">⌚</span>Watches</button>
-    <button class="bnav-btn" id="bnav-contacts" onclick="bNav('contacts')"><span class="bnav-icon">👥</span>Contacts</button>
-    <button class="bnav-btn" id="bnav-invoices" onclick="bNav('invoices')"><span class="bnav-icon">📄</span>Invoices</button>
-    <button class="bnav-btn" id="bnav-more" onclick="toggleMore()"><span class="bnav-icon">☰</span>More</button>
-  </div>
-</nav>
 
 </body>
 </html>
