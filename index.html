@@ -19,6 +19,21 @@
   font-family: inherit;
 }
 
+/* FullCalendar button styles (fallback since CDN CSS may be blocked) */
+.fc .fc-button{background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:0.3rem 0.7rem;font-size:0.7rem;cursor:pointer;font-family:'Raleway',sans-serif;letter-spacing:0.05em;}
+.fc .fc-button:hover{background:var(--charcoal);color:var(--gold);}
+.fc .fc-button-primary:not(:disabled).fc-button-active,.fc .fc-button-primary:not(:disabled):active{background:var(--gold2);border-color:var(--gold2);color:#000;}
+.fc .fc-button-group>.fc-button{border-radius:0;}
+.fc .fc-toolbar-title{font-family:'Playfair Display',serif;font-size:1rem;color:var(--text);}
+.fc .fc-toolbar{margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;}
+.fc .fc-daygrid-day-number{color:var(--text2);font-size:0.72rem;}
+.fc .fc-col-header-cell-cushion{color:var(--text3);font-size:0.68rem;letter-spacing:0.08em;text-transform:uppercase;}
+.fc-theme-standard td,.fc-theme-standard th{border-color:var(--border);}
+.fc-theme-standard .fc-scrollgrid{border-color:var(--border);}
+.fc .fc-daygrid-day.fc-day-today{background:rgba(184,148,58,0.08);}
+.fc .fc-event{background:var(--gold2);border-color:var(--gold);color:#000;font-size:0.68rem;}
+
+
 .fc .fc-toolbar-title {
   font-size: 1.2rem;
   font-weight: 600;
@@ -1171,7 +1186,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
         <div><div class="page-title">My <span>Collection</span></div><div class="page-subtitle">Personal watches — not for sale</div></div>
         <button class="btn-gold" onclick="openCollectionModal()">+ Add Watch</button>
       </div>
-      <div id="coll-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;"></div>
+      <div id="coll-grid" class="inv-rows"></div>
       <div class="empty-state" id="coll-empty" style="display:none"><h3>No personal watches yet</h3><p>Click <strong>+ Add Watch</strong> to add a watch to your collection.</p></div>
     </div>
     <div class="modal-overlay" id="collection-modal" style="display:none" onclick="if(event.target===this)closeCollectionModal()">
@@ -1257,7 +1272,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div style="font-size:0.65rem;color:var(--text2)">my watches with others</div>
         </div>
       </div>
-      <div class="card" style="padding:0;overflow:hidden"><div id="cons-list" style="overflow-x:auto;"></div></div>
+      <div class="inv-rows" id="cons-list"></div>
       <div class="empty-state" id="cons-empty" style="display:none"><h3>No consignments yet</h3><p>Click <strong>+ Add Consignment</strong> to start tracking.</p></div>
     </div>
     <div class="modal-overlay" id="cons-modal" style="display:none" onclick="if(event.target===this)closeConsModal()">
@@ -4365,37 +4380,26 @@ function renderCollection(){
   const grid=document.getElementById('coll-grid');const empty=document.getElementById('coll-empty');
   if(!myCollection.length){empty.style.display='block';grid.innerHTML='';return;}
   empty.style.display='none';
-  const totalCost=myCollection.reduce((s,w)=>s+(+w.purchase_price||0),0);
-  const totalVal=myCollection.reduce((s,w)=>s+(+w.estimated_value||0),0);
-  grid.innerHTML=myCollection.map(w=>`
-    <div class="card" style="padding:0;overflow:hidden;cursor:default">
-      <div style="background:var(--charcoal);padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold2);margin-bottom:0.2rem">${w.brand||''}</div>
-            <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400">${w.model||''}</div>
-            ${w.reference?`<div style="font-size:0.7rem;color:var(--text2);margin-top:0.15rem">${w.reference}</div>`:''}
-          </div>
-          <span style="font-size:0.55rem;background:rgba(184,148,58,0.15);color:var(--gold2);padding:3px 8px;letter-spacing:0.1em;text-transform:uppercase">Personal</span>
-        </div>
+  const hdr=`<div class="inv-row-header"><span>Watch</span><span>Paid</span><span>Est. Value</span><span>Condition</span><span>Papers</span><span>Year / Purchased</span><span>Actions</span></div>`;
+  grid.innerHTML=hdr+myCollection.map(w=>{
+    const sub=[w.reference,w.serial_number?'SN:'+w.serial_number:''].filter(Boolean).join(' · ');
+    return`<div class="inv-row">
+      <div><div class="inv-row-brand">${w.brand||''}</div><div class="inv-row-model">${w.model||''}</div><div class="inv-row-sub">${sub||'—'}</div>${w.notes?`<div class="inv-row-sub" style="font-style:italic">${w.notes}</div>`:''}</div>
+      <div class="inv-row-val gold">${w.purchase_price?'$'+(+w.purchase_price).toLocaleString():'—'}</div>
+      <div class="inv-row-val green">${w.estimated_value?'$'+(+w.estimated_value).toLocaleString():'—'}</div>
+      <div class="inv-row-val muted">${w.condition||'—'}</div>
+      <div class="inv-row-val muted">${w.box_papers||'—'}</div>
+      <div class="inv-row-val muted">${[w.year,w.purchase_date].filter(Boolean).join(' · ')||'—'}</div>
+      <div class="inv-row-val" style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+        <span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end">
+          <button onclick="openCollectionModal('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;font-size:0.55rem;cursor:pointer">Edit</button>
+          <button onclick="moveCollToInventory('${w.id}')" style="background:rgba(184,148,58,0.15);border:1px solid var(--gold2);color:var(--gold2);padding:2px 6px;font-size:0.55rem;cursor:pointer;white-space:nowrap">📦 To Inventory</button>
+          <button onclick="moveCollToConsignment('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 6px;font-size:0.55rem;cursor:pointer;white-space:nowrap">🤝 Consign</button>
+          <button onclick="deleteCollWatch('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:2px 6px;font-size:0.55rem;cursor:pointer">✕</button>
+        </span>
       </div>
-      <div style="padding:1rem 1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.72rem">
-        ${w.year?`<div><span style="color:var(--text2)">Year:</span> ${w.year}</div>`:''}
-        ${w.serial_number?`<div><span style="color:var(--text2)">Serial:</span> ${w.serial_number}</div>`:''}
-        ${w.condition?`<div><span style="color:var(--text2)">Condition:</span> ${w.condition}</div>`:''}
-        ${w.box_papers?`<div><span style="color:var(--text2)">Papers:</span> ${w.box_papers}</div>`:''}
-        ${w.purchase_price?`<div><span style="color:var(--text2)">Paid:</span> $${(+w.purchase_price).toLocaleString()}</div>`:''}
-        ${w.estimated_value?`<div><span style="color:var(--text2)">Est. Value:</span> <span style="color:var(--green)">$${(+w.estimated_value).toLocaleString()}</span></div>`:''}
-        ${w.purchase_date?`<div style="grid-column:1/-1"><span style="color:var(--text2)">Purchased:</span> ${w.purchase_date}</div>`:''}
-        ${w.notes?`<div style="grid-column:1/-1;color:var(--text2);font-style:italic;font-size:0.68rem;border-top:1px solid var(--border);padding-top:0.5rem;margin-top:0.25rem">${w.notes}</div>`:''}
-      </div>
-      <div style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);display:flex;gap:0.5rem;flex-wrap:wrap">
-        <button onclick="openCollectionModal('${w.id}')" style="flex:1;background:none;border:1px solid var(--border);color:var(--text2);padding:5px;font-size:0.65rem;cursor:pointer">Edit</button>
-        <button onclick="moveCollToInventory('${w.id}')" style="flex:1;background:rgba(184,148,58,0.1);border:1px solid var(--gold2);color:var(--gold2);padding:5px;font-size:0.65rem;cursor:pointer">📦 To Inventory</button>
-        <button onclick="moveCollToConsignment('${w.id}')" style="flex:1;background:none;border:1px solid var(--border);color:var(--text2);padding:5px;font-size:0.65rem;cursor:pointer">🤝 Consign</button>
-        <button onclick="deleteCollWatch('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:5px 10px;font-size:0.65rem;cursor:pointer">✕</button>
-      </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function openCollectionModal(id){
@@ -4543,34 +4547,33 @@ function renderConsignments(){
   document.getElementById('cons-holding-count').textContent=holding;
   document.getElementById('cons-out-count').textContent=out;
   const list=document.getElementById('cons-list');const empty=document.getElementById('cons-empty');
-  if(!filtered.length){empty.style.display='block';list.parentElement.style.display='none';return;}
-  empty.style.display='none';list.parentElement.style.display='';
+  if(!filtered.length){empty.style.display='block';list.innerHTML='';return;}
+  empty.style.display='none';
+  const partyLabel=consTab==='holding'?'Owner':'Holder';
   const STATUS_COLORS={active:'var(--gold2)',sold:'var(--green)',returned:'var(--text2)'};
-  list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
-    <thead><tr style="background:var(--surface);border-bottom:1px solid var(--border)">
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Watch</th>
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">${consTab==='holding'?'Owner':'Holder'}</th>
-      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Price</th>
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Split</th>
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Status</th>
-      <th style="padding:0.75rem 1rem;text-align:center;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Actions</th>
-    </tr></thead>
-    <tbody>${filtered.map((c,i)=>`<tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--bg)':'background:var(--surface)'}">
-      <td style="padding:0.75rem 1rem">
-        <div style="font-weight:500">${c.brand||''} ${c.model||''}</div>
-        ${c.reference?`<div style="font-size:0.68rem;color:var(--text2)">${c.reference}</div>`:''}
-        ${c.notes?`<div style="font-size:0.67rem;color:var(--text2);font-style:italic;margin-top:0.2rem">${c.notes}</div>`:''}
-      </td>
-      <td style="padding:0.75rem 1rem;font-weight:500">${c.other_party||'—'}</td>
-      <td style="padding:0.75rem 1rem;text-align:right">${c.agreed_price?'$'+(+c.agreed_price).toLocaleString():'—'}</td>
-      <td style="padding:0.75rem 1rem;color:var(--gold2)">${c.split_terms||'—'}</td>
-      <td style="padding:0.75rem 1rem"><span style="font-size:0.65rem;color:${STATUS_COLORS[c.status]||'var(--text2)'};text-transform:uppercase;letter-spacing:0.08em">${c.status||'active'}</span></td>
-      <td style="padding:0.75rem 1rem;text-align:center;white-space:nowrap">
-        <button onclick="openConsModal('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.65rem;cursor:pointer;margin-right:4px">Edit</button>
-        <button onclick="deleteCons('${c.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:3px 10px;font-size:0.65rem;cursor:pointer">Del</button>
-      </td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  const hdr=`<div class="inv-row-header"><span>Watch</span><span>${partyLabel}</span><span>Price / Split</span><span>Start Date</span><span>Status</span><span>Actions</span></div>`;
+  list.innerHTML=hdr+filtered.map(w=>{
+    const sub=[w.reference].filter(Boolean).join(' · ');
+    return`<div class="inv-row">
+      <div>
+        <div class="inv-row-brand">${w.brand||''}</div>
+        <div class="inv-row-model">${w.model||''}</div>
+        <div class="inv-row-sub">${sub||''}</div>
+        ${w.notes?`<div class="inv-row-sub" style="font-style:italic">${w.notes}</div>`:''}
+      </div>
+      <div class="inv-row-val">${w.other_party||'—'}</div>
+      <div class="inv-row-val">
+        <div class="gold">${w.agreed_price?'$'+(+w.agreed_price).toLocaleString():'—'}</div>
+        <div style="font-size:0.65rem;color:var(--text2)">${w.split_terms||''}</div>
+      </div>
+      <div class="inv-row-val muted">${w.start_date||'—'}</div>
+      <div class="inv-row-val"><span style="font-size:0.65rem;color:${STATUS_COLORS[w.status]||'var(--text2)'};text-transform:uppercase;letter-spacing:0.08em">${w.status||'active'}</span></div>
+      <div class="inv-row-val" style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+        <button onclick="openConsModal('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;font-size:0.6rem;cursor:pointer;white-space:nowrap">Edit</button>
+        <button onclick="deleteCons('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:2px 8px;font-size:0.6rem;cursor:pointer;white-space:nowrap">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function openConsModal(id){
@@ -4772,60 +4775,21 @@ saveConsignment=async function(){
 const _origRenderCons=renderConsignments;
 renderConsignments=function(){
   _origRenderCons();
-  // Patch action buttons to add Return to Inventory option
   const list=document.getElementById('cons-list');
   if(!list)return;
-  // Find all rows and add return button after del button
-  const filtered=allConsignments.filter(c=>c.type===consTab&&c.status==='active');
-  if(!filtered.length)return;
-  // Re-render with extra button
-  const STATUS_COLORS={active:'var(--gold2)',sold:'var(--green)',returned:'var(--text2)'};
-  list.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:0.78rem">
-    <thead><tr style="background:var(--surface);border-bottom:1px solid var(--border)">
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Watch</th>
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">${consTab==='holding'?'Owner':'Holder'}</th>
-      <th style="padding:0.75rem 1rem;text-align:right;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Price</th>
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Split</th>
-      <th style="padding:0.75rem 1rem;text-align:left;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Status</th>
-      <th style="padding:0.75rem 1rem;text-align:center;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2)">Actions</th>
-    </tr></thead>
-    <tbody>${allConsignments.filter(c=>c.type===consTab).map((c,i)=>`<tr style="border-bottom:1px solid var(--border);${i%2===0?'background:var(--bg)':'background:var(--surface)'}">
-      <td style="padding:0.75rem 1rem">
-        <div style="font-weight:500">${c.brand||''} ${c.model||''}</div>
-        ${c.reference?`<div style="font-size:0.68rem;color:var(--text2)">${c.reference}</div>`:''}
-        ${c.notes?`<div style="font-size:0.67rem;color:var(--text2);font-style:italic;margin-top:0.2rem">${c.notes}</div>`:''}
-      </td>
-      <td style="padding:0.75rem 1rem;font-weight:500">${c.other_party||'—'}</td>
-      <td style="padding:0.75rem 1rem;text-align:right">${c.agreed_price?'$'+(+c.agreed_price).toLocaleString():'—'}</td>
-      <td style="padding:0.75rem 1rem;color:var(--gold2)">${c.split_terms||'—'}</td>
-      <td style="padding:0.75rem 1rem"><span style="font-size:0.65rem;color:${STATUS_COLORS[c.status]||'var(--text2)'};text-transform:uppercase;letter-spacing:0.08em">${c.status||'active'}</span></td>
-      <td style="padding:0.75rem 1rem;text-align:center;white-space:nowrap;display:flex;flex-direction:column;gap:3px;align-items:center">
-        <button onclick="openConsModal('${c.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.65rem;cursor:pointer;width:100%">Edit</button>
-        ${c.status==='active'?`<button onclick="returnConsToInventory('${c.id}')" style="background:rgba(184,148,58,0.1);border:1px solid var(--gold2);color:var(--gold2);padding:3px 10px;font-size:0.65rem;cursor:pointer;width:100%">📦 Return to Inv</button>`:''}
-        <button onclick="deleteCons('${c.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:3px 10px;font-size:0.65rem;cursor:pointer;width:100%">Delete</button>
-      </td>
-    </tr>`).join('')}</tbody>
-  </table>`;
+  const rows=list.querySelectorAll('.inv-row');
+  const active=allConsignments.filter(c=>c.type===consTab);
+  rows.forEach((row,i)=>{
+    const w=active[i];if(!w||w.status!=='active')return;
+    const actions=row.querySelector('.inv-row-val:last-child');if(!actions)return;
+    const btn=document.createElement('button');
+    btn.textContent='📦 Return to Inv';
+    btn.style.cssText='background:none;border:1px solid var(--border);color:var(--text2);padding:2px 6px;font-size:0.55rem;cursor:pointer;white-space:nowrap';
+    btn.onclick=()=>returnConsToInventory(w.id);
+    actions.appendChild(btn);
+  });
 };
 
-async function returnConsToInventory(id){
-  const c=allConsignments.find(x=>x.id===id);if(!c)return;
-  if(!confirm(`Return "${c.brand} ${c.model}" to inventory?`))return;
-  const invRow=watchToInventoryRow({
-    brand:c.brand,model:c.model,ref:c.reference,
-    notes:`Returned from consignment with ${c.other_party}`
-  },'Consignment');
-  const[ins,upd]=await Promise.all([
-    db.from('inventory').insert(invRow).select().single(),
-    db.from('consignments').update({status:'returned'}).eq('id',id)
-  ]);
-  if(ins.error){showToast('Error: '+ins.error.message);return;}
-  inventory.unshift(ins.data);
-  const idx=allConsignments.findIndex(x=>x.id===id);
-  if(idx>=0)allConsignments[idx].status='returned';
-  refreshAll();renderConsignments();
-  showToast(`${c.brand} ${c.model} returned to inventory.`);
-}
 // ── END MOVE FUNCTIONS ────────────────────────────
 let currentInvoiceTab='sent';
 function switchInvoiceTab(tab){
@@ -6317,7 +6281,7 @@ async function initCalendar() {
   _fcInstance = new FullCalendar.Calendar(el, {
     initialView: 'dayGridMonth',
     height: 'auto',
-    headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,timeGridDay' },
+    headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,timeGridDay,listYear' },
     buttonText: { today:'Today', month:'Month', week:'Week', day:'Day' },
     events: events,
     eventClick: function(info) {
