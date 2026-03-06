@@ -4126,7 +4126,7 @@ function printExpenses(){
     </tbody></table>`;
   }).join('')}
   <div class="grand-total">Total Expenses: $${total.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-  <script>window.onload=()=>window.print()<\/script>
+  <scr'+'ipt>window.onload=()=>window.print()</scr'+'ipt>
   </body></html>`;
 
   const w=window.open('','_blank');w.document.write(html);w.document.close();
@@ -4246,7 +4246,7 @@ function printMileage(){
   <table><thead><tr><th>Date</th><th>Purpose</th><th>Category</th><th>From</th><th style="text-align:right">Miles</th><th style="text-align:right">Deduction</th></tr></thead>
   <tbody>${f.map(m=>`<tr><td>${m.date||''}</td><td>${m.purpose||''}</td><td>${m.category||''}</td><td>${m.from_location||''}</td><td style="text-align:right">${(+m.miles||0).toFixed(1)}</td><td style="text-align:right">$${((+m.miles||0)*IRS_RATE).toFixed(2)}</td></tr>`).join('')}</tbody>
   <tfoot><tr class="total"><td colspan="4">TOTAL (${f.length} trips)</td><td style="text-align:right">${totalMiles.toFixed(1)} mi</td><td style="text-align:right">$${(totalMiles*IRS_RATE).toFixed(2)}</td></tr></tfoot>
-  </table><script>window.onload=()=>window.print()<\/script></body></html>`;
+  </table><scr'+'ipt>window.onload=()=>window.print()</scr'+'ipt></body></html>`;
   const w=window.open('','_blank');w.document.write(html);w.document.close();
 }
 
