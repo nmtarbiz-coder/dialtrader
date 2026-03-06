@@ -1404,7 +1404,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
     </div>
     <div style="display:flex;gap:0.75rem;">
   <button class="btn-outline" onclick="syncInventoryEvents()">Sync Inventory</button>
-  <button class="btn-gold" onclick="openCalendarModal()">+ Add Event</button>
+  <button class="btn-gold" onclick="openCalendarEventModal()">+ Add Event</button>
 </div>
 
   <div class="panel">
@@ -6298,7 +6298,153 @@ document.addEventListener('DOMContentLoaded',()=>{
 
  </script>
 
-<script src="calendar.js"></script>
+<script>
+async function initCalendar() {
+  if (typeof FullCalendar === 'undefined') { console.error('FullCalendar not loaded'); return; }
+  const el = document.getElementById('main-calendar');
+  if (!el) return;
+  if (_fcInstance) { _fcInstance.destroy(); _fcInstance = null; }
+  const events = await buildCalendarEvents();
+  _fcInstance = new FullCalendar.Calendar(el, {
+    initialView: 'dayGridMonth',
+    height: 'auto',
+    headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek,timeGridDay' },
+    buttonText: { today:'Today', month:'Month', week:'Week', day:'Day' },
+    events: events,
+    eventClick: function(info) {
+      const e = info.event;
+      const props = e.extendedProps;
+      if (props.type === 'manual') {
+        if (confirm('Delete event "' + e.title + '"?')) { deleteCalendarEvent(props.dbId); }
+      } else {
+        showToast(e.title + (props.notes ? ' — ' + props.notes : ''));
+      }
+    },
+    eventClassNames: function(arg) {
+      return ['event-' + (arg.event.extendedProps.type || 'manual')];
+    }
+  });
+  _fcInstance.render();
+  setTimeout(() => _fcInstance && _fcInstance.updateSize(), 200);
+}
+
+async function initDashCalendar() {
+  if (typeof FullCalendar === 'undefined') return;
+  const el = document.getElementById('dash-calendar');
+  if (!el) return;
+  if (_fcDash) { _fcDash.destroy(); _fcDash = null; }
+  const events = await buildCalendarEvents();
+  _fcDash = new FullCalendar.Calendar(el, {
+    initialView: 'dayGridWeek',
+    height: 240,
+    headerToolbar: false,
+    events: events,
+    eventClick: function(info) {
+      const e = info.event;
+      showToast(e.title + (e.extendedProps.notes ? ' — ' + e.extendedProps.notes : ''));
+    },
+    eventClassNames: function(arg) {
+      return ['event-' + (arg.event.extendedProps.type || 'manual')];
+    }
+  });
+  _fcDash.render();
+  setTimeout(() => _fcDash && _fcDash.updateSize(), 200);
+}
+
+async function buildCalendarEvents() {
+  const events = [];
+  (inventory || []).forEach(w => {
+    if (w.purchase_date) events.push({
+      title: '\u{1F4E6} ' + w.brand + ' ' + w.model,
+      start: w.purchase_date, allDay: true,
+      extendedProps: { type: 'inventory', notes: 'Purchased' + (w.ref ? ' · ' + w.ref : '') }
+    });
+  });
+  (soldWatches || []).forEach(w => {
+    if (w.sale_date) events.push({
+      title: '\u2705 ' + w.brand + ' ' + w.model,
+      start: w.sale_date, allDay: true,
+      extendedProps: { type: 'sold', notes: 'Sold' + (w.ref ? ' · ' + w.ref : '') }
+    });
+  });
+  try {
+    const { data } = await db.from('calendar_events').select('*').eq('user_id', currentUser.id);
+    (data || []).forEach(e => events.push({
+      title: e.title, start: e.event_date, allDay: true,
+      extendedProps: { type: 'manual', dbId: e.id, notes: e.description || '' }
+    }));
+  } catch(err) { console.warn('calendar_events table not found'); }
+  return events;
+}
+
+async function syncInventoryToCalendar() {
+  showToast('Syncing watches to calendar...');
+  await initCalendar();
+  showToast('Calendar synced.');
+}
+
+function openCalendarEventModal() {
+  const today = new Date().toISOString().split('T')[0];
+  const overlay = document.createElement('div');
+  overlay.id = 'cal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999';
+  overlay.innerHTML = `
+    <div style="background:var(--charcoal);border:1px solid var(--border);padding:2rem;border-radius:12px;width:420px;max-width:95%;box-shadow:0 20px 50px rgba(0,0,0,0.5)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text)">Add Event</div>
+        <button onclick="document.getElementById('cal-overlay').remove()" style="background:none;border:none;color:var(--text2);font-size:1.2rem;cursor:pointer">✕</button>
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <label class="form-label">Title *</label>
+        <input class="form-input" id="cal-ev-title" placeholder="e.g. Watch show, Payment due...">
+      </div>
+      <div style="margin-bottom:0.75rem">
+        <label class="form-label">Date *</label>
+        <input class="form-input" type="date" id="cal-ev-date" value="${today}">
+      </div>
+      <div style="margin-bottom:1.25rem">
+        <label class="form-label">Notes (optional)</label>
+        <textarea class="form-textarea" id="cal-ev-notes" placeholder="Any details..." style="min-height:70px"></textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:0.5rem">
+        <button class="btn-outline" onclick="document.getElementById('cal-overlay').remove()">Cancel</button>
+        <button class="btn-gold" id="cal-save-btn" onclick="saveCalendarEvent(this)">Save Event</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('cal-ev-title') && document.getElementById('cal-ev-title').focus(), 50);
+}
+
+async function saveCalendarEvent(btn) {
+  const title = document.getElementById('cal-ev-title').value.trim();
+  const date = document.getElementById('cal-ev-date').value;
+  const notes = document.getElementById('cal-ev-notes').value.trim();
+  if (!title || !date) { showToast('Title and date are required.'); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { error } = await db.from('calendar_events').insert({
+    user_id: currentUser.id, title, event_date: date,
+    description: notes || null, event_type: 'manual'
+  });
+  if (error) {
+    showToast('Error saving — run the migration SQL first.');
+    btn.disabled = false; btn.textContent = 'Save Event'; return;
+  }
+  const o = document.getElementById('cal-overlay'); if(o) o.remove();
+  showToast('Event saved.');
+  await initCalendar();
+}
+
+async function deleteCalendarEvent(id) {
+  const { error } = await db.from('calendar_events').delete().eq('id', id);
+  if (error) { showToast('Error deleting event.'); return; }
+  showToast('Event deleted.');
+  await initCalendar();
+}
+
+// ── TASKS ──────────────────────────────────────────────────────────────────────────────
+
+// ── TASKS ─────────────────────────────────────────────────────────────────
+</script>
 
 <!-- MORE MENU OVERLAY -->
 <div id="more-overlay" onclick="toggleMore()"></div>
