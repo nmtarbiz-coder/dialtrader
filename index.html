@@ -850,7 +850,8 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
       <div id="invoices-detail-view" style="display:none">
         <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
           <span style="font-size:0.7rem;color:var(--text2);cursor:pointer;letter-spacing:0.06em;text-transform:uppercase" onclick="showInvoicesList()">← Back to Invoices</span>
-          <div style="margin-left:auto;display:flex;gap:0.5rem">
+          <div style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap">
+            <button class="btn-outline btn-sm" onclick="emailInvoice()">✉️ Email</button>
             <button class="btn-outline btn-sm" onclick="printInvoice()">🖨 Print / PDF</button>
             <button class="btn-outline btn-sm" onclick="editCurrentInvoice()">✏️ Edit</button>
             <button class="btn-gold btn-sm" id="btn-mark-paid" onclick="markInvoicePaid()">Mark Paid</button>
@@ -1783,9 +1784,13 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
 <!-- INVENTORY PICKER -->
 <div class="modal-overlay" id="inv-picker-modal" onclick="if(event.target===this)closeInvPicker()">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">Select from Inventory</div><button class="modal-close" onclick="closeInvPicker()">✕</button></div>
+    <div class="modal-header"><div class="modal-title">Select Watch</div><button class="modal-close" onclick="closeInvPicker()">✕</button></div>
     <div class="modal-body">
-      <input class="search-input" id="inv-picker-search" type="text" placeholder="Search inventory..." oninput="renderInvPicker()" style="width:100%;margin-bottom:1rem">
+      <div style="display:flex;gap:0;border:1px solid var(--border);margin-bottom:1rem;">
+        <div id="picker-tab-inv" onclick="switchPickerTab('inv')" style="flex:1;padding:0.45rem;text-align:center;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;cursor:pointer;background:var(--charcoal);color:#fff;">Current Inventory</div>
+        <div id="picker-tab-sold" onclick="switchPickerTab('sold')" style="flex:1;padding:0.45rem;text-align:center;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;cursor:pointer;color:var(--text2);">Sold History</div>
+      </div>
+      <input class="search-input" id="inv-picker-search" type="text" placeholder="Search..." oninput="renderInvPicker()" style="width:100%;margin-bottom:1rem">
       <div id="inv-picker-list" style="max-height:380px;overflow-y:auto;border:1px solid var(--border)"></div>
     </div>
   </div>
@@ -2765,18 +2770,45 @@ function addInvoiceLineManual(){
   invoiceLineItems.push({type:'manual',description:'',qty:1,price:0,watchId:null});
   renderInvoiceLines();
 }
-function addInvoiceLineFromInventory(){document.getElementById('inv-picker-modal').classList.add('open');renderInvPicker();}
+let invPickerTab='inv';
+function switchPickerTab(tab){
+  invPickerTab=tab;
+  document.getElementById('picker-tab-inv').style.background=tab==='inv'?'var(--charcoal)':'transparent';
+  document.getElementById('picker-tab-inv').style.color=tab==='inv'?'#fff':'var(--text2)';
+  document.getElementById('picker-tab-sold').style.background=tab==='sold'?'var(--charcoal)':'transparent';
+  document.getElementById('picker-tab-sold').style.color=tab==='sold'?'#fff':'var(--text2)';
+  document.getElementById('inv-picker-search').placeholder=tab==='inv'?'Search inventory...':'Search sold history...';
+  document.getElementById('inv-picker-search').value='';
+  renderInvPicker();
+}
+function addInvoiceLineFromInventory(){invPickerTab='inv';document.getElementById('inv-picker-modal').classList.add('open');switchPickerTab('inv');}
 function closeInvPicker(){document.getElementById('inv-picker-modal').classList.remove('open');}
 function renderInvPicker(){
   const q=(document.getElementById('inv-picker-search').value||'').toLowerCase();
-  const f=inventory.filter(w=>`${w.brand} ${w.model} ${w.ref} ${w.serial||''}`.toLowerCase().includes(q));
-  document.getElementById('inv-picker-list').innerHTML=f.length?f.map(w=>
-    `<div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" onclick="pickWatchForInvoice('${w.id}')">
-      <div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.2rem">${w.brand}</div>
-      <div style="font-size:0.88rem;font-weight:500">${w.model}${w.ref?' · Ref: '+w.ref:''}${w.serial?' · SN: '+w.serial:''}</div>
-      <div style="font-size:0.7rem;color:var(--text2);margin-top:0.15rem">${w.year?'Year: '+w.year+' · ':''} Listed: ${w.listed_price?fmt(w.listed_price):'No price set'} · ${w.condition||''} ${w.box_papers?'· '+w.box_papers:''}</div>
-    </div>`).join(''):'<div style="padding:1.5rem;text-align:center;color:var(--text2);font-size:0.75rem">No inventory matches</div>';
+  const pool = invPickerTab==='sold' ? soldWatches : inventory;
+  const f=pool.filter(w=>(w.brand+' '+w.model+' '+(w.ref||'')).toLowerCase().includes(q));
+  document.getElementById('inv-picker-list').innerHTML=f.length?f.map(w=>{
+    const parts=[w.brand,w.model,w.ref,w.year].filter(Boolean);
+    const price = invPickerTab==='sold' ? (w.sold_price||w.listed_price||0) : (w.listed_price||0);
+    const lbl = invPickerTab==='sold' ? `Sold $${price.toLocaleString()}` : (price?`$${price.toLocaleString()}`:'No price set');
+    return `<div style="padding:0.75rem 1rem;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.78rem" onclick="pickWatch('${w.id}','${invPickerTab}')">
+      <div style="font-weight:600">${escHtml(parts.join(' · '))}</div>
+      <div style="font-size:0.68rem;color:var(--text2);margin-top:0.2rem">${lbl}${w.serial?' · S/N '+escHtml(w.serial):''}</div>
+    </div>`;
+  }).join(''):`<div style="padding:2rem;text-align:center;color:var(--text2);font-size:0.75rem">No watches found</div>`;
 }
+
+function pickWatch(id, source){
+  const pool = source==='sold' ? soldWatches : inventory;
+  const w=pool.find(x=>x.id===id);
+  if(!w)return;
+  const parts=[w.brand,w.model,w.ref,w.year,w.serial?'S/N '+w.serial:''].filter(Boolean);
+  const price = source==='sold' ? (w.sold_price||w.listed_price||0) : (w.listed_price||0);
+  invoiceLineItems.push({type:'watch',description:parts.join(' · '),qty:1,price:price,watchId:w.id});
+  renderInvoiceLines();updateInvoiceTotals();closeInvPicker();
+}
+
+
 function pickWatchForInvoice(watchId){
   const w=inventory.find(x=>x.id===watchId);if(!w)return;
   const parts=[w.brand,w.model];
@@ -2897,10 +2929,30 @@ async function markInvoicePaid(){
   showToast('Invoice marked as paid.');
 }
 
+
+function emailInvoice(){
+  if(!currentInvoiceData){return;}
+  const inv=currentInvoiceData;
+  const to=inv.bill_email||'';
+  const subject=encodeURIComponent(`Invoice ${inv.invoice_number||''} from ${userProfile.biz_name||'DialTrader'}`);
+  const body=encodeURIComponent(
+    `Hi ${inv.bill_name||''},\n\n`+
+    `Please find your invoice attached.\n\n`+
+    `Invoice #: ${inv.invoice_number||'—'}\n`+
+    `Date: ${inv.invoice_date||'—'}\n`+
+    `Amount Due: $${(inv.balance_due||0).toFixed(2)}\n\n`+
+    `To pay via Zelle: ${inv.show_zelle&&userProfile.zelle?userProfile.zelle:'—'}\n`+
+    `To pay via Apple Pay: ${inv.show_applepay&&userProfile.applepay?userProfile.applepay:'—'}\n\n`+
+    `Thank you,\n${userProfile.biz_name||'DialTrader'}`
+  );
+  window.location.href=`mailto:${to}?subject=${subject}&body=${body}`;
+}
+
 function printInvoice(){window.print();}
 
 function buildInvoiceHTML(inv){
   const items=inv.line_items||[];
+  const showPay=inv.show_zelle||inv.show_applepay||inv.show_wire;
   const logoHtml=`<div style="width:80px;height:94px;display:flex;align-items:center;justify-content:center">${LOGO_SVG.replace(/width="600"/, 'width="80"').replace(/height="700"/, 'height="94"')}</div>`;
   return`<div class="invoice-preview">
     <div class="inv-hdr">
@@ -6502,6 +6554,7 @@ function acPick(prefix, contactId) {
     'sell-sell': { name: 'f-sell-name-sell', phone: 'f-sell-phone-sell', email: 'f-sell-email-sell', loc: null },
     'se-buy':    { name: 'se-buy-name',      phone: 'se-buy-phone',      email: 'se-buy-email',      loc: null },
     'se-sell':   { name: 'se-sell-name',     phone: 'se-sell-phone',     email: 'se-sell-email',     loc: null },
+    'inv-bill':  { name: 'inv-bill-name',    phone: 'inv-bill-phone',    email: 'inv-bill-email',    loc: null },
   };
   const fields = fieldMap[prefix];
   if (!fields) return;
