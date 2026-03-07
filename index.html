@@ -500,11 +500,12 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 
 /* ── BOTTOM NAV (mobile) ── */
 #bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--charcoal);border-top:2px solid var(--gold);z-index:500;padding-bottom:env(safe-area-inset-bottom);}
-.bnav-inner{display:flex;height:62px;align-items:stretch;}
-.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#666;cursor:pointer;font-family:'Raleway',sans-serif;font-size:0.58rem;letter-spacing:0;text-transform:uppercase;font-weight:700;padding:0;min-width:0;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.bnav-inner{display:flex;height:62px;align-items:stretch;justify-content:space-around;padding:0 8px;}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#666;cursor:pointer;font-family:'Raleway',sans-serif;font-size:0.58rem;letter-spacing:0;text-transform:uppercase;font-weight:700;padding:0 4px;min-width:44px;max-width:80px;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .bnav-btn.active{color:var(--gold);}
 .bnav-btn:active{opacity:0.6;}
 .bnav-icon{font-size:1.35rem;line-height:1;display:block;}
+.bnav-svg{width:22px;height:22px;display:block;}
 #more-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:510;}
 #more-overlay.open{display:block;}
 #more-menu{display:none;position:fixed;bottom:62px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:520;padding-bottom:env(safe-area-inset-bottom);}
@@ -1414,7 +1415,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="page-subtitle">Events &amp; reminders</div>
     </div>
     <div style="display:flex;gap:0.75rem;">
-      <button class="btn-outline" onclick="syncInventoryEvents()">Sync Inventory</button>
+      <button class="btn-outline" onclick="syncInventoryToCalendar()">Sync Inventory</button>
       <button class="btn-gold" onclick="openCalendarEventModal()">+ Add Event</button>
     </div>
   </div>
@@ -2239,6 +2240,7 @@ function updateNavBadges(){document.getElementById('nav-inv-count').textContent=
 // ── NAV ───────────────────────────────────────────
 function showPage(name){
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
+  if(typeof _fcInstance !== 'undefined' && _fcInstance && name !== 'calendar'){_fcInstance.destroy();_fcInstance=null;}
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const pg=document.getElementById('page-'+name);if(pg){pg.style.display='block';pg.classList.add('active');}
   const navEl=document.querySelector(`.nav-item[onclick="showPage('${name}')"]`);if(navEl)navEl.classList.add('active');
@@ -2258,7 +2260,7 @@ function showPage(name){
   if(name==='settings')populateSettingsPage();
   if(name==='help'){showHelp(currentHelpArticle);}
   if(name==='storefront')initStorefrontPage();
-  if(name==='calendar')setTimeout(initCalendar,50);
+  if(name==='calendar')setTimeout(initCalendar,80);
 }
 
 // ── HELPERS ───────────────────────────────────────
@@ -6273,9 +6275,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 <script>
 async function initCalendar() {
-  if (typeof FullCalendar === 'undefined') { console.error('FullCalendar not loaded'); return; }
+  if (typeof FullCalendar === 'undefined') { console.warn('FullCalendar not loaded'); return; }
   const el = document.getElementById('main-calendar');
-  if (!el) return;
+  if (!el) { console.warn('main-calendar element not found'); return; }
   if (_fcInstance) { _fcInstance.destroy(); _fcInstance = null; }
   const events = await buildCalendarEvents();
   _fcInstance = new FullCalendar.Calendar(el, {
@@ -6298,7 +6300,8 @@ async function initCalendar() {
     }
   });
   _fcInstance.render();
-  setTimeout(() => _fcInstance && _fcInstance.updateSize(), 200);
+  setTimeout(() => { if(_fcInstance) { _fcInstance.updateSize(); } }, 100);
+  setTimeout(() => { if(_fcInstance) { _fcInstance.updateSize(); } }, 500);
 }
 
 async function initDashCalendar() {
