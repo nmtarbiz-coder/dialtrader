@@ -3126,10 +3126,17 @@ async function markAsSold(){
   const row=inventory.find(w=>w.id===editingId);if(!row)return;
   const soldPrice=parseFloat(document.getElementById('f-sold-price').value)||0;
   if(!soldPrice){showToast('Enter a sold price.');return;}
-  const g=id=>document.getElementById(id).value.trim();
-  const sellName=g('f-sell-name-sell')||row.sell_name||'';
-  const sellPhone=g('f-sell-phone-sell')||row.sell_phone||'';
-  const sellEmail=g('f-sell-email-sell')||row.sell_email||'';
+  const g=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+  // Seller info — read from live Contacts tab fields first, fall back to saved row
+  const buyName  = g('f-buy-name')   || row.buy_name   || '';
+  const buyPhone = g('f-buy-phone')  || row.buy_phone  || '';
+  const buyEmail = g('f-buy-email')  || row.buy_email  || '';
+  const buyLoc   = g('f-buy-location')|| row.buy_location|| '';
+  // Buyer info — Mark Sold tab fields first, then Contacts tab, then saved row
+  const sellName = g('f-sell-name-sell')|| g('f-sell-name') || row.sell_name  || '';
+  const sellPhone= g('f-sell-phone-sell')|| g('f-sell-phone')|| row.sell_phone || '';
+  const sellEmail= g('f-sell-email-sell')|| g('f-sell-email')|| row.sell_email || '';
+  const sellLoc  = g('f-sell-location') || row.sell_location || '';
   // Auto-create buyer contact (separate from source contact)
   let buyerContactId=null;
   if(sellName){
@@ -3140,7 +3147,16 @@ async function markAsSold(){
       if(nc){contacts.unshift(nc);buyerContactId=nc.id;updateNavBadges();}
     }
   }
-  const sourceContactId = row.source_contact_id || row.contact_id || null;
+  // Auto-create seller (source) contact if name filled in
+  let sourceContactId = row.source_contact_id || row.contact_id || null;
+  if(buyName && !sourceContactId){
+    const existingSrc=contacts.find(c=>(c.name||'').toLowerCase()===buyName.toLowerCase());
+    if(existingSrc){sourceContactId=existingSrc.id;}
+    else{
+      const{data:sc}=await db.from('contacts').insert({user_id:currentUser.id,name:buyName,phone:buyPhone||null,email:buyEmail||null}).select().single();
+      if(sc){contacts.unshift(sc);sourceContactId=sc.id;updateNavBadges();}
+    }
+  }
   const soldRow={
     user_id:currentUser.id,
     source_contact_id:sourceContactId,
@@ -3158,8 +3174,8 @@ async function markAsSold(){
     notes:row.notes,condition:row.condition,box_papers:row.box_papers,
     case_size:row.case_size,case_material:row.case_material,movement:row.movement,
     dial_color:row.dial_color,bezel_color:row.bezel_color,bracelet_type:row.bracelet_type,bracelet_color:row.bracelet_color,
-    buy_name:row.buy_name,buy_phone:row.buy_phone,buy_email:row.buy_email,buy_location:row.buy_location,
-    sell_name:sellName,sell_phone:sellPhone,sell_email:sellEmail,sell_location:row.sell_location||'',
+    buy_name:buyName,buy_phone:buyPhone,buy_email:buyEmail,buy_location:buyLoc,
+    sell_name:sellName,sell_phone:sellPhone,sell_email:sellEmail,sell_location:sellLoc,
     photo_urls:row.photo_urls||[],
   };
   const[ins,del]=await Promise.all([
