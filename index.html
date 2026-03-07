@@ -854,6 +854,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
             <button class="btn-outline btn-sm" onclick="emailInvoice()">✉️ Email</button>
             <button class="btn-outline btn-sm" onclick="printInvoice()">🖨 Print / PDF</button>
             <button class="btn-outline btn-sm" onclick="editCurrentInvoice()">✏️ Edit</button>
+            <button class="btn-danger btn-sm" onclick="deleteInvoice()">🗑 Delete</button>
             <button class="btn-gold btn-sm" id="btn-mark-paid" onclick="markInvoicePaid()">Mark Paid</button>
           </div>
         </div>
@@ -2961,6 +2962,20 @@ function emailInvoice(){
     `Thank you,\n${userProfile.biz_name||'DialTrader'}`
   );
   window.location.href=`mailto:${to}?subject=${subject}&body=${body}`;
+}
+
+async function deleteInvoice(){
+  if(!currentInvoiceData)return;
+  const inv=currentInvoiceData;
+  const label=`Invoice ${inv.invoice_number||'#'}${inv.bill_name?' for '+inv.bill_name:''}`;
+  if(!confirm(`Delete ${label}? This cannot be undone.`))return;
+  const{error}=await db.from('invoices').delete().eq('id',inv.id);
+  if(error){showToast('Error: '+error.message);return;}
+  invoices=invoices.filter(i=>i.id!==inv.id);
+  currentInvoiceData=null;
+  showInvoicesList();
+  renderInvoices();
+  showToast(`${label} deleted.`);
 }
 
 function printInvoice(){window.print();}
