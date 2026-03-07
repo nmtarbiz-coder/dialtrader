@@ -674,6 +674,20 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
   </nav>
 
   <div class="main-content">
+<div id="schema-migration-banner" style="display:none;background:#7A1A1A;color:#fff;padding:0.85rem 1rem;margin-bottom:1rem;border-left:4px solid #ff4444;font-size:0.8rem;line-height:1.6;">
+  <strong>⚠️ Database Update Required</strong><br>
+  Your inventory table is missing contact columns added in v17. Run this SQL in your <a href="https://app.supabase.com" target="_blank" style="color:#ffaaaa">Supabase SQL editor</a>:<br><br>
+  <code style="background:rgba(0,0,0,0.3);padding:0.5rem;display:block;margin-top:0.5rem;white-space:pre-wrap;font-size:0.72rem;user-select:all">ALTER TABLE inventory
+  ADD COLUMN IF NOT EXISTS buy_name text,
+  ADD COLUMN IF NOT EXISTS buy_phone text,
+  ADD COLUMN IF NOT EXISTS buy_email text,
+  ADD COLUMN IF NOT EXISTS buy_location text,
+  ADD COLUMN IF NOT EXISTS sell_name text,
+  ADD COLUMN IF NOT EXISTS sell_phone text,
+  ADD COLUMN IF NOT EXISTS sell_email text,
+  ADD COLUMN IF NOT EXISTS sell_location text;</code>
+</div>
+
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
@@ -2118,6 +2132,17 @@ async function initAuth(){
   });
 }
 function showAuthScreen(){document.getElementById('loading-screen').classList.remove('visible');document.getElementById('app-screen').classList.remove('visible');document.getElementById('auth-screen').classList.add('visible');}
+async function checkInventorySchema(){
+  // Check if inventory table has buy_name column (added in v17)
+  try {
+    const {data, error} = await db.from('inventory').select('buy_name').limit(1);
+    if (error && error.message && error.message.includes('buy_name')) {
+      showToast('⚠️ DB update needed — see Settings > Database Migration', 6000);
+      document.getElementById('schema-migration-banner').style.display = 'block';
+    }
+  } catch(e) {}
+}
+
 async function showApp(){
   // Hard timeout — if something hangs, force the app visible after 8 seconds
   const forceShow=setTimeout(()=>{
@@ -2135,6 +2160,7 @@ async function showApp(){
   const profileComplete=await loadUserProfile();
   console.log('showApp: loading data...');
   await loadAllData();
+  checkInventorySchema();
   console.log('showApp: rendering core...');
   renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();renderTasksPage();
   console.log('showApp: loading extras...');
