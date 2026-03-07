@@ -1419,6 +1419,21 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           </div>
         </div>
         <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-title">Invoice Logo</div>
+          <div class="card-sub">Appears in the top-right of every invoice. Recommended: PNG or JPG, square or landscape, under 1MB.</div>
+          <div style="margin-top:1.25rem;display:flex;align-items:flex-start;gap:1.5rem;flex-wrap:wrap">
+            <div id="sp-logo-preview" style="width:120px;height:80px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;background:var(--surface2);flex-shrink:0;overflow:hidden;">
+              <span style="font-size:0.68rem;color:var(--text3);text-align:center;padding:0.5rem">No logo<br>uploaded</span>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <input type="file" id="sp-logo-file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" style="display:none" onchange="handleLogoUpload(event)">
+              <button class="btn-outline" onclick="document.getElementById('sp-logo-file').click()" style="margin-bottom:0.5rem">📁 Choose Logo Image</button>
+              <div id="sp-logo-status" style="font-size:0.7rem;color:var(--text2);margin-top:0.4rem"></div>
+              <button id="sp-logo-remove" class="btn-outline" onclick="removeLogo()" style="display:none;margin-top:0.5rem;font-size:0.65rem;color:#c44">✕ Remove Logo</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:1.5rem">
           <div class="card-title">Account</div>
           <div class="card-sub">Your login email: <strong id="sp-login-email" style="color:#fff"></strong></div>
           <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap">
@@ -2953,7 +2968,9 @@ function printInvoice(){window.print();}
 function buildInvoiceHTML(inv){
   const items=inv.line_items||[];
   const showPay=inv.show_zelle||inv.show_applepay||inv.show_wire;
-  const logoHtml=`<div style="width:80px;height:94px;display:flex;align-items:center;justify-content:center">${LOGO_SVG.replace(/width="600"/, 'width="80"').replace(/height="700"/, 'height="94"')}</div>`;
+  const logoHtml=userProfile.logo_url
+    ?`<img src="${userProfile.logo_url}" style="max-width:160px;max-height:90px;object-fit:contain;display:block">`
+    :`<div style="width:80px;height:94px;display:flex;align-items:center;justify-content:center">${LOGO_SVG.replace(/width="600"/, 'width="80"').replace(/height="700"/, 'height="94"')}</div>`;
   return`<div class="invoice-preview">
     <div class="inv-hdr">
       <div>
@@ -5313,7 +5330,7 @@ async function saveSoldEdit(){
 // ── USER PROFILE ─────────────────────────────────
 let userProfile={
   biz_name:'',owner_name:'',phone:'',contact_email:'',address:'',
-  website:'',zelle:'',applepay:'',wire_info:'',inv_notes:'',
+  website:'',zelle:'',applepay:'',wire_info:'',inv_notes:'',logo_url:'',
   profile_complete:false
 };
 
@@ -5368,6 +5385,7 @@ function populateSettingsPage(){
   document.getElementById('sp-wire').value=userProfile.wire_info||'';
   document.getElementById('sp-inv-notes').value=userProfile.inv_notes||'';
   document.getElementById('sp-login-email').textContent=currentUser.email;
+  renderLogoPreview(userProfile.logo_url||'');
 }
 
 async function changePassword(){
@@ -5376,6 +5394,70 @@ async function changePassword(){
   if(error)showToast('Error: '+error.message);
   else showToast('Password reset email sent to '+email);
 }
+
+
+// ── INVOICE LOGO ─────────────────────────────────────────────────────────────
+function renderLogoPreview(url){
+  const el=document.getElementById('sp-logo-preview');
+  const rmBtn=document.getElementById('sp-logo-remove');
+  if(!el)return;
+  if(url){
+    el.innerHTML=`<img src="${url}" style="max-width:116px;max-height:76px;object-fit:contain">`;
+    if(rmBtn)rmBtn.style.display='inline-block';
+  }else{
+    el.innerHTML='<span style="font-size:0.68rem;color:var(--text3);text-align:center;padding:0.5rem">No logo<br>uploaded</span>';
+    if(rmBtn)rmBtn.style.display='none';
+  }
+}
+
+async function handleLogoUpload(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  if(file.size>2*1024*1024){showToast('Logo must be under 2MB.');return;}
+  const status=document.getElementById('sp-logo-status');
+  status.textContent='Uploading…';
+
+  // Try Supabase Storage first
+  try{
+    const ext=file.name.split('.').pop();
+    const path=`logos/${currentUser.id}/invoice-logo.${ext}`;
+    const{error:upErr}=await db.storage.from('user-assets').upload(path,file,{upsert:true,contentType:file.type});
+    if(!upErr){
+      const{data:urlData}=db.storage.from('user-assets').getPublicUrl(path);
+      const logoUrl=urlData.publicUrl+'?v='+Date.now();
+      await saveLogo(logoUrl);
+      status.textContent='✓ Logo saved';
+      setTimeout(()=>status.textContent='',2500);
+      return;
+    }
+  }catch(e){}
+
+  // Fallback: store as base64 in user_profiles
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    const b64=e.target.result;
+    if(b64.length>500000){showToast('Logo too large for direct storage. Use a smaller image or PNG under 400KB.');status.textContent='';return;}
+    await saveLogo(b64);
+    status.textContent='✓ Logo saved';
+    setTimeout(()=>status.textContent='',2500);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveLogo(url){
+  userProfile.logo_url=url;
+  renderLogoPreview(url);
+  await db.from('user_profiles').upsert({user_id:currentUser.id,logo_url:url},{onConflict:'user_id'});
+}
+
+async function removeLogo(){
+  userProfile.logo_url='';
+  renderLogoPreview('');
+  document.getElementById('sp-logo-status').textContent='Logo removed';
+  setTimeout(()=>{if(document.getElementById('sp-logo-status'))document.getElementById('sp-logo-status').textContent='';},2000);
+  await db.from('user_profiles').upsert({user_id:currentUser.id,logo_url:null},{onConflict:'user_id'});
+}
+// ── END INVOICE LOGO ──────────────────────────────────────────────────────────
 
 // ── PROFILE SETUP MODAL (first login) ─────────────
 function openProfileSetupModal(){
