@@ -584,6 +584,14 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
   .page-actions .btn-gold,.page-actions .btn-outline{flex:1;}
 }
 
+
+/* Contact autocomplete dropdown */
+.contact-ac-wrap{position:relative;}
+.contact-ac-list{position:absolute;top:100%;left:0;right:0;background:var(--charcoal);border:1px solid var(--gold2);z-index:2000;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+.contact-ac-item{padding:0.6rem 0.85rem;cursor:pointer;font-size:0.78rem;border-bottom:1px solid var(--border);}
+.contact-ac-item:hover,.contact-ac-item.active{background:rgba(184,148,58,0.15);color:var(--gold);}
+.contact-ac-name{font-weight:600;}
+.contact-ac-sub{font-size:0.68rem;color:var(--text3);margin-top:0.1rem;}
 </style>
 </head>
 <body>
@@ -1601,7 +1609,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="modal-tab-panel" id="tab-wtcontacts">
         <div class="contact-card-form"><div class="contact-card-form-title">▸ Purchased From</div>
           <div class="form-grid">
-            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="f-buy-name" placeholder="Full name or business"></div>
+            <div class="form-group full"><label class="form-label">Name</label><div class="contact-ac-wrap"><input class="form-input" id="f-buy-name" placeholder="Full name or business" oninput="acContact(this,'buy')" onblur="acBlur('buy')" autocomplete="off"><div class="contact-ac-list" id="ac-buy" style="display:none"></div></div></div>
             <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="f-buy-phone" type="tel"></div>
             <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-buy-email" type="email"></div>
             <div class="form-group full"><label class="form-label">Location</label><input class="form-input" id="f-buy-location"></div>
@@ -1609,7 +1617,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
         </div>
         <div class="contact-card-form"><div class="contact-card-form-title">▸ Sold To (pre-fill or complete at sale)</div>
           <div class="form-grid">
-            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="f-sell-name" placeholder="Buyer name"></div>
+            <div class="form-group full"><label class="form-label">Name</label><div class="contact-ac-wrap"><input class="form-input" id="f-sell-name" placeholder="Buyer name" oninput="acContact(this,'sell')" onblur="acBlur('sell')" autocomplete="off"><div class="contact-ac-list" id="ac-sell" style="display:none"></div></div></div>
             <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="f-sell-phone" type="tel"></div>
             <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-sell-email" type="email"></div>
             <div class="form-group full"><label class="form-label">Location</label><input class="form-input" id="f-sell-location"></div>
@@ -1652,7 +1660,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
               <div class="platform-check" data-val="Other" onclick="togglePlatform(this)">Other</div>
             </div>
           </div>
-          <div class="form-group full"><label class="form-label">Sold To (Name)</label><input class="form-input" id="f-sell-name-sell" placeholder="Buyer name"></div>
+          <div class="form-group full"><label class="form-label">Sold To (Name)</label><div class="contact-ac-wrap"><input class="form-input" id="f-sell-name-sell" placeholder="Buyer name" oninput="acContact(this,'sell-sell')" onblur="acBlur('sell-sell')" autocomplete="off"><div class="contact-ac-list" id="ac-sell-sell" style="display:none"></div></div></div>
           <div class="form-group"><label class="form-label">Buyer Phone</label><input class="form-input" id="f-sell-phone-sell" type="tel"></div>
           <div class="form-group"><label class="form-label">Buyer Email</label><input class="form-input" id="f-sell-email-sell" type="email"></div>
         </div>
@@ -6409,6 +6417,61 @@ function checkSampleBanner(){
   if(hasSampleData()) showSampleBanner();
   else hideSampleBanner();
 }
+
+// ── CONTACT AUTOCOMPLETE ─────────────────────────────────────────────────────
+function acContact(input, prefix) {
+  const q = input.value.trim().toLowerCase();
+  const list = document.getElementById('ac-' + prefix);
+  if (!q || q.length < 1) { list.style.display = 'none'; return; }
+  const matches = contacts.filter(c =>
+    (c.name || '').toLowerCase().includes(q) ||
+    (c.phone || '').includes(q) ||
+    (c.email || '').toLowerCase().includes(q)
+  ).slice(0, 8);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map(c => {
+    const sub = [c.phone, c.email, c.city].filter(Boolean).join(' · ');
+    return `<div class="contact-ac-item" onmousedown="acPick('${prefix}','${c.id}')">
+      <div class="contact-ac-name">${escHtml(c.name || '')}</div>
+      ${sub ? `<div class="contact-ac-sub">${escHtml(sub)}</div>` : ''}
+    </div>`;
+  }).join('');
+  list.style.display = 'block';
+}
+
+function acBlur(prefix) {
+  // Small delay so onmousedown can fire first
+  setTimeout(() => {
+    const list = document.getElementById('ac-' + prefix);
+    if (list) list.style.display = 'none';
+  }, 180);
+}
+
+function acPick(prefix, contactId) {
+  const contact = contacts.find(c => c.id === contactId);
+  if (!contact) return;
+  const list = document.getElementById('ac-' + prefix);
+  if (list) list.style.display = 'none';
+
+  // Fill fields based on prefix
+  const fieldMap = {
+    'buy':       { name: 'f-buy-name',       phone: 'f-buy-phone',       email: 'f-buy-email',       loc: 'f-buy-location' },
+    'sell':      { name: 'f-sell-name',      phone: 'f-sell-phone',      email: 'f-sell-email',      loc: 'f-sell-location' },
+    'sell-sell': { name: 'f-sell-name-sell', phone: 'f-sell-phone-sell', email: 'f-sell-email-sell', loc: null },
+  };
+  const fields = fieldMap[prefix];
+  if (!fields) return;
+
+  const loc = [contact.city, contact.state].filter(Boolean).join(', ') ||
+               contact.address || '';
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  set(fields.name,  contact.name);
+  set(fields.phone, contact.phone);
+  set(fields.email, contact.email);
+  if (fields.loc) set(fields.loc, loc);
+}
+// ── END CONTACT AUTOCOMPLETE ──────────────────────────────────────────────────
 
 // ── BOOT ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
