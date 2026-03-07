@@ -2011,14 +2011,14 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="modal-tab-panel" id="tab-se-contacts">
         <div class="contact-card-form"><div class="contact-card-form-title">▸ Purchased From</div>
           <div class="form-grid">
-            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="se-buy-name"></div>
+            <div class="form-group full"><label class="form-label">Name</label><div class="contact-ac-wrap"><input class="form-input" id="se-buy-name" oninput="acContact(this,'se-buy')" onblur="acBlur('se-buy')" autocomplete="off"><div class="contact-ac-list" id="ac-se-buy" style="display:none"></div></div></div>
             <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="se-buy-phone" type="tel"></div>
             <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="se-buy-email" type="email"></div>
           </div>
         </div>
         <div class="contact-card-form"><div class="contact-card-form-title">▸ Sold To</div>
           <div class="form-grid">
-            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="se-sell-name"></div>
+            <div class="form-group full"><label class="form-label">Name</label><div class="contact-ac-wrap"><input class="form-input" id="se-sell-name" oninput="acContact(this,'se-sell')" onblur="acBlur('se-sell')" autocomplete="off"><div class="contact-ac-list" id="ac-se-sell" style="display:none"></div></div></div>
             <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="se-sell-phone" type="tel"></div>
             <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="se-sell-email" type="email"></div>
           </div>
@@ -6500,6 +6500,8 @@ function acPick(prefix, contactId) {
     'buy':       { name: 'f-buy-name',       phone: 'f-buy-phone',       email: 'f-buy-email',       loc: 'f-buy-location' },
     'sell':      { name: 'f-sell-name',      phone: 'f-sell-phone',      email: 'f-sell-email',      loc: 'f-sell-location' },
     'sell-sell': { name: 'f-sell-name-sell', phone: 'f-sell-phone-sell', email: 'f-sell-email-sell', loc: null },
+    'se-buy':    { name: 'se-buy-name',      phone: 'se-buy-phone',      email: 'se-buy-email',      loc: null },
+    'se-sell':   { name: 'se-sell-name',     phone: 'se-sell-phone',     email: 'se-sell-email',     loc: null },
   };
   const fields = fieldMap[prefix];
   if (!fields) return;
