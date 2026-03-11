@@ -500,15 +500,15 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 
 /* ── BOTTOM NAV (mobile) ── */
 #bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--charcoal);border-top:2px solid var(--gold);z-index:200;padding-bottom:env(safe-area-inset-bottom);}
-.bnav-inner{display:flex;height:62px;align-items:stretch;justify-content:space-evenly;padding:0 24px 0 48px;}
+.bnav-inner{display:flex;height:62px;align-items:stretch;justify-content:space-around;padding:0 8px;}
 .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#666;cursor:pointer;font-family:'Raleway',sans-serif;font-size:0.58rem;letter-spacing:0;text-transform:uppercase;font-weight:700;padding:0 8px;min-width:52px;overflow:hidden;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 .bnav-btn.active{color:var(--gold);}
 .bnav-btn:active{opacity:0.6;}
 .bnav-icon{font-size:1.35rem;line-height:1;display:block;}
 .bnav-svg{width:22px;height:22px;display:block;}
-#more-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:510;}
+#more-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:205;}
 #more-overlay.open{display:block;}
-#more-menu{display:none;position:fixed;bottom:62px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:210;padding-bottom:env(safe-area-inset-bottom);}
+#more-menu{display:none;position:fixed;bottom:62px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:220;padding-bottom:env(safe-area-inset-bottom);}
 #more-menu.open{display:block;}
 .more-item{display:flex;align-items:center;gap:0.75rem;padding:1rem 1.5rem;color:#ccc;font-family:'Raleway',sans-serif;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;}
 .more-item:active{background:rgba(201,168,76,0.1);color:var(--gold);}
@@ -1434,15 +1434,6 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
             </div>
           </div>
         </div>
-        <div class="card" style="margin-bottom:1.5rem" id="demo-data-card">
-          <div class="card-title">Demo Data</div>
-          <div class="card-sub">New to DialTrader? Load 5 sample watches in inventory and 5 in sold history to explore the app — then clear it all when you're ready to start for real.</div>
-          <div style="margin-top:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center">
-            <button class="btn-outline" onclick="seedDemoData()">🎯 Load Demo Data</button>
-            <button class="btn-danger" onclick="clearDemoData()">🗑 Clear Demo Data</button>
-            <span id="demo-status" style="font-size:0.72rem;color:var(--text2)"></span>
-          </div>
-        </div>
         <div class="card" style="margin-bottom:1.5rem">
           <div class="card-title">Account</div>
           <div class="card-sub">Your login email: <strong id="sp-login-email" style="color:#fff"></strong></div>
@@ -2206,7 +2197,6 @@ async function showApp(){
   console.log('showApp: loading data...');
   await loadAllData();
   checkInventorySchema();
-  await seedIfNewUser();
   console.log('showApp: rendering core...');
   renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();renderTasksPage();
   console.log('showApp: loading extras...');
@@ -6873,212 +6863,6 @@ function getAdDraftsForSave() {
 }
 // ══════════════════════════════════════════════════════════════════════════════
 //  END AD DRAFTS
-// ══════════════════════════════════════════════════════════════════════════════
-
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  DEMO DATA SEED / CLEAR
-// ══════════════════════════════════════════════════════════════════════════════
-const DEMO_TAG = '__demo__';   // tag stored in notes field to identify demo records
-
-const DEMO_INVENTORY = [
-  {
-    brand:'Rolex',model:'Submariner Date',ref:'126610LN',serial:'2024001',year:'2022',
-    purchase_date:'2024-01-15',purchase_price:12500,tax:0,shipping_in:0,other_fees:0,
-    listed_price:14200,msrp:10550,condition:'Mint',box_papers:'Full Set',
-    dial_color:'Black',bezel_color:'Black Ceramic',bracelet_type:'Oyster',
-    case_size:'41',case_material:'Stainless Steel',movement:'Automatic',
-    buy_name:'James Mitchell',buy_phone:'(501) 555-0101',buy_email:'james@example.com',buy_location:'Little Rock, AR',
-    platform:['Reddit','Chrono24'],stage_index:2,
-    notes:'Demo watch — Rolex Sub. Great entry-level luxury sport watch. '+DEMO_TAG,
-    photo_urls:[],
-  },
-  {
-    brand:'Omega',model:'Speedmaster Professional',ref:'310.30.42.50.01.001',serial:'2024002',year:'2021',
-    purchase_date:'2024-02-03',purchase_price:6200,tax:0,shipping_in:45,other_fees:0,
-    listed_price:7500,msrp:6900,condition:'Excellent',box_papers:'Box & Papers',
-    dial_color:'Black',bezel_color:'Black Tachymeter',bracelet_type:'Bracelet',
-    case_size:'42',case_material:'Stainless Steel',movement:'Manual Wind',
-    buy_name:'Patricia Chen',buy_phone:'(501) 555-0202',buy_email:'pat@example.com',buy_location:'Conway, AR',
-    platform:['eBay','Facebook Marketplace'],stage_index:3,
-    notes:'Demo watch — Moonwatch. Hesalite crystal, full sticker still on caseback. '+DEMO_TAG,
-    photo_urls:[],
-  },
-  {
-    brand:'Panerai',model:'Luminor Marina',ref:'PAM00632',serial:'2024003',year:'2020',
-    purchase_date:'2024-02-20',purchase_price:3400,tax:0,shipping_in:0,other_fees:25,
-    listed_price:3800,msrp:8800,condition:'Very Good',box_papers:'Full Set',
-    dial_color:'Black',bezel_color:'Polished',bracelet_type:'Leather Strap',
-    case_size:'44',case_material:'Stainless Steel',movement:'Automatic',
-    buy_name:'Robert Duvall',buy_phone:'(870) 555-0303',buy_email:'robert@example.com',buy_location:'Fort Smith, AR',
-    platform:['Moda','Reddit'],stage_index:1,
-    notes:'Demo watch — PAM632. Luminor crown-protection device, tritium lume. '+DEMO_TAG,
-    photo_urls:[],
-  },
-  {
-    brand:'Tudor',model:'Black Bay 58',ref:'79030N',serial:'2024004',year:'2023',
-    purchase_date:'2024-03-01',purchase_price:2900,tax:0,shipping_in:0,other_fees:0,
-    listed_price:3400,msrp:3775,condition:'Mint',box_papers:'Full Set',
-    dial_color:'Navy Blue',bezel_color:'Aluminum Navy Blue',bracelet_type:'Bracelet',
-    case_size:'39',case_material:'Stainless Steel',movement:'Automatic',
-    buy_name:'Sandra Williams',buy_phone:'(501) 555-0404',buy_email:'sandy@example.com',buy_location:'Bentonville, AR',
-    platform:['Grailzee'],stage_index:4,
-    notes:'Demo watch — BB58 Navy. One of the best value propositions in watches. '+DEMO_TAG,
-    photo_urls:[],
-  },
-  {
-    brand:'Grand Seiko',model:'Heritage Collection',ref:'SBGW231',serial:'2024005',year:'2019',
-    purchase_date:'2024-03-10',purchase_price:4100,tax:0,shipping_in:60,other_fees:0,
-    listed_price:5200,msrp:5700,condition:'Excellent',box_papers:'Full Set',
-    dial_color:'White (Birch Forest)',bezel_color:'Polished',bracelet_type:'Bracelet',
-    case_size:'37',case_material:'Stainless Steel',movement:'Manual Wind',
-    buy_name:'Michael Torres',buy_phone:'(479) 555-0505',buy_email:'mike@example.com',buy_location:'Fayetteville, AR',
-    platform:['Chrono24','WatchUSeek'],stage_index:2,
-    notes:'Demo watch — SBGW231. Zaratsu polishing, stunning dial. '+DEMO_TAG,
-    photo_urls:[],
-  },
-];
-
-const DEMO_SOLD = [
-  {
-    brand:'Rolex',model:'GMT-Master II',ref:'126710BLNR',serial:'S001',year:'2021',
-    purchase_date:'2023-06-01',sale_date:'2023-08-15',
-    purchase_price:14200,tax:0,shipping_in:0,other_fees:0,
-    sold_price:16500,platform_fee:0,payment_fee:0,shipping_out:30,
-    condition:'Excellent',box_papers:'Full Set',dial_color:'Black',
-    bezel_color:'Blue/Black Ceramic',bracelet_type:'Jubilee',case_size:'40',
-    case_material:'Stainless Steel',movement:'Automatic',
-    buy_name:'Craig Anderson',buy_phone:'(501) 555-1001',buy_email:'craig@example.com',buy_location:'Little Rock, AR',
-    sell_name:'Daniel Park',sell_phone:'(214) 555-1002',sell_email:'daniel@example.com',sell_location:'Dallas, TX',
-    platform:['Reddit'],notes:'Demo sold — Batman. Quick flip, 10 days from buy to sold. '+DEMO_TAG,photo_urls:[],
-  },
-  {
-    brand:'Patek Philippe',model:'Calatrava',ref:'5196P',serial:'S002',year:'2015',
-    purchase_date:'2023-07-10',sale_date:'2023-09-20',
-    purchase_price:24000,tax:0,shipping_in:0,other_fees:200,
-    sold_price:28500,platform_fee:0,payment_fee:285,shipping_out:50,
-    condition:'Very Good',box_papers:'Full Set',dial_color:'Silver',
-    bezel_color:'Smooth',bracelet_type:'Leather Strap',case_size:'37',
-    case_material:'Platinum',movement:'Manual Wind',
-    buy_name:'Elizabeth Harmon',buy_phone:'(901) 555-2001',buy_email:'liz@example.com',buy_location:'Memphis, TN',
-    sell_name:'Franklin Hughes',sell_phone:'(615) 555-2002',sell_email:'franklin@example.com',sell_location:'Nashville, TN',
-    platform:['Chrono24'],notes:'Demo sold — 5196P platinum. Patience paid off on this one. '+DEMO_TAG,photo_urls:[],
-  },
-  {
-    brand:'Audemars Piguet',model:'Royal Oak',ref:'15500ST',serial:'S003',year:'2020',
-    purchase_date:'2023-08-05',sale_date:'2023-10-01',
-    purchase_price:35000,tax:0,shipping_in:0,other_fees:0,
-    sold_price:38000,platform_fee:0,payment_fee:380,shipping_out:0,
-    condition:'Mint',box_papers:'Full Set',dial_color:'Blue',
-    bezel_color:'Integrated',bracelet_type:'Integrated Bracelet',case_size:'41',
-    case_material:'Stainless Steel',movement:'Automatic',
-    buy_name:'George Whitfield',buy_phone:'(404) 555-3001',buy_email:'george@example.com',buy_location:'Atlanta, GA',
-    sell_name:'Helen Zhao',sell_phone:'(312) 555-3002',sell_email:'helen@example.com',sell_location:'Chicago, IL',
-    platform:['Moda'],notes:'Demo sold — AP RO 15500. Local pickup, smooth deal. '+DEMO_TAG,photo_urls:[],
-  },
-  {
-    brand:'IWC',model:'Portugieser Chronograph',ref:'IW371615',serial:'S004',year:'2018',
-    purchase_date:'2023-09-12',sale_date:'2023-11-05',
-    purchase_price:7200,tax:0,shipping_in:55,other_fees:0,
-    sold_price:8400,platform_fee:84,payment_fee:0,shipping_out:35,
-    condition:'Very Good',box_papers:'Box Only',dial_color:'Silver',
-    bezel_color:'Polished',bracelet_type:'Leather Strap',case_size:'41',
-    case_material:'Stainless Steel',movement:'Automatic',
-    buy_name:'Ivan Petrov',buy_phone:'(713) 555-4001',buy_email:'ivan@example.com',buy_location:'Houston, TX',
-    sell_name:'Julia Roberts',sell_phone:'(305) 555-4002',sell_email:'julia@example.com',sell_location:'Miami, FL',
-    platform:['eBay'],notes:'Demo sold — IWC Portofino Chrono. eBay sale, small platform fee. '+DEMO_TAG,photo_urls:[],
-  },
-  {
-    brand:'Vacheron Constantin',model:'Overseas',ref:'4500V/110A',serial:'S005',year:'2022',
-    purchase_date:'2023-10-20',sale_date:'2023-12-10',
-    purchase_price:19500,tax:0,shipping_in:0,other_fees:150,
-    sold_price:22000,platform_fee:0,payment_fee:0,shipping_out:0,
-    condition:'Mint',box_papers:'Full Set',dial_color:'Blue',
-    bezel_color:'Polished',bracelet_type:'Integrated Bracelet',case_size:'41',
-    case_material:'Stainless Steel',movement:'Automatic',
-    buy_name:'Kevin Larson',buy_phone:'(602) 555-5001',buy_email:'kevin@example.com',buy_location:'Phoenix, AZ',
-    sell_name:'Laura Chen',sell_phone:'(503) 555-5002',sell_email:'laura@example.com',sell_location:'Portland, OR',
-    platform:['Reddit','Moda'],notes:'Demo sold — VC Overseas. Three-bracelet set. Wire transfer. '+DEMO_TAG,photo_urls:[],
-  },
-];
-
-async function seedDemoData(){
-  const status = document.getElementById('demo-status');
-  // Check if demo data already exists
-  const existing = inventory.filter(w => (w.notes||'').includes(DEMO_TAG));
-  const existingSold = soldWatches.filter(w => (w.notes||'').includes(DEMO_TAG));
-  if(existing.length > 0 || existingSold.length > 0){
-    status.textContent = 'Demo data already loaded.';
-    setTimeout(()=>status.textContent='',3000);
-    return;
-  }
-  status.textContent = 'Loading demo data...';
-  try {
-    // Insert inventory watches
-    const invRows = DEMO_INVENTORY.map(w => ({...w, user_id: currentUser.id}));
-    const {data: newInv, error: invErr} = await db.from('inventory').insert(invRows).select();
-    if(invErr) throw invErr;
-
-    // Insert sold watches
-    const soldRows = DEMO_SOLD.map(w => ({...w, user_id: currentUser.id}));
-    const {data: newSold, error: soldErr} = await db.from('sold_inventory').insert(soldRows).select();
-    if(soldErr) throw soldErr;
-
-    // Update local arrays
-    inventory = [...(newInv||[]), ...inventory];
-    soldWatches = [...(newSold||[]), ...soldWatches];
-
-    renderInventory(); renderSold(); renderDashboard(); updateNavBadges();
-    status.textContent = '✓ Demo data loaded — 5 inventory + 5 sold watches added.';
-    showToast('Demo data loaded! Explore the app, then use "Clear Demo Data" when ready.');
-    setTimeout(()=>status.textContent='',6000);
-  } catch(e) {
-    status.textContent = 'Error: ' + e.message;
-    console.error('seedDemoData error:', e);
-  }
-}
-
-async function clearDemoData(){
-  const invDemo = inventory.filter(w => (w.notes||'').includes(DEMO_TAG));
-  const soldDemo = soldWatches.filter(w => (w.notes||'').includes(DEMO_TAG));
-  const total = invDemo.length + soldDemo.length;
-  if(total === 0){ showToast('No demo data found.'); return; }
-  if(!confirm(`Remove ${total} demo watch${total!==1?'es':''} from your account? This cannot be undone.`)) return;
-
-  const status = document.getElementById('demo-status');
-  status.textContent = 'Clearing demo data...';
-  try {
-    if(invDemo.length){
-      const ids = invDemo.map(w=>w.id);
-      const {error} = await db.from('inventory').delete().in('id', ids);
-      if(error) throw error;
-      inventory = inventory.filter(w => !ids.includes(w.id));
-    }
-    if(soldDemo.length){
-      const ids = soldDemo.map(w=>w.id);
-      const {error} = await db.from('sold_inventory').delete().in('id', ids);
-      if(error) throw error;
-      soldWatches = soldWatches.filter(w => !ids.includes(w.id));
-    }
-    renderInventory(); renderSold(); renderDashboard(); updateNavBadges();
-    status.textContent = "✓ Demo data cleared. You're starting fresh!";
-    showToast('Demo data cleared. Welcome to DialTrader!');
-    setTimeout(()=>status.textContent='',5000);
-  } catch(e) {
-    status.textContent = 'Error: ' + e.message;
-    console.error('clearDemoData error:', e);
-  }
-}
-
-// Auto-seed for brand new users (no inventory and no sold watches yet)
-async function seedIfNewUser(){
-  const hasAny = inventory.length > 0 || soldWatches.length > 0;
-  if(!hasAny){
-    await seedDemoData();
-  }
-}
-// ══════════════════════════════════════════════════════════════════════════════
-//  END DEMO DATA
 // ══════════════════════════════════════════════════════════════════════════════
 
 
