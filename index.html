@@ -268,22 +268,22 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 /* INVENTORY */
 .inv-rows{border:1px solid var(--border);background:var(--border);display:flex;flex-direction:column;gap:1px;}
 .inv-row-header{display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 1fr 0.8fr 1fr;padding:0.5rem 1.25rem;background:var(--bg);gap:1rem;border-bottom:1px solid var(--border);}
-.inv-row-header span{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text2);font-weight:600;}
+.inv-row-header span{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);font-weight:600;}
 .inv-row{display:grid;grid-template-columns:2.4fr 1fr 1fr 1fr 1fr 0.8fr 1fr;align-items:center;padding:0.9rem 1.25rem;background:var(--surface);gap:1rem;cursor:pointer;transition:background 0.15s;}
 .inv-row:hover{background:#EDE8E0;}
 .inv-row:nth-child(even){background:var(--surface2);}
 .inv-row:nth-child(even):hover{background:#E5E0D8;}
-.inv-row-brand{font-size:0.82rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.25rem;font-weight:700;}
-.inv-row-model{font-family:'Playfair Display',serif;font-size:1.1rem;line-height:1.25;color:var(--text);margin-bottom:0.2rem;}
-.inv-row-sub{font-size:0.7rem;color:var(--text2);}
-.inv-row-val{font-size:0.9rem;color:var(--text);}
-.inv-row-val.gold{color:var(--gold);}.inv-row-val.green{color:var(--green);}.inv-row-val.red{color:var(--red);}.inv-row-val.muted{color:var(--text2);font-size:0.82rem;}
+.inv-row-brand{font-size:1.0rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.25rem;font-weight:700;}
+.inv-row-model{font-family:'Playfair Display',serif;font-size:1.25rem;line-height:1.25;color:var(--text);margin-bottom:0.2rem;}
+.inv-row-sub{font-size:0.82rem;color:var(--text2);}
+.inv-row-val{font-size:1.0rem;color:var(--text);}
+.inv-row-val.gold{color:var(--gold);}.inv-row-val.green{color:var(--green);}.inv-row-val.red{color:var(--red);}.inv-row-val.muted{color:var(--text2);font-size:0.9rem;}
 
 /* SOLD TABLE */
 .sold-table{width:100%;border-collapse:collapse;}
-.sold-table th{font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text2);text-align:left;padding:0.6rem 0.75rem;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;font-weight:600;background:var(--bg);}
+.sold-table th{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);text-align:left;padding:0.65rem 0.75rem;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;font-weight:600;background:var(--bg);}
 .sold-table th:hover{color:var(--gold);}
-.sold-table td{padding:0.8rem 0.75rem;font-size:0.74rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.sold-table td{padding:0.85rem 0.75rem;font-size:0.88rem;border-bottom:1px solid var(--border);vertical-align:middle;}
 .sold-table tr{cursor:pointer;}.sold-table tr:hover td{background:var(--surface2);}
 .profit-badge{display:inline-block;padding:0.15rem 0.5rem;font-size:0.68rem;font-weight:700;}
 .profit-badge.pos{background:var(--green-dim);color:var(--green);}
@@ -758,6 +758,12 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
           <option value="date-desc">Most Recent</option><option value="profit-desc">Profit: High→Low</option>
           <option value="profit-asc">Profit: Low→High</option><option value="roi-desc">ROI: High→Low</option>
         </select>
+        <label style="font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:0.4rem;white-space:nowrap">Date Sold
+          <input type="date" id="sold-date-from" class="form-input" style="padding:0.3rem 0.5rem;font-size:0.75rem;width:130px" onchange="renderSold()" title="From date">
+          <span style="color:var(--text2)">–</span>
+          <input type="date" id="sold-date-to" class="form-input" style="padding:0.3rem 0.5rem;font-size:0.75rem;width:130px" onchange="renderSold()" title="To date">
+        </label>
+        <button class="btn-outline btn-sm" style="font-size:0.65rem;padding:0.3rem 0.6rem;white-space:nowrap" onclick="document.getElementById('sold-date-from').value='';document.getElementById('sold-date-to').value='';renderSold()">Clear Dates</button>
       </div>
       <div style="overflow-x:auto">
         <table class="sold-table">
@@ -765,6 +771,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
             <th>Brand / Model</th><th>Ref / Serial</th><th>Cost Basis</th><th>Sold Price</th><th>Platform</th>
             <th onclick="setSoldSort('profit-desc')" style="cursor:pointer">Net Profit ↕</th>
             <th onclick="setSoldSort('roi-desc')" style="cursor:pointer">ROI ↕</th>
+            <th onclick="setSoldSort('date-desc')" style="cursor:pointer">Date Sold ↕</th>
             <th>Hold Days</th><th>P/Day</th><th>Photos</th><th></th>
           </tr></thead>
           <tbody id="sold-body"></tbody>
@@ -2414,7 +2421,14 @@ function setSoldSort(v){document.getElementById('sold-sort').value=v;renderSold(
 function renderSold(){
   const q=(document.getElementById('sold-search').value||'').toLowerCase();
   const sort=document.getElementById('sold-sort').value;
-  let f=soldWatches.filter(s=>`${s.brand} ${s.model} ${s.ref}`.toLowerCase().includes(q));
+  const dateFrom=document.getElementById('sold-date-from')?.value||'';
+  const dateTo=document.getElementById('sold-date-to')?.value||'';
+  let f=soldWatches.filter(s=>{
+    if(!`${s.brand} ${s.model} ${s.ref}`.toLowerCase().includes(q)) return false;
+    if(dateFrom && s.sale_date && s.sale_date < dateFrom) return false;
+    if(dateTo && s.sale_date && s.sale_date > dateTo) return false;
+    return true;
+  });
   f.sort((a,b)=>{
     if(sort==='profit-desc')return soldNetProfit(b)-soldNetProfit(a);
     if(sort==='profit-asc')return soldNetProfit(a)-soldNetProfit(b);
@@ -2430,19 +2444,20 @@ function renderSold(){
     const p=soldNetProfit(s),r=soldROI(s),d=daysHeld(s.purchase_date,s.sale_date);
     const ppd=d&&d>0?p/d:null,hp=s.photo_urls&&s.photo_urls.length>0;
     return`<tr onclick="openSoldPhotoModal('${s.id}')" title="Click to add/edit photos">
-      <td><div style="font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:0.2rem">${s.brand||''}</div><div style="font-size:0.76rem">${s.model||''}</div></td>
-      <td style="color:var(--text2);font-size:0.7rem">${[s.ref,s.serial?'SN:'+s.serial:''].filter(Boolean).join(' · ')||'—'}</td>
+      <td><div style="font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.25rem">${s.brand||''}</div><div style="font-size:0.92rem">${s.model||''}</div></td>
+      <td style="color:var(--text2);font-size:0.84rem">${[s.ref,s.serial?'SN:'+s.serial:''].filter(Boolean).join(' · ')||'—'}</td>
       <td>${fmt(soldCostBasis(s))}</td><td>${fmt(s.sold_price)}</td>
-      <td style="font-size:0.68rem;color:var(--text2)">${Array.isArray(s.platform)?s.platform.join(', '):(s.platform||'—')}</td>
+      <td style="font-size:0.82rem;color:var(--text2)">${Array.isArray(s.platform)?s.platform.join(', '):(s.platform||'—')}</td>
       <td><span class="profit-badge ${p>=0?'pos':'neg'}">${p>=0?'+':''}${fmt(p)}</span></td>
       <td style="color:${r>=0?'var(--green)':'var(--red)'}">${fmtPct(r)}</td>
+      <td style="color:var(--text2);font-size:0.84rem">${s.sale_date?new Date(s.sale_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
       <td style="color:var(--text2)">${d!==null?d+'d':'—'}</td>
-      <td style="color:var(--text2);font-size:0.68rem">${ppd!==null?(ppd>=0?'+':'')+fmt(ppd,2):'—'}</td>
-      <td style="font-size:0.7rem;cursor:pointer" onclick="event.stopPropagation();openSoldPhotoModal('${s.id}')">${hp?'📷'+s.photo_urls.length:'<span style="color:var(--text2)">+📷</span>'}</td>
+      <td style="color:var(--text2);font-size:0.82rem">${ppd!==null?(ppd>=0?'+':'')+fmt(ppd,2):'—'}</td>
+      <td style="font-size:0.84rem;cursor:pointer" onclick="event.stopPropagation();openSoldPhotoModal('${s.id}')">${hp?'📷'+s.photo_urls.length:'<span style="color:var(--text2)">+📷</span>'}</td>
       <td>
-        <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.6rem" onclick="event.stopPropagation();openSoldEditModal('${s.id}')">✏️ Edit</button>
-        <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.6rem;margin-top:0.2rem" onclick="event.stopPropagation();unsellWatch('${s.id}')" title="Move back to inventory">↩ Unsell</button>
-        <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.6rem;margin-top:0.2rem;border-color:var(--gold2);color:var(--gold2)" onclick="event.stopPropagation();moveSoldToCollection('${s.id}')" title="Move to personal collection">💎 Keep It</button>
+        <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.72rem" onclick="event.stopPropagation();openSoldEditModal('${s.id}')">✏️ Edit</button>
+        <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.72rem;margin-top:0.2rem" onclick="event.stopPropagation();unsellWatch('${s.id}')" title="Move back to inventory">↩ Unsell</button>
+        <button class="btn-outline btn-sm" style="white-space:nowrap;font-size:0.72rem;margin-top:0.2rem;border-color:var(--gold2);color:var(--gold2)" onclick="event.stopPropagation();moveSoldToCollection('${s.id}')" title="Move to personal collection">💎 Keep It</button>
       </td>
     </tr>`;
   }).join('');
