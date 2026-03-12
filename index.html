@@ -731,7 +731,10 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="page" id="page-inventory">
       <div class="page-header">
         <div><div class="page-title">Inventory</div><div class="page-subtitle" id="inv-subtitle"></div></div>
-        <button class="btn-gold" onclick="openModal()">+ Add Watch</button>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn-outline" onclick="openTradeModal()" style="border-color:var(--gold2);color:var(--gold2)">⇄ Trade</button>
+          <button class="btn-gold" onclick="openModal()">+ Add Watch</button>
+        </div>
       </div>
       <div class="filter-bar">
         <input class="search-input" id="inv-search" type="text" placeholder="Search brand, model, ref..." oninput="renderInventory()">
@@ -3337,6 +3340,184 @@ async function markAsSold(){
 
 function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();renderTasks();renderTasksPage();updateTaskBadge();}
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  TRADE MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+function openTradeModal(){
+  // Populate the outgoing watch dropdown with current inventory
+  const sel=document.getElementById('trade-out-watch');
+  sel.innerHTML='<option value="">— Pick your watch —</option>'+
+    inventory.map(w=>`<option value="${w.id}">${w.brand} ${w.model}${w.ref?' · '+w.ref:''} (Cost: ${fmt(soldCostBasis(w))})</option>`).join('');
+  // Clear all fields
+  ['trade-out-value','trade-in-brand','trade-in-model','trade-in-ref','trade-in-year',
+   'trade-in-listed','trade-cash-amt','trade-person-name','trade-person-phone','trade-person-email']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('trade-cash-dir').value='received';
+  document.getElementById('trade-in-condition').value='';
+  document.getElementById('trade-in-boxpapers').value='';
+  document.getElementById('trade-out-summary').style.display='none';
+  document.getElementById('trade-summary-box').style.display='none';
+  document.getElementById('trade-error').style.display='none';
+  document.getElementById('trade-modal').style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeTradeModal(){
+  document.getElementById('trade-modal').style.display='none';
+  document.body.style.overflow='';
+}
+function onTradeOutSelect(){
+  const id=document.getElementById('trade-out-watch').value;
+  const summary=document.getElementById('trade-out-summary');
+  if(!id){summary.style.display='none';return;}
+  const w=inventory.find(x=>x.id===id);
+  if(!w){summary.style.display='none';return;}
+  const cost=soldCostBasis(w);
+  summary.style.display='block';
+  summary.innerHTML=`<strong style="color:var(--text)">${w.brand} ${w.model}</strong>${w.ref?' &nbsp;·&nbsp; Ref: '+w.ref:''}<br>
+    Cost Basis: <strong>${fmt(cost)}</strong>&nbsp;&nbsp;
+    ${w.listed_price?'Listed At: <strong>'+fmt(w.listed_price)+'</strong>&nbsp;&nbsp;':''}
+    ${w.purchase_date?'Acquired: <strong>'+w.purchase_date+'</strong>':''}`;
+  updateTradeSummary();
+}
+function updateTradeSummary(){
+  const outId=document.getElementById('trade-out-watch').value;
+  const outVal=parseFloat(document.getElementById('trade-out-value').value)||0;
+  const cashDir=document.getElementById('trade-cash-dir').value;
+  const cashAmt=parseFloat(document.getElementById('trade-cash-amt').value)||0;
+  const inListed=parseFloat(document.getElementById('trade-in-listed').value)||0;
+  const box=document.getElementById('trade-summary-box');
+  const lines=document.getElementById('trade-summary-lines');
+  if(!outId||!outVal){box.style.display='none';return;}
+  const w=inventory.find(x=>x.id===outId);
+  if(!w){box.style.display='none';return;}
+  const cost=soldCostBasis(w);
+  // Your effective proceeds for the outgoing watch
+  const cashReceived = cashDir==='received'?cashAmt : cashDir==='paid'?-cashAmt : 0;
+  const totalProceeds = outVal + cashReceived;
+  const outProfit = totalProceeds - cost;
+  // Cost basis of incoming watch = trade-in value + any cash YOU paid
+  const inCostBasis = outVal + (cashDir==='paid'?cashAmt:0) - (cashDir==='received'?cashAmt:0);
+  const potentialProfit = inListed ? inListed - inCostBasis : null;
+  box.style.display='block';
+  lines.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.25rem 2rem">
+      <span style="color:#aaa">Your watch cost basis</span><span>${fmt(cost)}</span>
+      <span style="color:#aaa">Trade-in value agreed</span><span>${fmt(outVal)}</span>
+      ${cashDir==='received'?`<span style="color:#aaa">Cash you received (boot)</span><span style="color:var(--green)">+${fmt(cashAmt)}</span>`:''}
+      ${cashDir==='paid'?`<span style="color:#aaa">Cash you paid (boot)</span><span style="color:var(--red)">−${fmt(cashAmt)}</span>`:''}
+      <span style="color:#aaa;border-top:1px solid #444;padding-top:0.3rem">Your net proceeds</span>
+      <span style="border-top:1px solid #444;padding-top:0.3rem;color:${totalProceeds>=cost?'var(--green)':'var(--red)'}">${fmt(totalProceeds)}</span>
+      <span style="color:#aaa">Profit/loss on your watch</span>
+      <span style="color:${outProfit>=0?'var(--green)':'var(--red)'}">${outProfit>=0?'+':''}${fmt(outProfit)}</span>
+      <span style="color:#aaa;border-top:1px solid #444;padding-top:0.3rem">Incoming watch cost basis</span>
+      <span style="border-top:1px solid #444;padding-top:0.3rem">${fmt(inCostBasis)}</span>
+      ${potentialProfit!==null?`<span style="color:#aaa">Potential profit if sold at ${fmt(inListed)}</span><span style="color:${potentialProfit>=0?'var(--green)':'var(--red)'}">${potentialProfit>=0?'+':''}${fmt(potentialProfit)}</span>`:''}
+    </div>`;
+}
+
+async function executeTrade(){
+  const errEl=document.getElementById('trade-error');
+  errEl.style.display='none';
+  const outId=document.getElementById('trade-out-watch').value;
+  const outVal=parseFloat(document.getElementById('trade-out-value').value)||0;
+  const inBrand=(document.getElementById('trade-in-brand').value||'').trim();
+  const inModel=(document.getElementById('trade-in-model').value||'').trim();
+  if(!outId){errEl.textContent='Please select the watch going out.';errEl.style.display='block';return;}
+  if(!outVal){errEl.textContent='Please enter the agreed trade-in value.';errEl.style.display='block';return;}
+  if(!inBrand||!inModel){errEl.textContent='Please enter the brand and model of the incoming watch.';errEl.style.display='block';return;}
+  const w=inventory.find(x=>x.id===outId);
+  if(!w){errEl.textContent='Watch not found.';errEl.style.display='block';return;}
+
+  const cashDir=document.getElementById('trade-cash-dir').value;
+  const cashAmt=parseFloat(document.getElementById('trade-cash-amt').value)||0;
+  const cashReceived=cashDir==='received'?cashAmt:cashDir==='paid'?-cashAmt:0;
+  const totalProceeds=outVal+cashReceived;
+  const inCostBasis=outVal+(cashDir==='paid'?cashAmt:0)-(cashDir==='received'?cashAmt:0);
+  const personName=(document.getElementById('trade-person-name').value||'').trim();
+  const personPhone=(document.getElementById('trade-person-phone').value||'').trim();
+  const personEmail=(document.getElementById('trade-person-email').value||'').trim();
+  const today=new Date().toISOString().split('T')[0];
+
+  const btn=document.getElementById('trade-execute-btn');
+  btn.disabled=true;btn.textContent='Recording...';
+
+  try{
+    // 1. Auto-create/find contact
+    let contactId=null;
+    if(personName){
+      const existing=contacts.find(c=>(c.name||'').toLowerCase()===personName.toLowerCase());
+      if(existing){contactId=existing.id;}
+      else{
+        const{data:nc}=await db.from('contacts').insert({user_id:currentUser.id,name:personName,phone:personPhone||null,email:personEmail||null}).select().single();
+        if(nc){contacts.unshift(nc);contactId=nc.id;updateNavBadges();}
+      }
+    }
+
+    // 2. Move outgoing watch to sold_inventory
+    const tradeNotes=`[TRADE] Traded for ${inBrand} ${inModel}. Trade value: ${fmt(outVal)}${cashDir==='received'?' + '+fmt(cashAmt)+' cash boot received':cashDir==='paid'?' − '+fmt(cashAmt)+' cash boot paid':''}. ${w.notes||''}`.trim();
+    const soldRow={
+      user_id:currentUser.id,
+      brand:w.brand,model:w.model,ref:w.ref,year:w.year,serial:w.serial,
+      purchase_date:w.purchase_date,sale_date:today,
+      purchase_price:w.purchase_price,tax:w.tax||0,shipping_in:w.shipping_in||0,other_fees:w.other_fees||0,
+      sold_price:totalProceeds,platform_fee:0,payment_fee:0,shipping_out:0,
+      platform:['Trade'],
+      condition:w.condition,box_papers:w.box_papers,
+      case_size:w.case_size,case_material:w.case_material,movement:w.movement,
+      dial_color:w.dial_color,bezel_color:w.bezel_color,bracelet_type:w.bracelet_type,
+      buy_name:w.buy_name||'',buy_phone:w.buy_phone||'',buy_email:w.buy_email||'',buy_location:w.buy_location||'',
+      sell_name:personName,sell_phone:personPhone,sell_email:personEmail,sell_location:'',
+      buyer_contact_id:contactId,contact_id:contactId,
+      photo_urls:w.photo_urls||[],
+      notes:tradeNotes,
+    };
+    const[ins,del]=await Promise.all([
+      db.from('sold_inventory').insert(soldRow).select().single(),
+      db.from('inventory').delete().eq('id',outId)
+    ]);
+    if(ins.error)throw ins.error;
+    soldWatches.unshift(ins.data);
+    inventory=inventory.filter(x=>x.id!==outId);
+
+    // 3. Add incoming watch to inventory
+    const inRef=(document.getElementById('trade-in-ref').value||'').trim();
+    const inYear=(document.getElementById('trade-in-year').value||'').trim();
+    const inListed=parseFloat(document.getElementById('trade-in-listed').value)||0;
+    const inCond=document.getElementById('trade-in-condition').value||'';
+    const inBP=document.getElementById('trade-in-boxpapers').value||'';
+    const inNotes=`[TRADE] Received in trade from ${personName||'trade partner'}. Trade value: ${fmt(outVal)}${cashDir==='received'?' + '+fmt(cashAmt)+' cash boot received':cashDir==='paid'?' − '+fmt(cashAmt)+' cash boot paid':''}.`;
+    const newWatch={
+      user_id:currentUser.id,
+      brand:inBrand,model:inModel,ref:inRef||null,year:inYear||null,
+      purchase_date:today,
+      purchase_price:inCostBasis,tax:0,shipping_in:0,other_fees:0,
+      listed_price:inListed||null,msrp:null,
+      stage_index:0,platform:[],
+      condition:inCond||null,box_papers:inBP||null,
+      buy_name:personName,buy_phone:personPhone,buy_email:personEmail,buy_location:'',
+      source_contact_id:contactId,
+      photo_urls:[],notes:inNotes,
+    };
+    const{data:newInv,error:invErr}=await db.from('inventory').insert(newWatch).select().single();
+    if(invErr)throw invErr;
+    inventory.unshift(newInv);
+
+    const outProfit=totalProceeds-soldCostBasis(ins.data);
+    btn.disabled=false;btn.textContent='⇄ Record This Trade';
+    closeTradeModal();
+    refreshAll();populateContactDropdowns();
+    showToast(`Trade recorded! ${w.brand} ${w.model} → ${inBrand} ${inModel}. P/L on your watch: ${outProfit>=0?'+':''}${fmt(outProfit)}`);
+
+  }catch(e){
+    btn.disabled=false;btn.textContent='⇄ Record This Trade';
+    errEl.textContent='Error: '+e.message;errEl.style.display='block';
+    console.error('executeTrade error:',e);
+  }
+}
+// ══════════════════════════════════════════════════════════════════════════════
+//  END TRADE MODAL
+// ══════════════════════════════════════════════════════════════════════════════
+
 // ── SWATCHES ──────────────────────────────────────
 const DIAL_COLORS=[{hex:'#1a1a1a',name:'Black'},{hex:'#2c3e6b',name:'Blue'},{hex:'#1e4d3b',name:'Green'},{hex:'#f5f0e8',name:'White/Cream'},{hex:'#c9a84c',name:'Gold/Champagne'},{hex:'#8b7355',name:'Brown/Chocolate'},{hex:'#7b3f3f',name:'Burgundy/Wine'},{hex:'#9e9e9e',name:'Silver/Grey'},{hex:'#4a7fa5',name:'Slate Blue'},{hex:'#2d5a3d',name:'Olive Green'},{hex:'#d4a5a5',name:'Pink/Rose'},{hex:'#f2f2f2',name:'Panda/White'}];
 const BEZEL_COLORS=[{hex:'#1a1a1a',name:'Black'},{hex:'#2c3e6b',name:'Blue'},{hex:'#1e4d3b',name:'Green'},{hex:'#9e9e9e',name:'Steel/Silver'},{hex:'#c9a84c',name:'Gold'},{hex:'#e8c97a',name:'Yellow Gold'},{hex:'#c0c0c0',name:'White Gold'},{hex:'#b87333',name:'Rose Gold'},{hex:'#ff5722',name:'Red/Orange'},{hex:'#f5f0e8',name:'Ceramic White'},{hex:'#3d3d3d',name:'Dark Ceramic'},{hex:'#7b3f3f',name:'Burgundy'}];
@@ -4169,6 +4350,116 @@ async function deleteCalendarEvent(id) {
 </script>
 
 
+
+<!-- TRADE MODAL -->
+<div id="trade-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1100;overflow-y:auto;padding:1.5rem 1rem">
+  <div style="background:var(--surface);max-width:680px;margin:0 auto;border-top:3px solid var(--gold);box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text)">Record a Trade</div>
+        <div style="font-size:0.7rem;color:var(--text2);margin-top:0.2rem;letter-spacing:0.05em">Your watch out · Their watch + cash in</div>
+      </div>
+      <button onclick="closeTradeModal()" style="background:none;border:none;font-size:1.4rem;color:var(--text2);cursor:pointer;padding:0.25rem">✕</button>
+    </div>
+
+    <div style="padding:1.5rem">
+
+      <!-- STEP 1: YOUR WATCH GOING OUT -->
+      <div style="margin-bottom:1.75rem">
+        <div style="font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.85rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)">① Your Watch Going Out</div>
+        <div style="margin-bottom:0.85rem">
+          <label class="form-label">Select from Inventory</label>
+          <select class="form-input" id="trade-out-watch" onchange="onTradeOutSelect()">
+            <option value="">— Pick your watch —</option>
+          </select>
+        </div>
+        <div id="trade-out-summary" style="display:none;background:var(--bg);padding:0.85rem 1rem;border-left:3px solid var(--gold);font-size:0.8rem;color:var(--text2);line-height:1.8"></div>
+        <div style="margin-top:0.85rem">
+          <label class="form-label">Trade-In Value You Agreed On ($) <span style="color:var(--text2);font-weight:400">— what their watch is worth to them as credit</span></label>
+          <input class="form-input" id="trade-out-value" type="number" placeholder="e.g. 2500" oninput="updateTradeSummary()">
+          <div style="font-size:0.68rem;color:var(--text2);margin-top:0.3rem">This becomes the "sold price" of your outgoing watch.</div>
+        </div>
+      </div>
+
+      <!-- STEP 2: INCOMING WATCH -->
+      <div style="margin-bottom:1.75rem">
+        <div style="font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.85rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)">② Watch Coming In to You</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+          <div><label class="form-label">Brand *</label><input class="form-input" id="trade-in-brand" placeholder="e.g. Omega"></div>
+          <div><label class="form-label">Model *</label><input class="form-input" id="trade-in-model" placeholder="e.g. Speedmaster Professional"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem">
+          <div><label class="form-label">Reference #</label><input class="form-input" id="trade-in-ref" placeholder="e.g. 310.30.42.50.01.001"></div>
+          <div><label class="form-label">Year</label><input class="form-input" id="trade-in-year" type="number" placeholder="e.g. 2020"></div>
+        </div>
+        <div style="margin-bottom:0.75rem">
+          <label class="form-label">Your Target Sell Price ($) <span style="color:var(--text2);font-weight:400">— what you plan to ask for it</span></label>
+          <input class="form-input" id="trade-in-listed" type="number" placeholder="e.g. 3200" oninput="updateTradeSummary()">
+        </div>
+        <div style="margin-bottom:0.75rem">
+          <label class="form-label">Condition</label>
+          <select class="form-input" id="trade-in-condition">
+            <option value="">— Select —</option>
+            <option>Mint</option><option>Excellent</option><option>Very Good</option><option>Good</option><option>Fair</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Box &amp; Papers</label>
+          <select class="form-input" id="trade-in-boxpapers">
+            <option value="">— Select —</option>
+            <option>Full Set</option><option>Box & Papers</option><option>Box Only</option><option>Papers Only</option><option>None</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- STEP 3: CASH DIFFERENCE -->
+      <div style="margin-bottom:1.75rem">
+        <div style="font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.85rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)">③ Cash Difference</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div>
+            <label class="form-label">Direction</label>
+            <select class="form-input" id="trade-cash-dir" onchange="updateTradeSummary()">
+              <option value="received">They paid me cash (boot)</option>
+              <option value="paid">I paid them cash (boot)</option>
+              <option value="none">Even trade, no cash</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Cash Amount ($)</label>
+            <input class="form-input" id="trade-cash-amt" type="number" placeholder="0" oninput="updateTradeSummary()">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: WHO -->
+      <div style="margin-bottom:1.75rem">
+        <div style="font-size:0.62rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.85rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border)">④ Who Did You Trade With?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div><label class="form-label">Name</label><input class="form-input" id="trade-person-name" placeholder="Full name"></div>
+          <div><label class="form-label">Phone</label><input class="form-input" id="trade-person-phone" placeholder="(555) 000-0000"></div>
+        </div>
+        <div style="margin-top:0.75rem">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="trade-person-email" placeholder="email@example.com">
+        </div>
+      </div>
+
+      <!-- TRADE SUMMARY BOX -->
+      <div id="trade-summary-box" style="display:none;background:var(--charcoal);color:#fff;padding:1.1rem 1.25rem;margin-bottom:1.25rem;border-left:3px solid var(--gold)">
+        <div style="font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);margin-bottom:0.75rem;font-weight:700">Trade Summary</div>
+        <div id="trade-summary-lines" style="font-size:0.82rem;line-height:2.1;color:#ddd"></div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+        <button class="btn-gold" onclick="executeTrade()" id="trade-execute-btn" style="flex:1;min-width:180px;padding:0.75rem">⇄ Record This Trade</button>
+        <button class="btn-outline" onclick="closeTradeModal()" style="padding:0.75rem 1.25rem">Cancel</button>
+      </div>
+      <div id="trade-error" style="color:var(--red);font-size:0.75rem;margin-top:0.6rem;display:none"></div>
+    </div>
+  </div>
+</div>
 
 <!-- MORE MENU OVERLAY -->
 <div id="more-overlay" onclick="toggleMore()"></div>
