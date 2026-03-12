@@ -3395,8 +3395,9 @@ function updateTradeSummary(){
   const cashReceived = cashDir==='received'?cashAmt : cashDir==='paid'?-cashAmt : 0;
   const totalProceeds = outVal + cashReceived;
   const outProfit = totalProceeds - cost;
-  // Cost basis of incoming watch = trade-in value + any cash YOU paid
-  const inCostBasis = outVal + (cashDir==='paid'?cashAmt:0) - (cashDir==='received'?cashAmt:0);
+  // Cost basis of incoming watch = exactly what you valued it at, period.
+  // Cash boot adjusts your proceeds on the outgoing watch, not the incoming watch's value.
+  const inCostBasis = outVal + (cashDir==='paid'?cashAmt:0);
   const potentialProfit = inListed ? inListed - inCostBasis : null;
   box.style.display='block';
   lines.innerHTML=`
@@ -3432,7 +3433,7 @@ async function executeTrade(){
   const cashAmt=parseFloat(document.getElementById('trade-cash-amt').value)||0;
   const cashReceived=cashDir==='received'?cashAmt:cashDir==='paid'?-cashAmt:0;
   const totalProceeds=outVal+cashReceived;
-  const inCostBasis=outVal+(cashDir==='paid'?cashAmt:0)-(cashDir==='received'?cashAmt:0);
+  const inCostBasis=outVal+(cashDir==='paid'?cashAmt:0);
   const personName=(document.getElementById('trade-person-name').value||'').trim();
   const personPhone=(document.getElementById('trade-person-phone').value||'').trim();
   const personEmail=(document.getElementById('trade-person-email').value||'').trim();
