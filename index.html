@@ -1240,7 +1240,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div><label class="form-label">Est. Current Value ($)</label><input class="form-input" id="coll-value" type="number" placeholder="0.00"></div>
           <div><label class="form-label">Condition</label>
             <select class="form-select" id="coll-condition">
-              <option value="">— Select —</option><option>Mint / Unworn</option><option>Excellent</option><option>Very Good</option><option>Good</option><option>Fair</option>
+              <option value="">— Select —</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
             </select>
           </div>
           <div><label class="form-label">Box & Papers</label>
@@ -1619,7 +1619,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="modal-tab-panel" id="tab-details">
         <div class="form-grid">
           <div class="form-group"><label class="form-label">Condition</label>
-            <select class="form-select" id="f-condition"><option value="">— Select —</option><option>New / Unworn</option><option>Mint (9/10)</option><option>Excellent (8/10)</option><option>Very Good (7/10)</option><option>Good (6/10)</option><option>Fair (5/10)</option><option>Parts/Repair</option></select>
+            <select class="form-select" id="f-condition"><option value="">— Select —</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
           </div>
           <div class="form-group"><label class="form-label">Box & Papers</label>
             <select class="form-select" id="f-box-papers"><option value="">— Select —</option><option>Full Set (Box + Papers)</option><option>Box Only</option><option>Papers Only</option><option>No Box, No Papers</option></select>
@@ -2045,7 +2045,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div class="form-group"><label class="form-label">Serial</label><input class="form-input" id="se-serial"></div>
           <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="se-year"></div>
           <div class="form-group"><label class="form-label">Condition</label>
-            <select class="form-select" id="se-condition"><option value="">— Select —</option><option>New / Unworn</option><option>Mint (9/10)</option><option>Excellent (8/10)</option><option>Very Good (7/10)</option><option>Good (6/10)</option><option>Fair (5/10)</option><option>Parts/Repair</option></select>
+            <select class="form-select" id="se-condition"><option value="">— Select —</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
           </div>
           <div class="form-group"><label class="form-label">Box & Papers</label>
             <select class="form-select" id="se-box-papers"><option value="">— Select —</option><option>Full Set (Box + Papers)</option><option>Box Only</option><option>Papers Only</option><option>No Box, No Papers</option></select>
@@ -4402,7 +4402,7 @@ async function deleteCalendarEvent(id) {
           <label class="form-label">Condition</label>
           <select class="form-input" id="trade-in-condition">
             <option value="">— Select —</option>
-            <option>Mint</option><option>Excellent</option><option>Very Good</option><option>Good</option><option>Fair</option>
+            <option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
           </select>
         </div>
         <div>
@@ -7045,6 +7045,14 @@ function renderAdTabs() {
           onclick="copyAdText(${i})">📋 Copy</button>
         <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem"
           onclick="renameAdTab(${i})">✏️ Rename</button>
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem;background:#E1306C;border-color:#E1306C;color:#fff"
+          onclick="shareToInstagram(${i})" title="Open Instagram with caption copied">
+          <svg style="width:12px;height:12px;vertical-align:middle;margin-right:3px" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>Instagram
+        </button>
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem;background:#1877F2;border-color:#1877F2;color:#fff"
+          onclick="shareToFacebook(${i})" title="Open Facebook with caption copied">
+          <svg style="width:12px;height:12px;vertical-align:middle;margin-right:3px" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>Facebook
+        </button>
         <span style="font-size:0.65rem;color:var(--text3);margin-left:auto">Auto-saves with watch</span>
       </div>
       <textarea
@@ -7100,6 +7108,93 @@ function copyAdText(i) {
     el.select(); document.execCommand('copy'); showToast('Copied!');
   });
 }
+
+// ── SOCIAL SHARE ─────────────────────────────────────────────────────────────
+function getAdShareData(i) {
+  // Save latest textarea content
+  const el = document.getElementById(`ad-body-${i}`);
+  if (el) adDrafts[i].body = el.value;
+  const caption = adDrafts[i].body || '';
+  // Get first uploaded photo URL from pendingPhotos (existing Supabase photos)
+  const photoUrl = pendingPhotos.find(p => p.existing && p.url)?.url || null;
+  return { caption, photoUrl };
+}
+
+async function shareToInstagram(i) {
+  const { caption, photoUrl } = getAdShareData(i);
+  if (!caption.trim()) {
+    showToast('Write or auto-populate your ad first.');
+    return;
+  }
+
+  // Copy caption to clipboard
+  try {
+    await navigator.clipboard.writeText(caption);
+  } catch(e) {
+    try { 
+      const el = document.getElementById(`ad-body-${i}`);
+      if (el) { el.select(); document.execCommand('copy'); }
+    } catch(e2) {}
+  }
+
+  // Show instruction toast then open Instagram
+  showToast('Caption copied! Instagram is opening — paste it into your post caption.');
+
+  // Small delay so toast is visible, then open Instagram
+  setTimeout(() => {
+    // On mobile, instagram:// deep link opens the app directly
+    // Try the share URL which on mobile will open the IG app
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && photoUrl) {
+      // On mobile with a photo: open Instagram camera/new post
+      // Instagram doesn't support pre-loading captions via URL, but this opens the app
+      window.location.href = 'instagram://app';
+      // Fallback to web after short delay
+      setTimeout(() => { window.open('https://www.instagram.com', '_blank'); }, 1500);
+    } else if (isMobile) {
+      window.location.href = 'instagram://app';
+      setTimeout(() => { window.open('https://www.instagram.com', '_blank'); }, 1500);
+    } else {
+      window.open('https://www.instagram.com', '_blank');
+    }
+  }, 400);
+}
+
+async function shareToFacebook(i) {
+  const { caption, photoUrl } = getAdShareData(i);
+  if (!caption.trim()) {
+    showToast('Write or auto-populate your ad first.');
+    return;
+  }
+
+  // Copy caption to clipboard
+  try {
+    await navigator.clipboard.writeText(caption);
+  } catch(e) {
+    try {
+      const el = document.getElementById(`ad-body-${i}`);
+      if (el) { el.select(); document.execCommand('copy'); }
+    } catch(e2) {}
+  }
+
+  showToast('Caption copied! Facebook is opening — create a post on your Tolliver Timepieces page and paste.');
+
+  setTimeout(() => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      // Try to open the Facebook app directly
+      window.location.href = 'fb://page/';
+      // Fallback: open mobile Facebook web
+      setTimeout(() => {
+        window.open('https://m.facebook.com', '_blank');
+      }, 1500);
+    } else {
+      // Desktop: open Facebook new post composer
+      window.open('https://www.facebook.com', '_blank');
+    }
+  }, 400);
+}
+// ── END SOCIAL SHARE ─────────────────────────────────────────────────────────
 
 function autoPopulateAd(i) {
   // Grab current watch data from open modal form
