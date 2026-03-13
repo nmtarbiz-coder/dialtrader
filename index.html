@@ -1526,6 +1526,8 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
             <option value="photos">Photo Management</option>
             <option value="crm">CRM &amp; Contacts</option>
             <option value="tax">Tax Reporting</option>
+            <option value="ads-tab">Ad Drafts &amp; Posting</option>
+            <option value="social-share">Posting to Instagram &amp; Facebook</option>
           </optgroup>
         </select>
       </div>
@@ -1550,6 +1552,8 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div class="help-nav-item" onclick="showHelp('photos')">Photo Management</div>
           <div class="help-nav-item" onclick="showHelp('crm')">CRM &amp; Contacts</div>
           <div class="help-nav-item" onclick="showHelp('tax')">Tax Reporting</div>
+          <div class="help-nav-item" onclick="showHelp('ads-tab')">Ad Drafts &amp; Posting</div>
+          <div class="help-nav-item" onclick="showHelp('social-share')">Posting to Instagram &amp; Facebook</div>
         </div>
         <div class="help-content" id="help-content-area"></div>
       </div>
@@ -6322,6 +6326,75 @@ const HELP_ARTICLES={
       </div>
     </div>
     <div class="help-tip"><strong>Upgrading or questions:</strong> Contact us at hello@dialtrader.com to change your plan. Your data stays exactly as-is when you switch.</div>
+  </div>`,
+
+  'ads-tab':`<div class="help-article">
+    <h1>Ad Drafts &amp; the Ads Tab</h1>
+    <div class="help-tag">Selling · Marketing</div>
+    <p>Every watch in your inventory has an <strong>Ads tab</strong> in its edit modal. This is where you write and store your listing copy for each platform you sell on — Reddit, Facebook, Instagram, Moda, Chrono24, and any custom platform you add.</p>
+    <h2>How the Ads Tab Works</h2>
+    <p>When you open a watch to edit it, click the <strong>Ads</strong> tab (6th tab). You'll see a tab bar with your platform tabs across the top. Each tab has its own text area where you write that platform's version of the ad.</p>
+    <ul>
+      <li><strong>Default tabs:</strong> Reddit, FB MP, Moda, Chrono24 — created automatically for every watch</li>
+      <li><strong>Add a platform:</strong> Click <em>+ Add Platform</em> at the end of the tab bar — up to 10 tabs per watch</li>
+      <li><strong>Rename a tab:</strong> Double-click the tab name, or click the ✏️ Rename button</li>
+      <li><strong>Delete a tab:</strong> Click the ✕ on the tab (need at least one tab at all times)</li>
+      <li><strong>Auto-saves:</strong> All ad copy saves automatically whenever you save the watch — no separate save needed</li>
+    </ul>
+    <h2>⚡ Auto-Populate</h2>
+    <p>Hit <strong>⚡ Auto-Populate</strong> to instantly generate ad copy from your watch's specs. DialTrader writes a different style for each platform:</p>
+    <ul>
+      <li><strong>Reddit tab:</strong> Generates a proper WTS (Want To Sell) format post with title, bullet specs, comps section placeholder, price, shipping origin (Arkansas), and payment methods</li>
+      <li><strong>All other tabs:</strong> Generates a clean bullet-style listing with watch name, specs, price, and shipping/payment info</li>
+    </ul>
+    <p>After auto-populate, you can edit the text freely — add comps, personal notes, or adjust anything. It's a starting point, not a final draft.</p>
+    <h2>📋 Copy</h2>
+    <p>Click <strong>📋 Copy</strong> to copy the current tab's text to your clipboard, ready to paste into any website, app, or message.</p>
+    <div class="help-tip"><strong>Pro tip:</strong> Write your Reddit post in the Reddit tab first using Auto-Populate, then tweak the FB tab for a shorter, more visual style — the same watch, two different voices for two different audiences.</div>
+  </div>`,
+
+  'social-share':`<div class="help-article">
+    <h1>Posting to Instagram &amp; Facebook</h1>
+    <div class="help-tag">Selling · Social Media</div>
+    <p>From the <strong>Ads tab</strong> of any watch, you'll see a pink <strong>Instagram</strong> button and a blue <strong>Facebook</strong> button. These are designed to get your listing post live on your Tolliver Timepieces pages as fast as possible.</p>
+    <h2>How It Works</h2>
+    <div class="help-step">
+      <div class="help-step-num">1</div>
+      <div class="help-step-body">
+        <strong>Write or Auto-Populate your ad copy</strong>
+        <span>Open a watch → Ads tab → pick the platform tab → click ⚡ Auto-Populate (or write your own). Edit until it reads the way you want it.</span>
+      </div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">2</div>
+      <div class="help-step-body">
+        <strong>Tap the Instagram or Facebook button</strong>
+        <span>DialTrader instantly copies your caption to the clipboard, then opens the Instagram or Facebook app on your phone.</span>
+      </div>
+    </div>
+    <div class="help-step">
+      <div class="help-step-num">3</div>
+      <div class="help-step-body">
+        <strong>Create your post in the app</strong>
+        <span>In Instagram or Facebook, go to your Tolliver Timepieces page, tap <em>New Post</em>, select your watch photo from your camera roll, then long-press in the caption field and tap <em>Paste</em>. Your copy is already there. Hit Post.</span>
+      </div>
+    </div>
+    <h2>Instagram Tips</h2>
+    <ul>
+      <li>Post to your <strong>Tolliver Timepieces business page</strong>, not your personal profile, for better reach</li>
+      <li>Use the first photo from your camera roll that you took of the watch — DialTrader can't push the photo directly into Instagram, but it's already on your phone</li>
+      <li>Add a few relevant hashtags at the end of the pasted caption: <code>#watchforsale #rolex #tudor #watchtrader #conwayarkansas</code></li>
+      <li>Consider posting to your Story as well as your Feed for double the visibility</li>
+    </ul>
+    <h2>Facebook Tips</h2>
+    <ul>
+      <li>Post to your <strong>Tolliver Timepieces Facebook page</strong> — the button opens Facebook where you create a page post</li>
+      <li>Paste the caption, add the photo, and post — Facebook algorithm favors posts with photos over text-only</li>
+      <li>After posting to your page, you can share that post into watch group communities (Moda Watch Club, TWAT, WTA B/S/T, etc.) directly from Facebook</li>
+    </ul>
+    <h2>Why Can't It Post Automatically?</h2>
+    <p>Facebook and Instagram's APIs do not allow any third-party app to fully automate posting to a page — this is a hard platform policy that applies to all apps, including major ones. What DialTrader does instead is get you to the point of posting in about 10 seconds: caption written, copied, app open, ready to paste and go.</p>
+    <div class="help-tip"><strong>Fastest workflow on mobile:</strong> Open watch in DialTrader → Ads tab → Auto-Populate → tap Instagram → switch to IG → new post → pick photo → paste → post. About 20 seconds start to finish.</div>
   </div>`,
 
   'storefront-intro':`<div class="help-article">
