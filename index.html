@@ -368,6 +368,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .task-delete{flex-shrink:0;background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.85rem;padding:2px 4px;opacity:0;transition:opacity 0.15s;}
 .task-item:hover .task-delete{opacity:1;}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center;padding:1rem;}
+.modal-box{background:var(--surface);border-top:3px solid var(--gold);overflow-y:auto;max-height:90vh;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border2);width:600px;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15);}
 .modal-lg{width:860px;}
@@ -732,6 +733,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
       <div class="page-header">
         <div><div class="page-title">Inventory</div><div class="page-subtitle" id="inv-subtitle"></div></div>
         <div style="display:flex;gap:0.5rem">
+          <button class="btn-outline" onclick="printInventorySummary()" style="border-color:var(--text2);color:var(--text2)">🖨 Print Summary</button>
           <button class="btn-outline" onclick="openTradeModal()" style="border-color:var(--gold2);color:var(--gold2)">⇄ Trade</button>
           <button class="btn-gold" onclick="openModal()">+ Add Watch</button>
         </div>
@@ -1240,7 +1242,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div><label class="form-label">Est. Current Value ($)</label><input class="form-input" id="coll-value" type="number" placeholder="0.00"></div>
           <div><label class="form-label">Condition</label>
             <select class="form-select" id="coll-condition">
-              <option value="">— Select —</option><option>Like New (10/10)</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
+              <option value="">— Select —</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
             </select>
           </div>
           <div><label class="form-label">Box & Papers</label>
@@ -1623,7 +1625,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="modal-tab-panel" id="tab-details">
         <div class="form-grid">
           <div class="form-group"><label class="form-label">Condition</label>
-            <select class="form-select" id="f-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
+            <select class="form-select" id="f-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
           </div>
           <div class="form-group"><label class="form-label">Box & Papers</label>
             <select class="form-select" id="f-box-papers"><option value="">— Select —</option><option>Full Set (Box + Papers)</option><option>Box Only</option><option>Papers Only</option><option>No Box, No Papers</option></select>
@@ -2049,7 +2051,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div class="form-group"><label class="form-label">Serial</label><input class="form-input" id="se-serial"></div>
           <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="se-year"></div>
           <div class="form-group"><label class="form-label">Condition</label>
-            <select class="form-select" id="se-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
+            <select class="form-select" id="se-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
           </div>
           <div class="form-group"><label class="form-label">Box & Papers</label>
             <select class="form-select" id="se-box-papers"><option value="">— Select —</option><option>Full Set (Box + Papers)</option><option>Box Only</option><option>Papers Only</option><option>No Box, No Papers</option></select>
@@ -3343,6 +3345,124 @@ async function markAsSold(){
 }
 
 function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();renderTasks();renderTasksPage();updateTaskBadge();}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  INVENTORY SUMMARY PRINT
+// ══════════════════════════════════════════════════════════════════════════════
+function printInventorySummary(){
+  if(!inventory.length){showToast('No watches in inventory.');return;}
+  const today=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  const sorted=[...inventory].sort((a,b)=>(a.brand||'').localeCompare(b.brand||''));
+
+  const rows=sorted.map((w,i)=>{
+    const cost=soldCostBasis(w);
+    const stage=STAGES[w.stage_index]||'—';
+    const stageNum=w.stage_index!=null?w.stage_index+1:'—';
+    const days=w.purchase_date?Math.floor((Date.now()-new Date(w.purchase_date))/86400000):null;
+    const platforms=Array.isArray(w.platform)&&w.platform.length?w.platform.join(', '):'—';
+    return `
+    <tr>
+      <td class="num">${i+1}</td>
+      <td><strong>${w.brand||'—'}</strong></td>
+      <td>${w.model||'—'}</td>
+      <td class="mono">${w.ref||'—'}</td>
+      <td class="money">$${cost.toLocaleString()}</td>
+      <td class="money">${w.listed_price?'$'+Number(w.listed_price).toLocaleString():'—'}</td>
+      <td class="center">${days!=null?days+'d':'—'}</td>
+      <td><span class="stage-pill stage-${w.stage_index||0}">${stageNum}. ${stage}</span></td>
+      <td class="plat">${platforms}</td>
+      <td class="notes-col"></td>
+    </tr>`;
+  }).join('');
+
+  const stageLegend=STAGES.map((s,i)=>`<span class="leg-item"><span class="leg-dot" style="background:${['#555','#1e3a5f','#1a3a1a','#2a1a3a','#1a2a3a','#3a1a00','#1a1a3a','#3a2a00','#1a2a1a','#1a3a1a'][i]||'#555'}"></span>${i+1}. ${s}</span>`).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Inventory Summary — ${today}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Arial',sans-serif;font-size:11px;color:#1a1a1a;padding:1.5rem 2rem;background:#fff}
+  h1{font-size:1.25rem;font-weight:700;margin-bottom:0.2rem;letter-spacing:0.02em}
+  .meta{font-size:0.8rem;color:#666;margin-bottom:1.25rem}
+  table{width:100%;border-collapse:collapse;margin-bottom:1.5rem}
+  thead th{background:#1a1a1a;color:#fff;padding:6px 8px;text-align:left;font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap}
+  thead th.right{text-align:right}
+  thead th.center{text-align:center}
+  tbody tr{border-bottom:1px solid #e8e8e8}
+  tbody tr:nth-child(even){background:#fafafa}
+  tbody tr:hover{background:#fffbf0}
+  td{padding:8px 8px;vertical-align:top}
+  td.num{color:#aaa;font-size:0.75rem;text-align:center;width:24px}
+  td.money{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.mono{font-family:'Courier New',monospace;font-size:0.85rem;color:#444}
+  td.center{text-align:center;color:#666}
+  td.plat{font-size:0.75rem;color:#666;max-width:120px}
+  td.notes-col{min-width:180px;border-bottom:1px dashed #ccc;vertical-align:bottom;padding-bottom:2px}
+  td strong{font-size:1rem;display:block;margin-bottom:1px}
+  .stage-pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:0.68rem;font-weight:600;white-space:nowrap;background:#f0f0f0;color:#333}
+  .totals{background:#fffbf0;border:1px solid #B8943A;padding:0.75rem 1rem;margin-bottom:1.5rem;display:flex;gap:2rem;flex-wrap:wrap}
+  .totals-item{text-align:center}
+  .totals-item .val{font-size:1.1rem;font-weight:700;color:#B8943A}
+  .totals-item .lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-top:2px}
+  .legend{margin-top:0.5rem;padding:0.75rem;background:#f8f8f8;border:1px solid #eee}
+  .legend-title{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:#888;font-weight:700;margin-bottom:0.4rem}
+  .leg-item{display:inline-flex;align-items:center;gap:4px;margin-right:12px;margin-bottom:4px;font-size:0.72rem;color:#444}
+  .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .notes-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:#bbb;display:block;margin-bottom:4px}
+  .plan-line{border:none;border-bottom:1px dashed #ccc;width:100%;margin-bottom:6px;height:14px;display:block}
+  @media print{
+    body{padding:0.75rem 1rem}
+    button{display:none!important}
+    tr{page-break-inside:avoid}
+  }
+</style>
+</head><body>
+
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+  <div>
+    <h1>Tolliver Timepieces — Inventory Summary</h1>
+    <div class="meta">Generated ${today} &nbsp;·&nbsp; ${sorted.length} watch${sorted.length!==1?'es':''} in inventory</div>
+  </div>
+  <button onclick="window.print()" style="padding:6px 16px;background:#1a1a1a;color:#fff;border:none;cursor:pointer;font-size:0.8rem;font-weight:600;letter-spacing:0.05em">🖨 Print / Save PDF</button>
+</div>
+
+<div class="totals">
+  <div class="totals-item"><div class="val">${sorted.length}</div><div class="lbl">Total Watches</div></div>
+  <div class="totals-item"><div class="val">$${sorted.reduce((s,w)=>s+soldCostBasis(w),0).toLocaleString()}</div><div class="lbl">Total Capital In</div></div>
+  <div class="totals-item"><div class="val">$${sorted.reduce((s,w)=>s+(+w.listed_price||0),0).toLocaleString()}</div><div class="lbl">Total Listed Value</div></div>
+  <div class="totals-item"><div class="val">$${sorted.reduce((s,w)=>s+Math.max(0,(+w.listed_price||0)-soldCostBasis(w)),0).toLocaleString()}</div><div class="lbl">Potential Profit</div></div>
+</div>
+
+<table>
+  <thead><tr>
+    <th class="center">#</th>
+    <th>Brand</th>
+    <th>Model</th>
+    <th>Reference</th>
+    <th class="right">Cost</th>
+    <th class="right">Listed</th>
+    <th class="center">Days</th>
+    <th>Pipeline Stage</th>
+    <th>Platform(s)</th>
+    <th>Notes / Plan</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+
+<div class="legend">
+  <div class="legend-title">Pipeline Stage Key</div>
+  ${stageLegend}
+</div>
+
+<script>window.onload=()=>window.print()<\/script>
+</body></html>`;
+
+  const w=window.open('','_blank');
+  w.document.write(html);
+  w.document.close();
+}
+// ══════════════════════════════════════════════════════════════════════════════
+//  END INVENTORY SUMMARY PRINT
+// ══════════════════════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  TRADE MODAL
@@ -5014,10 +5134,10 @@ function renderCollection(){
       <div class="inv-row-val muted">${[w.year,w.purchase_date].filter(Boolean).join(' · ')||'—'}</div>
       <div class="inv-row-val" style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
         <span style="display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end">
-          <button onclick="openCollectionModal('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 8px;font-size:0.55rem;cursor:pointer">Edit</button>
-          <button onclick="moveCollToInventory('${w.id}')" style="background:rgba(184,148,58,0.15);border:1px solid var(--gold2);color:var(--gold2);padding:2px 6px;font-size:0.55rem;cursor:pointer;white-space:nowrap">📦 To Inventory</button>
-          <button onclick="moveCollToConsignment('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:2px 6px;font-size:0.55rem;cursor:pointer;white-space:nowrap">🤝 Consign</button>
-          <button onclick="deleteCollWatch('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:2px 6px;font-size:0.55rem;cursor:pointer">✕</button>
+          <button onclick="openCollectionModal('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.7rem;cursor:pointer;font-family:'Raleway',sans-serif;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">Edit</button>
+          <button onclick="moveCollToInventory('${w.id}')" style="background:rgba(184,148,58,0.15);border:1px solid var(--gold2);color:var(--gold2);padding:3px 10px;font-size:0.7rem;cursor:pointer;white-space:nowrap;font-family:'Raleway',sans-serif;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">📦 To Inventory</button>
+          <button onclick="moveCollToConsignment('${w.id}')" style="background:none;border:1px solid var(--border);color:var(--text2);padding:3px 10px;font-size:0.7rem;cursor:pointer;white-space:nowrap;font-family:'Raleway',sans-serif;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">🤝 Consign</button>
+          <button onclick="deleteCollWatch('${w.id}')" style="background:none;border:1px solid rgba(192,57,43,0.4);color:var(--red);padding:3px 8px;font-size:0.7rem;cursor:pointer;font-family:'Raleway',sans-serif;font-weight:600">✕</button>
         </span>
       </div>
     </div>`;
