@@ -653,6 +653,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="sidebar-section-label">Tools</div>
     <div class="nav-item" onclick="showPage('import')"><span class="nav-icon">📥</span>Import / Export</div>
     <div class="nav-item" onclick="showPage('tax')"><span class="nav-icon">💰</span>Tax Report</div>
+    <div class="nav-item" onclick="showPage('profit-analysis')"><span class="nav-icon">📈</span>Profit Analysis</div>
     <div class="nav-item" onclick="showPage('expenses')"><span class="nav-icon">🧾</span>Expenses<span class="nav-badge" id="nav-exp-count" style="display:none">0</span></div>
     <div class="nav-item" onclick="showPage('mileage')"><span class="nav-icon">🚗</span>Mileage</div>
     <div class="nav-item" onclick="showPage('goals')"><span class="nav-icon">🎯</span>Profit Goals</div>
@@ -1046,10 +1047,35 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
         <div style="display:flex;gap:0.5rem;align-items:center">
           <select class="filter-select" id="tax-year-filter" onchange="renderTaxReport()"><option value="all">All Years</option></select>
           <button class="btn-outline" onclick="exportTaxCSV()">⬆ Export CSV</button>
-          <button class="btn-gold" onclick="window.print()">🖨 Print Report</button>
+          <button class="btn-gold" onclick="printTaxReport()">🖨 Print / PDF</button>
         </div>
       </div>
       <div id="tax-report-content" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- PROFIT ANALYSIS PAGE -->
+    <div class="page" id="page-profit-analysis" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Profit <span>Analysis</span></div>
+          <div class="page-subtitle">Capital performance — by year, quarter, month, week, and watch</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+          <select class="filter-select" id="pa-period" onchange="renderProfitAnalysis()">
+            <option value="year">By Year</option>
+            <option value="quarter">By Quarter</option>
+            <option value="month" selected>By Month</option>
+            <option value="week">By Week</option>
+          </select>
+          <select class="filter-select" id="pa-year-filter" onchange="renderProfitAnalysis()">
+            <option value="all">All Years</option>
+          </select>
+          <button class="btn-outline" onclick="printProfitAnalysis()">🖨 Print / PDF</button>
+        </div>
+      </div>
+      <div id="pa-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1.5rem;"></div>
+      <div id="pa-chart-wrap" style="margin-bottom:1.5rem;"></div>
+      <div id="pa-content"></div>
     </div>
 
     <!-- EXPENSES PAGE -->
@@ -2335,6 +2361,7 @@ function showPage(name){
   const pg=document.getElementById('page-'+name);if(pg){pg.style.display='block';pg.classList.add('active');}
   const navEl=document.querySelector(`.nav-item[onclick="showPage('${name}')"]`);if(navEl)navEl.classList.add('active');
   if(name==='dashboard')renderDashboard();
+  if(name==='profit-analysis')renderProfitAnalysis();
   if(name==='inventory')renderInventory();
   if(name==='sold')renderSold();
   if(name==='contacts')renderContacts();
@@ -3344,7 +3371,7 @@ async function markAsSold(){
   showToast(`${row.brand} ${row.model} sold · Profit: ${fmt(p)}`);
 }
 
-function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();renderTasks();renderTasksPage();updateTaskBadge();}
+function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();renderTasks();renderTasksPage();updateTaskBadge();if(document.getElementById('page-profit-analysis')&&document.getElementById('page-profit-analysis').style.display!=='none')renderProfitAnalysis();}
 
 // ══════════════════════════════════════════════════════════════════════════════
 //  INVENTORY SUMMARY PRINT
@@ -4082,6 +4109,282 @@ function renderTaxReport(){
   }).join('');
   document.getElementById('tax-report-content').innerHTML=html||'<div class="empty-state"><p>No data for selected year.</p></div>';
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PRINT TAX REPORT — opens proper printable window
+// ══════════════════════════════════════════════════════════════════════════════
+function printTaxReport(){
+  const filterYear=document.getElementById('tax-year-filter').value;
+  const label = filterYear==='all' ? 'All Years' : filterYear + ' Tax Year';
+  const inner = document.getElementById('tax-report-content').innerHTML;
+  if(!inner || inner.includes('empty-state')){showToast('No data to print.');return;}
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Tax Report — ${label}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:1.5rem 2rem;background:#fff}
+h1{font-size:1.3rem;margin-bottom:0.25rem}
+.meta{color:#666;font-size:0.8rem;margin-bottom:1.5rem}
+.tax-year-block{margin-bottom:2rem;border:1px solid #ddd}
+.tax-year-header{background:#1a1a1a;color:#fff;padding:0.75rem 1rem;display:flex;justify-content:space-between;align-items:center}
+.tax-year-title{font-size:1.1rem;font-weight:600}
+.tax-year-net{font-size:1.2rem;font-weight:700}
+.tax-year-net.pos{color:#7fca9f}.tax-year-net.neg{color:#e8897a}
+.tax-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #ddd}
+.tax-summary-cell{padding:0.6rem 0.8rem;border-right:1px solid #eee;border-bottom:1px solid #eee}
+.tax-summary-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px}
+.tax-summary-val{font-size:1rem;font-weight:700}
+.tax-transactions{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{background:#f5f5f5;padding:5px 8px;text-align:left;font-size:0.65rem;text-transform:uppercase;border-bottom:1px solid #ddd}
+td{padding:5px 8px;border-bottom:1px solid #eee;font-size:0.78rem}
+@media print{button{display:none!important}tr{page-break-inside:avoid}}
+</style></head><body>
+<h1>Tax Report — ${label}</h1>
+<div class="meta">Tolliver Timepieces / NXT Enterprises LLC · Generated ${new Date().toLocaleDateString()}</div>
+${inner}
+<script>window.onload=()=>window.print()<\/script>
+</body></html>`);
+  w.document.close();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PROFIT ANALYSIS
+// ══════════════════════════════════════════════════════════════════════════════
+function renderProfitAnalysis(){
+  if(!soldWatches.length){
+    document.getElementById('pa-content').innerHTML='<div class="empty-state"><h3>No sold watches yet</h3><p>Profit analysis will appear once you have sales.</p></div>';
+    document.getElementById('pa-kpi-row').innerHTML='';
+    document.getElementById('pa-chart-wrap').innerHTML='';
+    return;
+  }
+
+  const period = document.getElementById('pa-period').value;
+  const yearFilterEl = document.getElementById('pa-year-filter');
+
+  // Populate year filter
+  const allYears = [...new Set(soldWatches.map(s=>s.sale_date?new Date(s.sale_date).getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
+  const curYear = yearFilterEl.value;
+  yearFilterEl.innerHTML = '<option value="all">All Years</option>' + allYears.map(y=>`<option value="${y}">${y}</option>`).join('');
+  if(curYear) yearFilterEl.value = curYear;
+  const yearFilter = yearFilterEl.value;
+
+  const watches = yearFilter==='all' ? soldWatches : soldWatches.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()==yearFilter);
+
+  // ── KPI Cards ──
+  const totalGross = watches.reduce((s,w)=>s+(+w.sold_price||0),0);
+  const totalCOGS  = watches.reduce((s,w)=>s+soldCostBasis(w),0);
+  const totalFees  = watches.reduce((s,w)=>s+(+w.platform_fee||0)+(+w.payment_fee||0)+(+w.shipping_out||0),0);
+  const totalNet   = watches.reduce((s,w)=>s+soldNetProfit(w),0);
+  const avgNet     = watches.length ? totalNet/watches.length : 0;
+  const avgROI     = watches.length ? watches.reduce((s,w)=>s+soldROI(w),0)/watches.length : 0;
+  const avgDays    = (()=>{
+    const valid = watches.filter(w=>w.purchase_date&&w.sale_date);
+    if(!valid.length) return null;
+    return valid.reduce((s,w)=>s+Math.round((new Date(w.sale_date)-new Date(w.purchase_date))/86400000),0)/valid.length;
+  })();
+  const bestWatch  = watches.length ? watches.reduce((b,w)=>soldNetProfit(w)>soldNetProfit(b)?w:b, watches[0]) : null;
+
+  document.getElementById('pa-kpi-row').innerHTML = [
+    {label:'Total Gross Sales',   val:fmt(totalGross), sub:''},
+    {label:'Total COGS',          val:fmt(totalCOGS),  sub:''},
+    {label:'Platform & Sell Fees',val:fmt(totalFees),  sub:''},
+    {label:'Total Net Profit',    val:fmt(totalNet),   val_color:totalNet>=0?'var(--green)':'var(--red)'},
+    {label:'Avg Profit / Watch',  val:fmt(avgNet),     val_color:avgNet>=0?'var(--green)':'var(--red)'},
+    {label:'Avg ROI',             val:fmtPct(avgROI),  val_color:avgROI>=0?'var(--green)':'var(--red)'},
+    {label:'Avg Days Held',       val:avgDays!=null?Math.round(avgDays)+'d':'—', sub:'purchase → sale'},
+    {label:'Watches Sold',        val:watches.length,  sub:''},
+    {label:'Best Single Watch',   val:bestWatch?`${bestWatch.brand} ${bestWatch.model}`:'—', val_small:bestWatch?fmt(soldNetProfit(bestWatch)):'', val_color:'var(--green)'},
+  ].map(k=>`<div style="background:var(--surface);border:1px solid var(--border);padding:0.75rem 1rem">
+    <div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:0.3rem">${k.label}</div>
+    <div style="font-size:${k.val_small||String(k.val).length>10?'0.95rem':'1.15rem'};font-weight:700;color:${k.val_color||'var(--text)'}">${k.val}</div>
+    ${k.val_small?`<div style="font-size:0.75rem;color:var(--green)">${k.val_small}</div>`:''}
+    ${k.sub?`<div style="font-size:0.62rem;color:var(--text2);margin-top:0.15rem">${k.sub}</div>`:''}
+  </div>`).join('');
+
+  // ── Group data by period ──
+  function getPeriodKey(dateStr){
+    if(!dateStr) return null;
+    const d = new Date(dateStr);
+    if(period==='year')    return d.getFullYear().toString();
+    if(period==='quarter') return `${d.getFullYear()} Q${Math.ceil((d.getMonth()+1)/3)}`;
+    if(period==='month')   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if(period==='week'){
+      // ISO week
+      const tmp=new Date(d); tmp.setHours(0,0,0,0); tmp.setDate(tmp.getDate()+3-(tmp.getDay()+6)%7);
+      const w1=new Date(tmp.getFullYear(),0,4);
+      const wk=1+Math.round(((tmp-w1)/86400000-3+(w1.getDay()+6)%7)/7);
+      return `${tmp.getFullYear()}-W${String(wk).padStart(2,'0')}`;
+    }
+  }
+  function getPeriodLabel(key){
+    if(period==='year') return key;
+    if(period==='quarter') return key;
+    if(period==='month'){const [y,m]=key.split('-');return new Date(y,m-1).toLocaleDateString('en-US',{month:'short',year:'numeric'});}
+    if(period==='week') return key.replace('-W',' Wk ');
+  }
+
+  const groups = {};
+  watches.forEach(w=>{
+    const k=getPeriodKey(w.sale_date);
+    if(!k) return;
+    if(!groups[k]) groups[k]={key:k,watches:[],gross:0,cogs:0,fees:0,net:0};
+    const g=groups[k];
+    g.watches.push(w);
+    g.gross += (+w.sold_price||0);
+    g.cogs  += soldCostBasis(w);
+    g.fees  += (+w.platform_fee||0)+(+w.payment_fee||0)+(+w.shipping_out||0);
+    g.net   += soldNetProfit(w);
+  });
+  const sortedGroups = Object.values(groups).sort((a,b)=>a.key<b.key?1:-1);
+
+  // ── Bar chart (SVG) ──
+  if(sortedGroups.length > 0){
+    const chartData = [...sortedGroups].reverse();
+    const maxAbs = Math.max(...chartData.map(g=>Math.abs(g.net)),1);
+    const barH = 28, gap=6, labelW=110, valW=70, chartW=340;
+    const svgH = chartData.length*(barH+gap)+40;
+    let bars='';
+    chartData.forEach((g,i)=>{
+      const y = 20+i*(barH+gap);
+      const barLen = Math.round((Math.abs(g.net)/maxAbs)*(chartW-10));
+      const color = g.net>=0?'#7fca9f':'#e8897a';
+      const netStr = (g.net>=0?'+':'')+fmt(g.net);
+      bars += `<text x="${labelW-5}" y="${y+barH/2+4}" text-anchor="end" font-size="11" fill="#aaa">${getPeriodLabel(g.key)}</text>`;
+      bars += `<rect x="${labelW}" y="${y}" width="${barLen}" height="${barH}" fill="${color}" opacity="0.85" rx="2"/>`;
+      bars += `<text x="${labelW+barLen+5}" y="${y+barH/2+4}" font-size="10" fill="${color}" font-weight="700">${netStr}</text>`;
+    });
+    document.getElementById('pa-chart-wrap').innerHTML=`
+      <div style="background:var(--surface);border:1px solid var(--border);padding:1rem">
+        <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--text2);margin-bottom:0.75rem">Net Profit by ${period.charAt(0).toUpperCase()+period.slice(1)}</div>
+        <svg width="100%" viewBox="0 0 ${labelW+chartW+valW} ${svgH}" style="overflow:visible;max-width:700px">${bars}</svg>
+      </div>`;
+  } else {
+    document.getElementById('pa-chart-wrap').innerHTML='';
+  }
+
+  // ── Period breakdown table ──
+  const periodRows = sortedGroups.map(g=>{
+    const avgROI_g = g.watches.length ? g.watches.reduce((s,w)=>s+soldROI(w),0)/g.watches.length : 0;
+    const avgDays_g = (()=>{
+      const valid=g.watches.filter(w=>w.purchase_date&&w.sale_date);
+      if(!valid.length) return null;
+      return valid.reduce((s,w)=>s+Math.round((new Date(w.sale_date)-new Date(w.purchase_date))/86400000),0)/valid.length;
+    })();
+    const netColor = g.net>=0?'var(--green)':'var(--red)';
+    return `<tr>
+      <td><strong>${getPeriodLabel(g.key)}</strong></td>
+      <td style="text-align:center">${g.watches.length}</td>
+      <td>${fmt(g.gross)}</td>
+      <td>${fmt(g.cogs)}</td>
+      <td style="color:var(--text2)">${fmt(g.fees)}</td>
+      <td style="color:${netColor};font-weight:700">${g.net>=0?'+':''}${fmt(g.net)}</td>
+      <td style="color:${netColor}">${fmtPct(avgROI_g)}</td>
+      <td style="color:var(--text2)">${avgDays_g!=null?Math.round(avgDays_g)+'d':'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Per-watch detail table ──
+  const watchRows = [...watches].sort((a,b)=>soldNetProfit(b)-soldNetProfit(a)).map(s=>{
+    const p=soldNetProfit(s), r=soldROI(s);
+    const days = s.purchase_date&&s.sale_date ? Math.round((new Date(s.sale_date)-new Date(s.purchase_date))/86400000) : null;
+    const plat = Array.isArray(s.platform)?s.platform.join(', '):(s.platform||'—');
+    return `<tr>
+      <td style="white-space:nowrap">${s.sale_date||'—'}</td>
+      <td><strong>${s.brand||''}</strong> ${s.model||''}</td>
+      <td style="color:var(--text2);font-size:0.72rem">${s.ref||'—'}</td>
+      <td>${fmt(soldCostBasis(s))}</td>
+      <td>${fmt(s.sold_price)}</td>
+      <td style="color:var(--text2)">${fmt((+s.platform_fee||0)+(+s.payment_fee||0)+(+s.shipping_out||0))}</td>
+      <td style="color:${p>=0?'var(--green)':'var(--red)'};font-weight:700">${p>=0?'+':''}${fmt(p)}</td>
+      <td style="color:${r>=0?'var(--green)':'var(--red)'}">${fmtPct(r)}</td>
+      <td style="color:var(--text2)">${days!=null?days+'d':'—'}</td>
+      <td style="font-size:0.68rem;color:var(--text2)">${plat}</td>
+    </tr>`;
+  }).join('');
+
+  const thStyle='padding:0.5rem 0.75rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap';
+  const tdStyle='style="padding:0.45rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.8rem"';
+
+  document.getElementById('pa-content').innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto">
+      <div style="padding:0.75rem 1rem;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--text2);border-bottom:1px solid var(--border)">
+        ${period.charAt(0).toUpperCase()+period.slice(1)}ly Breakdown
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="${thStyle}">Period</th>
+          <th style="${thStyle};text-align:center">Watches</th>
+          <th style="${thStyle}">Gross Sales</th>
+          <th style="${thStyle}">COGS</th>
+          <th style="${thStyle}">Fees</th>
+          <th style="${thStyle}">Net Profit</th>
+          <th style="${thStyle}">Avg ROI</th>
+          <th style="${thStyle}">Avg Held</th>
+        </tr></thead>
+        <tbody>${periodRows.replace(/<td>/g,'<td style="padding:0.45rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem">').replace(/<td style="text-align:center">/g,'<td style="padding:0.45rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem;text-align:center">')}</tbody>
+      </table>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);overflow-x:auto">
+      <div style="padding:0.75rem 1rem;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.09em;color:var(--text2);border-bottom:1px solid var(--border)">
+        Individual Watch Performance — sorted by net profit
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="${thStyle}">Sale Date</th>
+          <th style="${thStyle}">Watch</th>
+          <th style="${thStyle}">Ref</th>
+          <th style="${thStyle}">Cost Basis</th>
+          <th style="${thStyle}">Sold Price</th>
+          <th style="${thStyle}">Fees</th>
+          <th style="${thStyle}">Net Profit</th>
+          <th style="${thStyle}">ROI</th>
+          <th style="${thStyle}">Days Held</th>
+          <th style="${thStyle}">Platform</th>
+        </tr></thead>
+        <tbody>${watchRows.replace(/<td>/g,'<td style="padding:0.45rem 0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.8rem">')}</tbody>
+      </table>
+    </div>`;
+}
+
+function printProfitAnalysis(){
+  const inner = document.getElementById('pa-content').innerHTML;
+  const kpi   = document.getElementById('pa-kpi-row').innerHTML;
+  const chart = document.getElementById('pa-chart-wrap').innerHTML;
+  if(!inner||inner.includes('empty-state')){showToast('No data to print.');return;}
+  const period= document.getElementById('pa-period').value;
+  const yr    = document.getElementById('pa-year-filter').value;
+  const label = `Profit Analysis — ${period.charAt(0).toUpperCase()+period.slice(1)}ly · ${yr==='all'?'All Years':yr}`;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${label}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:1.5rem 2rem;background:#fff}
+h1{font-size:1.2rem;margin-bottom:0.2rem}
+.meta{color:#666;font-size:0.8rem;margin-bottom:1.25rem}
+table{width:100%;border-collapse:collapse;margin-top:0.5rem}
+th{background:#f5f5f5;padding:5px 8px;text-align:left;font-size:0.62rem;text-transform:uppercase;border-bottom:1px solid #ddd}
+td{padding:5px 8px;border-bottom:1px solid #eee;font-size:0.78rem}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;margin-bottom:1rem}
+.kpi{border:1px solid #ddd;padding:0.5rem 0.7rem}
+.kpi-label{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.07em;color:#888;margin-bottom:3px}
+.kpi-val{font-size:0.95rem;font-weight:700}
+.section{border:1px solid #ddd;margin-bottom:1rem;overflow:hidden}
+.section-header{background:#f5f5f5;padding:0.4rem 0.75rem;font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;color:#555}
+@media print{button{display:none!important}tr{page-break-inside:avoid}}
+</style></head><body>
+<h1>${label}</h1>
+<div class="meta">Tolliver Timepieces / NXT Enterprises LLC · Generated ${new Date().toLocaleDateString()}</div>
+<div class="kpi-row">${kpi.replace(/background:var\(--surface\)[^;"]*/g,'').replace(/border:1px solid var\(--border\)/g,'border:1px solid #ddd').replace(/color:var\(--text2\)/g,'color:#888').replace(/color:var\(--text\)/g,'color:#111').replace(/color:var\(--green\)/g,'color:#2d7a4f').replace(/color:var\(--red\)/g,'color:#c0392b')}</div>
+${chart}
+${inner.replace(/background:var\(--surface\)/g,'background:#fff').replace(/border:1px solid var\(--border\)/g,'border:1px solid #ddd').replace(/color:var\(--text2\)/g,'color:#888').replace(/color:var\(--green\)/g,'color:#2d7a4f').replace(/color:var\(--red\)/g,'color:#c0392b').replace(/rgba\(255,255,255,0\.04\)/g,'#f9f9f9')}
+<script>window.onload=()=>window.print()<\/script>
+</body></html>`);
+  w.document.close();
+}
+// ── END PROFIT ANALYSIS ────────────────────────────────────────────────────
 
 function exportTaxCSV(){
   const filterYear=document.getElementById('tax-year-filter').value;
