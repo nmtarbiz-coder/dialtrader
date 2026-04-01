@@ -1254,8 +1254,8 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
         <div class="modal-tab" onclick="switchTab('photos')">Photos</div>
         <div class="modal-tab" onclick="switchTab('wtcontacts')">Contacts</div>
         <div class="modal-tab" onclick="switchTab('notes')">Notes</div>
+        <div class="modal-tab" onclick="switchTab('ads')">Ads</div>
         <div class="modal-tab" id="tab-sell-btn" onclick="switchTab('sell')" style="display:none">Mark Sold</div>
-        <div class="modal-tab" id="tab-ad-graphic-btn" onclick="openAdGraphic()" style="display:none;color:var(--gold2)">🖼 Ad Graphic</div>
       </div>
       <div class="modal-tab-panel active" id="tab-basics">
         <div class="form-grid">
@@ -1358,6 +1358,14 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           </div>
           <div id="notes-list" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem"></div>
         </div>
+      </div>
+      <div class="modal-tab-panel" id="tab-ads">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
+          <div style="font-size:0.68rem;color:var(--text2)">Write & save ad copy for each platform. Auto-populate pulls from watch data.</div>
+          <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem" onclick="addAdTab()">+ Add Platform</button>
+        </div>
+        <div id="ad-tabs-bar" style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem;overflow-x:auto;flex-wrap:nowrap"></div>
+        <div id="ad-tabs-content"></div>
       </div>
       <div class="modal-tab-panel" id="tab-sell">
         <div style="font-size:0.78rem;color:var(--text2);margin-bottom:1.25rem;line-height:1.7">Complete sale details below. The watch moves to Sold History.</div>
@@ -2615,13 +2623,13 @@ function openModal(){
   document.getElementById('modal-title').textContent='Add Watch to Inventory';
   document.getElementById('btn-delete').style.display='none';
   document.getElementById('tab-sell-btn').style.display='none';
-  document.getElementById('tab-ad-graphic-btn').style.display='none';
   clearWatchForm();pendingPhotos=[];renderPhotoGrid();
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
   buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
   populateContactDropdowns();
   buildStageSelector(0);
   switchTab('basics');
+  initAdDrafts(null);
   document.getElementById('modal').classList.add('open');
   setTimeout(()=>document.getElementById('f-brand').focus(),50);
 }
@@ -2631,7 +2639,6 @@ function editWatch(id){
   document.getElementById('modal-title').textContent='Edit: ' + [w.brand, w.model].filter(Boolean).join(' ');
   document.getElementById('btn-delete').style.display='inline-block';
   document.getElementById('tab-sell-btn').style.display='block';
-  document.getElementById('tab-ad-graphic-btn').style.display='block';
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
   buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
   populateContactDropdowns();
@@ -2658,6 +2665,7 @@ function editWatch(id){
   document.getElementById('modal').classList.add('open');
 
   loadNotesForWatch(id);
+  initAdDrafts(w);
 }
 function clearWatchForm(){
   ['f-brand','f-model','f-ref','f-serial','f-year','f-purchase-date','f-purchase-price','f-tax','f-shipping-in','f-other-fees','f-listed-price','f-msrp','f-notes','f-case-size','f-dial-color','f-bezel-color','f-bracelet-color','f-buy-name','f-buy-phone','f-buy-email','f-buy-location','f-sell-name','f-sell-phone','f-sell-email','f-sell-location','f-sell-name-sell','f-sell-phone-sell','f-sell-email-sell','f-sold-price','f-platform-fee','f-payment-fee','f-shipping-out','f-sale-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -2746,6 +2754,7 @@ function getFormData(){
     buyEmail:g('f-buy-email').value.trim(),buyLocation:g('f-buy-location').value.trim(),
     sellName:g('f-sell-name').value.trim(),sellPhone:g('f-sell-phone').value.trim(),
     sellEmail:g('f-sell-email').value.trim(),sellLocation:g('f-sell-location').value.trim(),
+    adDrafts:getAdDraftsForSave(),
   };
 }
 function localToDb(d){
@@ -2763,6 +2772,7 @@ function localToDb(d){
     bracelet_type:d.braceletType||null,bracelet_color:d.braceletColor||null,
     buy_name:d.buyName||null,buy_phone:d.buyPhone||null,buy_email:d.buyEmail||null,buy_location:d.buyLocation||null,
     sell_name:d.sellName||null,sell_phone:d.sellPhone||null,sell_email:d.sellEmail||null,sell_location:d.sellLocation||null,
+    ad_drafts:d.adDrafts||null,
   };
 }
 
@@ -2776,7 +2786,7 @@ async function saveWatch(){
   if(editingId){
     const res=await db.from('inventory').update(dbRow).eq('id',editingId);
     error=res.error;savedId=editingId;
-    if(!error){const i=inventory.findIndex(w=>w.id===editingId);inventory[i]={...inventory[i],...dbRow,id:editingId};}
+    if(!error){const i=inventory.findIndex(w=>w.id===editingId);inventory[i]={...inventory[i],...dbRow,id:editingId,ad_drafts:dbRow.ad_drafts};}
   }else{
     const res=await db.from('inventory').insert(dbRow).select().single();
     error=res.error;if(!error){savedId=res.data.id;inventory.unshift(res.data);}
@@ -3793,6 +3803,164 @@ function downloadAdGraphic() {
     }
   }, 250);
 }
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  AD DRAFTS
+// ══════════════════════════════════════════════════════════════════════════════
+const AD_DEFAULT_TABS = ['Reddit', 'FB MP', 'Moda', 'Chrono24'];
+let adDrafts = [];
+let activeAdTab = 0;
+
+function initAdDrafts(watch) {
+  const saved = watch && watch.ad_drafts;
+  if (saved && Array.isArray(saved) && saved.length) {
+    adDrafts = saved.map((d, i) => ({ id: i, name: d.name || `Ad ${i+1}`, body: d.body || '' }));
+  } else {
+    adDrafts = AD_DEFAULT_TABS.map((name, i) => ({ id: i, name, body: '' }));
+  }
+  activeAdTab = 0;
+  renderAdTabs();
+}
+
+function renderAdTabs() {
+  const bar = document.getElementById('ad-tabs-bar');
+  const content = document.getElementById('ad-tabs-content');
+  if (!bar || !content) return;
+
+  bar.innerHTML = adDrafts.map((tab, i) => `
+    <div onclick="switchAdTab(${i})" style="
+      display:flex;align-items:center;gap:0.3rem;
+      padding:0.5rem 0.85rem;cursor:pointer;white-space:nowrap;
+      font-size:0.65rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;
+      font-family:'Raleway',sans-serif;
+      border-bottom:2px solid ${i===activeAdTab?'var(--gold)':'transparent'};
+      color:${i===activeAdTab?'var(--gold)':'var(--text2)'};
+      margin-bottom:-1px;
+    ">
+      <span ondblclick="renameAdTab(${i})" title="Double-click to rename">${escHtml(tab.name)}</span>
+      <span onclick="event.stopPropagation();deleteAdTab(${i})" style="
+        margin-left:0.2rem;color:#888;font-size:0.75rem;line-height:1;
+        padding:0 0.2rem;cursor:pointer;
+      " title="Delete tab">✕</span>
+    </div>
+  `).join('');
+
+  content.innerHTML = adDrafts.map((tab, i) => `
+    <div id="ad-panel-${i}" style="display:${i===activeAdTab?'block':'none'}">
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;flex-wrap:wrap;align-items:center">
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem"
+          onclick="autoPopulateAd(${i})">⚡ Auto-Populate</button>
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem"
+          onclick="copyAdText(${i})">📋 Copy</button>
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem"
+          onclick="renameAdTab(${i})">✏️ Rename</button>
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem;border-color:var(--gold2);color:var(--gold2)"
+          onclick="openAdGraphic()">🖼 Ad Graphic</button>
+        <span style="font-size:0.65rem;color:var(--text3);margin-left:auto">Auto-saves with watch</span>
+      </div>
+      <textarea
+        id="ad-body-${i}"
+        oninput="adDrafts[${i}].body=this.value"
+        placeholder="Write your ad copy here, or hit ⚡ Auto-Populate to generate from watch data..."
+        style="width:100%;height:320px;font-family:'Courier New',monospace;font-size:0.8rem;
+               line-height:1.6;padding:0.85rem;border:1px solid var(--border);
+               background:var(--surface);color:var(--text);resize:vertical;
+               box-sizing:border-box;"
+      >${escHtml(tab.body)}</textarea>
+    </div>
+  `).join('');
+}
+
+function switchAdTab(i) {
+  const cur = document.getElementById(`ad-body-${activeAdTab}`);
+  if (cur) adDrafts[activeAdTab].body = cur.value;
+  activeAdTab = i;
+  renderAdTabs();
+}
+
+function addAdTab() {
+  if (adDrafts.length >= 10) { showToast('Maximum 10 ad tabs.'); return; }
+  const name = prompt('Platform name for this ad tab:', 'New Platform');
+  if (!name || !name.trim()) return;
+  adDrafts.push({ id: Date.now(), name: name.trim(), body: '' });
+  activeAdTab = adDrafts.length - 1;
+  renderAdTabs();
+}
+
+function deleteAdTab(i) {
+  if (adDrafts.length <= 1) { showToast('Need at least one ad tab.'); return; }
+  if (!confirm(`Delete the "${adDrafts[i].name}" tab? This cannot be undone.`)) return;
+  adDrafts.splice(i, 1);
+  activeAdTab = Math.min(activeAdTab, adDrafts.length - 1);
+  renderAdTabs();
+}
+
+function renameAdTab(i) {
+  const cur = prompt('Rename this tab:', adDrafts[i].name);
+  if (!cur || !cur.trim()) return;
+  adDrafts[i].name = cur.trim();
+  renderAdTabs();
+}
+
+function copyAdText(i) {
+  const el = document.getElementById(`ad-body-${i}`);
+  if (!el) return;
+  adDrafts[i].body = el.value;
+  navigator.clipboard.writeText(el.value).then(() => showToast('Copied to clipboard!')).catch(() => {
+    el.select(); document.execCommand('copy'); showToast('Copied!');
+  });
+}
+
+function autoPopulateAd(i) {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const brand    = g('f-brand');
+  const model    = g('f-model');
+  const ref      = g('f-ref');
+  const year     = g('f-year');
+  const price    = g('f-listed-price') || g('f-purchase-price');
+  const cond     = g('f-condition');
+  const papers   = g('f-box-papers');
+  const notes    = g('f-notes');
+  const size     = g('f-case-size');
+  const tabName  = adDrafts[i].name.toLowerCase();
+
+  const watchLine  = [brand, model, size ? size+'mm' : ''].filter(Boolean).join(' ');
+  const refLine    = ref ? '* Ref. ' + ref : '';
+  const yearLine   = year ? '* Card dated ' + year : '';
+  const papersLine = (papers === 'Full Set (Box + Papers)' || papers === 'Full Set' || papers === 'Box & Papers')
+    ? '* Full Box & Papers Complete Set'
+    : papers ? '* ' + papers : '';
+  const condLine   = cond ? '* ' + cond + ' condition' : '';
+  const notesLines = notes ? notes.split('\n').filter(Boolean).map(l => '* ' + l).join('\n') : '';
+  const priceNum   = parseFloat(price) || 0;
+  const priceStr   = priceNum ? '$' + priceNum.toLocaleString() : '[PRICE]';
+  const zelle      = userProfile && userProfile.zelle ? ' (' + userProfile.zelle + ')' : '';
+
+  let body;
+  if (tabName.includes('reddit')) {
+    const title = '[WTS] ' + watchLine + (ref ? ' ' + ref : '') + (year ? ' (' + year + ')' : '');
+    const specs = [refLine, yearLine, papersLine, condLine, '* See pics for condition', '* Runs strong'].filter(Boolean).join('\n');
+    body = title + '\n' + watchLine + (ref ? ' ' + ref : '') + '\n' + specs + '\n\nU.S. Comps\n* C24 - [PRICE]\n* eBay - [PRICE]\n\nPrice ' + priceStr + ' +Label\nShips fully insured from Arkansas.\nZelle \u2022 Wire' + zelle + '\nHit me up with Q\'s';
+  } else {
+    const specs = [refLine, yearLine, papersLine, condLine, notesLines, '* Runs strong'].filter(Boolean).join('\n');
+    body = watchLine + '\n' + specs + '\nPrice ' + priceStr + ' +Label\nShips from Arkansas\nZelle \u2022 Wire' + zelle;
+  }
+
+  adDrafts[i].body = body;
+  renderAdTabs();
+  showToast('Ad populated for ' + adDrafts[i].name);
+}
+function getAdDraftsForSave() {
+  adDrafts.forEach((tab, i) => {
+    const el = document.getElementById(`ad-body-${i}`);
+    if (el) tab.body = el.value;
+  });
+  return adDrafts.map(({ name, body }) => ({ name, body }));
+}
+// ══════════════════════════════════════════════════════════════════════════════
+//  END AD DRAFTS
+// ══════════════════════════════════════════════════════════════════════════════
 
 
 function exportTaxCSV(){
