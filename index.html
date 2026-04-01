@@ -4537,27 +4537,30 @@ async function downloadAdGraphic() {
   const card = document.getElementById('ag-inner');
   if (!card) return;
 
-  // Use html2canvas if available, otherwise guide user
   if (typeof html2canvas !== 'undefined') {
     try {
       showToast('Generating image...');
-      // Clone into a fixed offscreen container so it renders exactly like it looks on screen
-      const clone = card.cloneNode(true);
-      const wrapper = document.createElement('div');
-      wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:480px;z-index:-1;font-family:Raleway,sans-serif;';
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-      await new Promise(r => setTimeout(r, 80)); // let fonts/images settle
-      const canvas = await html2canvas(wrapper, {
+
+      // Measure the card exactly as rendered on screen
+      const rect = card.getBoundingClientRect();
+      const cardW = Math.round(rect.width);
+      const cardH = Math.round(rect.height);
+
+      // Capture the card element directly — pass exact w/h so nothing gets stretched
+      const canvas = await html2canvas(card, {
         scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
         logging: false,
-        width: 480,
-        windowWidth: 480
+        width: cardW,
+        height: cardH,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0
       });
-      document.body.removeChild(wrapper);
+
       const link = document.createElement('a');
       const d = window._agData || {};
       const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
@@ -4566,7 +4569,8 @@ async function downloadAdGraphic() {
       link.click();
       showToast('Downloaded! ✓');
     } catch(e) {
-      showToast('Screenshot it manually — press & hold on mobile');
+      console.error('Download error:', e);
+      showToast('Try pressing & hold on mobile, or screenshot on desktop');
     }
   } else {
     showToast('Press & hold the graphic to save on mobile, or screenshot on desktop');
