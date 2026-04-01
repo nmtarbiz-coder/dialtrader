@@ -2071,9 +2071,9 @@ function renderSold(){
 
 // ── CONTACTS ─────────────────────────────────────
 function populateContactDropdowns(){
-  const opts='<option value="">— None —</option>'+contacts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const opts='<option value="">— None —</option>'+contacts.map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('');
   document.getElementById('f-contact-link').innerHTML=opts;
-  const iOpts='<option value="">— Manual entry —</option>'+contacts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const iOpts='<option value="">— Manual entry —</option>'+contacts.map(c=>'<option value="'+c.id+'">'+c.name+'</option>').join('');
   document.getElementById('inv-contact-select').innerHTML=iOpts;
 }
 
@@ -3274,7 +3274,7 @@ function renderTaxReport(){
   const years=[...new Set(soldWatches.map(s=>s.sale_date?new Date(s.sale_date).getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
   const sel=document.getElementById('tax-year-filter');
   const cur=sel.value;
-  sel.innerHTML='<option value="all">All Years</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  sel.innerHTML='<option value="all">All Years</option>'+years.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
   if(cur)sel.value=cur;
 
   const filterYear=sel.value;
@@ -3360,7 +3360,7 @@ td{padding:5px 8px;border-bottom:1px solid #eee;font-size:0.78rem}
 <div class="meta">Tolliver Timepieces / NXT Enterprises LLC · Generated ${new Date().toLocaleDateString()}</div>
 ${inner}
 <script>window.onload=()=>window.print()<\/script>
-</body></html>\`);
+</body></html>`);
   w.document.close();
 }
 
@@ -3378,7 +3378,7 @@ function renderProfitAnalysis(){
   // Populate year filter
   const allYears = [...new Set(soldWatches.map(s=>s.sale_date?new Date(s.sale_date).getFullYear():null).filter(Boolean))].sort((a,b)=>b-a);
   const curYear = yearFilterEl.value;
-  yearFilterEl.innerHTML = '<option value="all">All Years</option>' + allYears.map(y=>`<option value="${y}">${y}</option>`).join('');
+  yearFilterEl.innerHTML = '<option value="all">All Years</option>' + allYears.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
   if(curYear) yearFilterEl.value = curYear;
   const yearFilter = yearFilterEl.value;
 
@@ -4047,7 +4047,7 @@ function openReceivedModal(id){
   document.getElementById('ri-upload-label').textContent='Drop PDF or image here, or click to browse';
   // Populate watch dropdown
   const allWatches=[...inventory.map(w=>({id:w.id,label:`[Inventory] ${w.brand} ${w.model}${w.ref?' '+w.ref:''}`})),...soldWatches.map(w=>({id:w.id,label:`[Sold] ${w.brand} ${w.model}${w.ref?' '+w.ref:''}`}))];
-  document.getElementById('ri-watch-link').innerHTML='<option value="">— None —</option>'+allWatches.map(w=>`<option value="${w.id}">${w.label}</option>`).join('');
+  document.getElementById('ri-watch-link').innerHTML='<option value="">— None —</option>'+allWatches.map(w=>'<option value="'+w.id+'">'+w.label+'</option>').join('');
   if(id){
     const inv=receivedInvoices.find(x=>x.id===id);if(!inv)return;
     document.getElementById('ri-seller').value=inv.seller_name||'';
