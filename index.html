@@ -4545,60 +4545,38 @@ async function downloadAdGraphic() {
   try {
     showToast('Generating image...');
 
-    // Render into a fresh hidden container at exactly 440px — no overlay, no scroll, clean layout
-    const container = document.createElement('div');
-    container.style.cssText = [
-      'position:fixed',
-      'left:-9999px',
-      'top:0',
-      'width:440px',
-      'overflow:visible',
-      'z-index:-9999',
-      'font-family:Raleway,sans-serif',
-      'background:transparent'
-    ].join(';');
-    document.body.appendChild(container);
+    // Capture the LIVE card exactly as it appears on screen — no re-layout, no container tricks
+    const card = document.getElementById('ag-inner');
+    const rect = card.getBoundingClientRect();
+    const W = Math.round(rect.width);
+    const H = Math.round(rect.height);
 
-    // Re-render the card fresh into the container (not a clone — a fresh render)
-    const savedTheme = _agTheme;
-    renderAdGraphicCard(); // make sure _agData is current
-    const liveCard = document.getElementById('ag-inner');
-    const freshCard = liveCard.cloneNode(true);
-    // Fix the image inside to have explicit dimensions matching the container width
-    const imgs = freshCard.querySelectorAll('img');
-    imgs.forEach(img => {
-      img.style.width = '100%';
-      img.style.height = '320px';
-      img.style.objectFit = 'cover';
-      img.style.display = 'block';
-    });
-    container.appendChild(freshCard);
-
-    // Wait for layout + any image paints
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise(r => setTimeout(r, 150));
-
-    const cW = container.offsetWidth;
-    const cH = container.offsetHeight;
-
-    const canvas = await html2canvas(container, {
+    const canvas = await html2canvas(card, {
       scale: 3,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
-      width: cW,
-      height: cH,
-      scrollX: 0,
-      scrollY: 0
+      width:  W,
+      height: H,
+      scrollX: -window.scrollX,
+      scrollY: -window.scrollY,
+      windowWidth:  document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight
     });
 
-    document.body.removeChild(container);
+    // If canvas came back with wrong height, crop to correct aspect
+    const expectedH = Math.round(W * H / W) * 3;
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width  = W * 3;
+    finalCanvas.height = H * 3;
+    const ctx = finalCanvas.getContext('2d');
+    ctx.drawImage(canvas, 0, 0, W * 3, H * 3, 0, 0, W * 3, H * 3);
 
     const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
     const link = document.createElement('a');
     link.download = fname + '.png';
-    link.href = canvas.toDataURL('image/png');
+    link.href = finalCanvas.toDataURL('image/png');
     link.click();
     showToast('Downloaded! ✓');
   } catch(e) {
