@@ -4534,46 +4534,76 @@ function renderAdGraphicCard() {
 }
 
 async function downloadAdGraphic() {
-  const card = document.getElementById('ag-inner');
-  if (!card) return;
+  const d = window._agData || {};
+  if (!d.brand && !d.model) return;
 
-  if (typeof html2canvas !== 'undefined') {
-    try {
-      showToast('Generating image...');
-
-      // Measure the card exactly as rendered on screen
-      const rect = card.getBoundingClientRect();
-      const cardW = Math.round(rect.width);
-      const cardH = Math.round(rect.height);
-
-      // Capture the card element directly — pass exact w/h so nothing gets stretched
-      const canvas = await html2canvas(card, {
-        scale: 3,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        logging: false,
-        width: cardW,
-        height: cardH,
-        scrollX: 0,
-        scrollY: 0,
-        x: 0,
-        y: 0
-      });
-
-      const link = document.createElement('a');
-      const d = window._agData || {};
-      const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
-      link.download = fname + '.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      showToast('Downloaded! ✓');
-    } catch(e) {
-      console.error('Download error:', e);
-      showToast('Try pressing & hold on mobile, or screenshot on desktop');
-    }
-  } else {
+  if (typeof html2canvas === 'undefined') {
     showToast('Press & hold the graphic to save on mobile, or screenshot on desktop');
+    return;
+  }
+
+  try {
+    showToast('Generating image...');
+
+    // Render into a fresh hidden container at exactly 440px — no overlay, no scroll, clean layout
+    const container = document.createElement('div');
+    container.style.cssText = [
+      'position:fixed',
+      'left:-9999px',
+      'top:0',
+      'width:440px',
+      'overflow:visible',
+      'z-index:-9999',
+      'font-family:Raleway,sans-serif',
+      'background:transparent'
+    ].join(';');
+    document.body.appendChild(container);
+
+    // Re-render the card fresh into the container (not a clone — a fresh render)
+    const savedTheme = _agTheme;
+    renderAdGraphicCard(); // make sure _agData is current
+    const liveCard = document.getElementById('ag-inner');
+    const freshCard = liveCard.cloneNode(true);
+    // Fix the image inside to have explicit dimensions matching the container width
+    const imgs = freshCard.querySelectorAll('img');
+    imgs.forEach(img => {
+      img.style.width = '100%';
+      img.style.height = '320px';
+      img.style.objectFit = 'cover';
+      img.style.display = 'block';
+    });
+    container.appendChild(freshCard);
+
+    // Wait for layout + any image paints
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 150));
+
+    const cW = container.offsetWidth;
+    const cH = container.offsetHeight;
+
+    const canvas = await html2canvas(container, {
+      scale: 3,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+      width: cW,
+      height: cH,
+      scrollX: 0,
+      scrollY: 0
+    });
+
+    document.body.removeChild(container);
+
+    const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
+    const link = document.createElement('a');
+    link.download = fname + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Downloaded! ✓');
+  } catch(e) {
+    console.error('Download error:', e);
+    showToast('Try screenshotting the graphic directly');
   }
 }
 // ── END AD GRAPHIC GENERATOR ───────────────────────────────────────────────
