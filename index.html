@@ -4472,7 +4472,7 @@ function renderAdGraphicCard() {
     </div>`).join('');
 
   const photoHTML = d.photoUrl
-    ? `<img src="${d.photoUrl}" style="width:100%;height:320px;object-fit:cover;object-position:center;display:block;background:#111" onerror="this.style.display='none'">`
+    ? `<img src="${d.photoUrl}" style="width:100%;height:380px;object-fit:cover;object-position:center;display:block;background:#111" onerror="this.style.display='none'">`
     : `<div style="width:100%;height:220px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.2);font-size:3rem;opacity:0.3">🕐</div>`;
 
   document.getElementById('ad-graphic-card').innerHTML = `
@@ -4545,44 +4545,53 @@ async function downloadAdGraphic() {
   try {
     showToast('Generating image...');
 
-    // Capture card + wrap in navy background so download matches what you see on screen
     const card = document.getElementById('ag-inner');
-    const rect = card.getBoundingClientRect();
-    const W = Math.round(rect.width);
-    const H = Math.round(rect.height);
-    const PAD = 32; // navy padding around card, matching overlay feel
 
-    // Render card to canvas
-    const cardCanvas = await html2canvas(card, {
+    // Temporarily force card to exactly 600px wide so capture is always consistent
+    const prevWidth = card.style.width;
+    const prevMaxWidth = card.style.maxWidth;
+    card.style.width = '600px';
+    card.style.maxWidth = '600px';
+
+    // Force all images to correct height for 600px width
+    const imgs = card.querySelectorAll('img');
+    const prevImgStyles = [];
+    imgs.forEach(img => {
+      prevImgStyles.push({h: img.style.height, w: img.style.width});
+      img.style.height = '380px';
+      img.style.width = '100%';
+      img.style.objectFit = 'cover';
+    });
+
+    // Wait for reflow
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 100));
+
+    const W = card.offsetWidth;
+    const H = card.offsetHeight;
+
+    const canvas = await html2canvas(card, {
       scale: 3,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
       width: W,
-      height: H,
-      scrollX: -window.scrollX,
-      scrollY: -window.scrollY,
-      windowWidth:  document.documentElement.clientWidth,
-      windowHeight: document.documentElement.clientHeight
+      height: H
     });
 
-    // Composite onto navy background with padding
-    const bg = _agTheme === 'dark' ? '#0b2641' : '#f5f0e8';
-    const finalCanvas = document.createElement('canvas');
-    const scale = 3;
-    finalCanvas.width  = (W + PAD * 2) * scale;
-    finalCanvas.height = (H + PAD * 2) * scale;
-    const ctx = finalCanvas.getContext('2d');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-    ctx.drawImage(cardCanvas, 0, 0, W * scale, H * scale,
-                              PAD * scale, PAD * scale, W * scale, H * scale);
+    // Restore styles
+    card.style.width = prevWidth;
+    card.style.maxWidth = prevMaxWidth;
+    imgs.forEach((img, i) => {
+      img.style.height = prevImgStyles[i].h;
+      img.style.width = prevImgStyles[i].w;
+    });
 
     const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
     const link = document.createElement('a');
     link.download = fname + '.png';
-    link.href = finalCanvas.toDataURL('image/png');
+    link.href = canvas.toDataURL('image/png');
     link.click();
     showToast('Downloaded! ✓');
   } catch(e) {
@@ -7999,7 +8008,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <!-- AD GRAPHIC MODAL                                               -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div id="ad-graphic-overlay" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.92);overflow-y:auto;padding:1.5rem 1rem;">
-  <div style="max-width:480px;margin:0 auto;">
+  <div style="width:600px;max-width:calc(100vw - 2rem);margin:0 auto;">
     <!-- Controls bar -->
     <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
       <button onclick="closeAdGraphic()" style="background:transparent;border:1px solid #555;color:#aaa;padding:0.35rem 0.9rem;font-size:0.7rem;letter-spacing:0.08em;cursor:pointer">✕ Close</button>
