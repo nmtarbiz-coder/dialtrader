@@ -4533,69 +4533,61 @@ function renderAdGraphicCard() {
     </div>`;
 }
 
-async function downloadAdGraphic() {
+function downloadAdGraphic() {
   const d = window._agData || {};
-  if (!d.brand && !d.model) return;
+  if (!d.brand && !d.model) { showToast('Open a watch first.'); return; }
 
-  if (typeof html2canvas === 'undefined') {
-    showToast('Press & hold the graphic to save on mobile, or screenshot on desktop');
-    return;
-  }
+  // Build the card HTML fresh
+  renderAdGraphicCard();
+  const cardHTML = document.getElementById('ag-inner').outerHTML;
+  const bg = _agTheme === 'dark' ? '#0b2641' : '#f5f0e8';
+  const fname = [d.brand, d.model, d.ref].filter(Boolean).join(' ').replace(/\s+/g,' ') || 'Ad Graphic';
 
-  try {
-    showToast('Generating image...');
+  // Open a clean popup window with ONLY the card — user prints/saves from there
+  const w = window.open('', '_blank', 'width=700,height=900,scrollbars=no,toolbar=no,menubar=no');
+  if (!w) { showToast('Allow popups for this site to use Save/Print.'); return; }
 
-    const card = document.getElementById('ag-inner');
-    const overlay = document.getElementById('ad-graphic-overlay');
-
-    // Measure card exactly as rendered — no width overrides
-    const rect = card.getBoundingClientRect();
-    const W = Math.round(rect.width);
-    const H = Math.round(rect.height);
-
-    // The overlay is a scrollable fixed div — html2canvas needs the scroll offset of the overlay
-    // to correctly locate the card element within it
-    const overlayScrollTop = overlay.scrollTop || 0;
-
-    const canvas = await html2canvas(card, {
-      scale: 3,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: false,
-      width: W,
-      height: H,
-      scrollX: -rect.left,
-      scrollY: -(rect.top - overlayScrollTop),
-      windowWidth: rect.width,
-      windowHeight: rect.height
-    });
-
-    // Verify canvas dimensions match what we measured (safety crop if off)
-    const expectedW = W * 3;
-    const expectedH = H * 3;
-    let finalCanvas = canvas;
-    if (canvas.width !== expectedW || canvas.height !== expectedH) {
-      finalCanvas = document.createElement('canvas');
-      finalCanvas.width = expectedW;
-      finalCanvas.height = expectedH;
-      finalCanvas.getContext('2d').drawImage(canvas,
-        0, 0, expectedW, expectedH,
-        0, 0, expectedW, expectedH);
+  w.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${fname}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html, body {
+      width:660px;
+      background:${bg};
+      font-family:'Raleway',sans-serif;
+      -webkit-print-color-adjust:exact;
+      print-color-adjust:exact;
     }
-
-    const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
-    const link = document.createElement('a');
-    link.download = fname + '.png';
-    link.href = finalCanvas.toDataURL('image/png');
-    link.click();
-    showToast('Downloaded! ✓');
-  } catch(e) {
-    console.error('Download error:', e);
-    showToast('Try screenshotting the graphic directly');
-  }
-}
-// ── END AD GRAPHIC GENERATOR ───────────────────────────────────────────────
+    body { padding:30px; }
+    @page { size:660px auto; margin:0; }
+    @media print {
+      html, body { width:660px; }
+      body { padding:30px; }
+    }
+    /* Pass through all the card styles */
+    #ag-inner { width:100% !important; max-width:none !important; }
+    #ag-inner img { width:100% !important; height:380px !important; object-fit:cover !important; display:block !important; }
+  </style>
+</head>
+<body>
+  ${cardHTML}
+  <div style="text-align:center;margin-top:18px;font-family:Raleway,sans-serif;font-size:11px;color:rgba(255,255,255,0.35)">
+    To save as image: right-click the card → Save image as &nbsp;·&nbsp; Or press Ctrl+P / ⌘+P to save as PDF
+  </div>
+  <script>
+    // Auto-trigger print after fonts load
+    document.fonts.ready.then(() => {
+      setTimeout(() => window.print(), 400);
+    });
+  <\/script>
+</body>
+</html>`);
+  w.document.close();
+}// ── END AD GRAPHIC GENERATOR ───────────────────────────────────────────────
 
 function exportTaxCSV(){
   const filterYear=document.getElementById('tax-year-filter').value;
@@ -8009,7 +8001,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
       <button onclick="closeAdGraphic()" style="background:transparent;border:1px solid #555;color:#aaa;padding:0.35rem 0.9rem;font-size:0.7rem;letter-spacing:0.08em;cursor:pointer">✕ Close</button>
       <div style="font-size:0.65rem;color:#888;flex:1;text-align:center">Screenshot this graphic to post on social media</div>
-      <button onclick="downloadAdGraphic()" style="background:#B8943A;border:none;color:#000;padding:0.35rem 1rem;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;cursor:pointer">⬇ Download PNG</button>
+      <button onclick="downloadAdGraphic()" style="background:#B8943A;border:none;color:#000;padding:0.35rem 1rem;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;cursor:pointer">⬇ Save / Print</button>
     </div>
     <!-- Style toggle -->
     <div style="display:flex;gap:0.5rem;margin-bottom:1rem;justify-content:center">
