@@ -4545,19 +4545,21 @@ async function downloadAdGraphic() {
   try {
     showToast('Generating image...');
 
-    // Capture the LIVE card exactly as it appears on screen — no re-layout, no container tricks
+    // Capture card + wrap in navy background so download matches what you see on screen
     const card = document.getElementById('ag-inner');
     const rect = card.getBoundingClientRect();
     const W = Math.round(rect.width);
     const H = Math.round(rect.height);
+    const PAD = 32; // navy padding around card, matching overlay feel
 
-    const canvas = await html2canvas(card, {
+    // Render card to canvas
+    const cardCanvas = await html2canvas(card, {
       scale: 3,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       logging: false,
-      width:  W,
+      width: W,
       height: H,
       scrollX: -window.scrollX,
       scrollY: -window.scrollY,
@@ -4565,13 +4567,17 @@ async function downloadAdGraphic() {
       windowHeight: document.documentElement.clientHeight
     });
 
-    // If canvas came back with wrong height, crop to correct aspect
-    const expectedH = Math.round(W * H / W) * 3;
+    // Composite onto navy background with padding
+    const bg = _agTheme === 'dark' ? '#0b2641' : '#f5f0e8';
     const finalCanvas = document.createElement('canvas');
-    finalCanvas.width  = W * 3;
-    finalCanvas.height = H * 3;
+    const scale = 3;
+    finalCanvas.width  = (W + PAD * 2) * scale;
+    finalCanvas.height = (H + PAD * 2) * scale;
     const ctx = finalCanvas.getContext('2d');
-    ctx.drawImage(canvas, 0, 0, W * 3, H * 3, 0, 0, W * 3, H * 3);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+    ctx.drawImage(cardCanvas, 0, 0, W * scale, H * scale,
+                              PAD * scale, PAD * scale, W * scale, H * scale);
 
     const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
     const link = document.createElement('a');
