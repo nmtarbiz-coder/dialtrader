@@ -13,6 +13,7 @@
   // Wire/bank info is stored per-user in Settings → user_profiles.wire_info
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <style>
 .fc {
@@ -3481,6 +3482,33 @@ function printInventorySummary(){
 </div>
 
 <script>window.onload=()=>window.print()<\/script>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- AD GRAPHIC MODAL                                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="ad-graphic-overlay" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.92);overflow-y:auto;padding:1.5rem 1rem;">
+  <div style="max-width:480px;margin:0 auto;">
+    <!-- Controls bar -->
+    <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+      <button onclick="closeAdGraphic()" style="background:transparent;border:1px solid #555;color:#aaa;padding:0.35rem 0.9rem;font-size:0.7rem;letter-spacing:0.08em;cursor:pointer">✕ Close</button>
+      <div style="font-size:0.65rem;color:#888;flex:1;text-align:center">Screenshot this graphic to post on social media</div>
+      <button onclick="downloadAdGraphic()" style="background:#B8943A;border:none;color:#000;padding:0.35rem 1rem;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;cursor:pointer">⬇ Download PNG</button>
+    </div>
+    <!-- Style toggle -->
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;justify-content:center">
+      <button onclick="setAdGraphicTheme('dark')" id="ag-theme-dark" style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.3rem 0.8rem;border:1px solid #B8943A;background:#B8943A;color:#000;cursor:pointer;font-weight:700">Dark</button>
+      <button onclick="setAdGraphicTheme('light')" id="ag-theme-light" style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.3rem 0.8rem;border:1px solid #555;background:transparent;color:#aaa;cursor:pointer">Light</button>
+    </div>
+    <!-- The graphic itself — this is what gets screenshotted / downloaded -->
+    <div id="ad-graphic-card" style="width:100%;font-family:'Raleway',sans-serif;position:relative;">
+      <!-- Rendered by JS -->
+    </div>
+    <div style="font-size:0.6rem;color:#555;text-align:center;margin-top:0.75rem">
+      Tip: On mobile, press and hold the graphic to save to your camera roll
+    </div>
+  </div>
+</div>
+
 </body></html>`;
 
   const w=window.open('','_blank');
@@ -4385,6 +4413,180 @@ ${inner.replace(/background:var\(--surface\)/g,'background:#fff').replace(/borde
   w.document.close();
 }
 // ── END PROFIT ANALYSIS ────────────────────────────────────────────────────
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  AD GRAPHIC GENERATOR
+// ══════════════════════════════════════════════════════════════════════════════
+let _agTheme = 'dark';
+
+function openAdGraphic() {
+  // Pull watch data from the open modal form
+  const brand    = document.getElementById('f-brand')?.value || '';
+  const model    = document.getElementById('f-model')?.value || '';
+  const ref      = document.getElementById('f-ref')?.value || '';
+  const year     = document.getElementById('f-year')?.value || '';
+  const price    = document.getElementById('f-listed-price')?.value || '';
+  const condition= document.getElementById('f-condition')?.value || '';
+  const boxPapers= document.getElementById('f-box-papers')?.value || '';
+  const caseMat  = document.getElementById('f-case-material')?.value || '';
+  const caseSize = document.getElementById('f-case-size')?.value || '';
+  const dialColor= document.getElementById('f-dial-color')?.value || '';
+  const bracelet = document.getElementById('f-bracelet-type')?.value || '';
+
+  // Get first photo from editing watch
+  let photoUrl = '';
+  if (editingId) {
+    const w = inventory.find(x => x.id === editingId);
+    if (w && w.photo_urls && w.photo_urls.length) photoUrl = w.photo_urls[0];
+  }
+
+  window._agData = { brand, model, ref, year, price, condition, boxPapers, caseMat, caseSize, dialColor, bracelet, photoUrl };
+  _agTheme = 'dark';
+  renderAdGraphicCard();
+  document.getElementById('ad-graphic-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAdGraphic() {
+  document.getElementById('ad-graphic-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function setAdGraphicTheme(theme) {
+  _agTheme = theme;
+  document.getElementById('ag-theme-dark').style.background  = theme==='dark' ? '#B8943A' : 'transparent';
+  document.getElementById('ag-theme-dark').style.color       = theme==='dark' ? '#000' : '#aaa';
+  document.getElementById('ag-theme-dark').style.borderColor = theme==='dark' ? '#B8943A' : '#555';
+  document.getElementById('ag-theme-light').style.background = theme==='light' ? '#B8943A' : 'transparent';
+  document.getElementById('ag-theme-light').style.color      = theme==='light' ? '#000' : '#aaa';
+  document.getElementById('ag-theme-light').style.borderColor= theme==='light' ? '#B8943A' : '#555';
+  renderAdGraphicCard();
+}
+
+function renderAdGraphicCard() {
+  const d = window._agData || {};
+  const dark = _agTheme === 'dark';
+
+  const bg       = dark ? '#0d1b2a' : '#f5f0e8';
+  const textMain = dark ? '#ffffff' : '#0d1b2a';
+  const textSub  = dark ? '#B8943A' : '#8a6a1a';
+  const textMid  = dark ? '#cccccc' : '#444444';
+  const chipBg   = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const chipBdr  = dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.15)';
+  const borderGold = '#B8943A';
+  const lineBdr  = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+  const priceStr = d.price ? '$' + Number(d.price).toLocaleString() : '';
+
+  // Chips — only show if data exists
+  const chips = [
+    d.condition ? { label:'CONDITION', val: d.condition.split(' ')[0] + (d.condition.includes('/') ? ' ' + d.condition.split(' ').slice(1).join(' ') : '') } : null,
+    d.year      ? { label:'YEAR',      val: d.year } : null,
+    d.boxPapers ? { label:'INCLUDED',  val: d.boxPapers === 'Full Set (Box + Papers)' ? 'Full Set' : d.boxPapers.replace(' Only','').replace('No Box, No Papers','Watch Only') } : null,
+    d.dialColor ? { label:'DIAL',      val: d.dialColor } : null,
+    d.caseMat   ? { label:'CASE',      val: d.caseMat.replace('Stainless Steel','Steel').replace('Yellow Gold','Yel. Gold').replace('White Gold','Wht. Gold').replace('Rose Gold','Rose Gold') } : null,
+    (d.caseSize||d.bracelet) ? { label: d.caseSize ? 'SIZE' : 'BRACELET', val: d.caseSize ? d.caseSize+'mm' : d.bracelet } : null,
+  ].filter(Boolean);
+
+  const chipHTML = chips.map(c => `
+    <div style="background:${chipBg};border:1px solid ${chipBdr};padding:0.55rem 0.6rem;text-align:center;min-width:80px;flex:1">
+      <div style="font-size:0.48rem;letter-spacing:0.14em;text-transform:uppercase;color:${textSub};margin-bottom:0.25rem;font-weight:600">${c.label}</div>
+      <div style="font-size:0.72rem;font-weight:600;color:${textMain}">${c.val}</div>
+    </div>`).join('');
+
+  const photoHTML = d.photoUrl
+    ? `<img src="${d.photoUrl}" style="width:100%;height:300px;object-fit:contain;display:block;background:#000" onerror="this.style.display='none'">`
+    : `<div style="width:100%;height:220px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.2);font-size:3rem;opacity:0.3">🕐</div>`;
+
+  document.getElementById('ad-graphic-card').innerHTML = `
+    <div id="ag-inner" style="background:${bg};width:100%;padding:0;overflow:hidden;position:relative;border:1px solid ${borderGold}">
+
+      <!-- Top accent line -->
+      <div style="height:3px;background:linear-gradient(90deg,transparent,${borderGold},transparent)"></div>
+
+      <!-- Header -->
+      <div style="padding:1.5rem 1.75rem 1rem;text-align:center">
+        <div style="font-size:0.55rem;letter-spacing:0.35em;text-transform:uppercase;color:${textSub};margin-bottom:0.35rem">
+          ── &nbsp; FOR SALE &nbsp; ──
+        </div>
+        ${d.brand ? `<div style="font-size:0.75rem;letter-spacing:0.22em;text-transform:uppercase;color:${textMid};margin-bottom:0.3rem;font-weight:500">${d.brand}</div>` : ''}
+        ${d.model ? `<div style="font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:${textMain};line-height:1.15;margin-bottom:0.3rem">${d.model}</div>` : ''}
+        ${d.ref   ? `<div style="font-size:0.62rem;letter-spacing:0.12em;color:${textSub}">· &nbsp; Ref. ${d.ref} &nbsp; ·</div>` : ''}
+      </div>
+
+      <!-- Photo frame -->
+      <div style="margin:0 1.5rem;border:1px solid ${borderGold};position:relative;overflow:hidden">
+        <div style="position:absolute;top:8px;left:8px;width:16px;height:16px;border-top:2px solid ${borderGold};border-left:2px solid ${borderGold};z-index:2"></div>
+        <div style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-top:2px solid ${borderGold};border-right:2px solid ${borderGold};z-index:2"></div>
+        <div style="position:absolute;bottom:8px;left:8px;width:16px;height:16px;border-bottom:2px solid ${borderGold};border-left:2px solid ${borderGold};z-index:2"></div>
+        <div style="position:absolute;bottom:8px;right:8px;width:16px;height:16px;border-bottom:2px solid ${borderGold};border-right:2px solid ${borderGold};z-index:2"></div>
+        ${photoHTML}
+      </div>
+
+      <!-- Price / Available button -->
+      <div style="padding:1.25rem 1.75rem 0.75rem;text-align:center">
+        <div style="display:inline-block;border:2px solid ${borderGold};padding:0.6rem 2.5rem;font-size:1rem;font-weight:600;letter-spacing:0.08em;color:${textMain}">
+          ${priceStr || 'Available'}
+        </div>
+      </div>
+
+      <!-- Chips -->
+      ${chips.length ? `
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;padding:0.5rem 1.5rem 1.25rem">
+        ${chipHTML}
+      </div>` : '<div style="height:1rem"></div>'}
+
+      <!-- Divider -->
+      <div style="height:1px;background:${lineBdr};margin:0 1.5rem"></div>
+
+      <!-- Footer -->
+      <div style="padding:0.85rem 1.75rem;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:0.8rem;font-weight:700;letter-spacing:0.1em;color:${textMain}">TOLLIVER TIMEPIECES</div>
+          <div style="font-size:0.55rem;letter-spacing:0.12em;color:${textSub};text-transform:uppercase;margin-top:0.1rem">Conway, Arkansas &nbsp;·&nbsp; Nationwide Shipping</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:0.55rem;letter-spacing:0.12em;color:${textSub}">@tollivertimepieces</div>
+          <div style="font-size:0.55rem;letter-spacing:0.12em;color:${textMid};margin-top:0.1rem">tollivertime.com</div>
+        </div>
+      </div>
+
+      <!-- Bottom accent line -->
+      <div style="height:3px;background:linear-gradient(90deg,transparent,${borderGold},transparent)"></div>
+    </div>`;
+}
+
+async function downloadAdGraphic() {
+  const card = document.getElementById('ag-inner');
+  if (!card) return;
+
+  // Use html2canvas if available, otherwise guide user
+  if (typeof html2canvas !== 'undefined') {
+    try {
+      showToast('Generating image...');
+      const canvas = await html2canvas(card, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false
+      });
+      const link = document.createElement('a');
+      const d = window._agData || {};
+      const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
+      link.download = fname + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('Downloaded! ✓');
+    } catch(e) {
+      showToast('Screenshot it manually — press & hold on mobile');
+    }
+  } else {
+    showToast('Press & hold the graphic to save on mobile, or screenshot on desktop');
+  }
+}
+// ── END AD GRAPHIC GENERATOR ───────────────────────────────────────────────
 
 function exportTaxCSV(){
   const filterYear=document.getElementById('tax-year-filter').value;
@@ -7548,6 +7750,10 @@ function renderAdTabs() {
         <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem;background:#1877F2;border-color:#1877F2;color:#fff"
           onclick="shareToFacebook(${i})" title="Open Facebook with caption copied">
           <svg style="width:12px;height:12px;vertical-align:middle;margin-right:3px" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>Facebook
+        </button>
+        <button class="btn-outline" style="font-size:0.65rem;padding:0.3rem 0.75rem;border-color:var(--gold2);color:var(--gold2)"
+          onclick="openAdGraphic()" title="Generate a visual ad graphic ready to screenshot and post">
+          🖼 Ad Graphic
         </button>
         <span style="font-size:0.65rem;color:var(--text3);margin-left:auto">Auto-saves with watch</span>
       </div>
