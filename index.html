@@ -4542,73 +4542,42 @@ function downloadAdGraphic() {
   const bg = _agTheme === 'dark' ? '#0b2641' : '#f5f0e8';
   const fname = [d.brand, d.model, d.ref].filter(Boolean).join(' ') || 'Ad Graphic';
 
-  const w = window.open('', '_blank', 'width=680,height=960,scrollbars=no,toolbar=no,menubar=no,resizable=yes');
-  if (!w) { showToast('Please allow popups for this site.'); return; }
-
-  w.document.write(`<!DOCTYPE html>
+  // Build a self-contained HTML blob and open it as an object URL
+  // This avoids sandbox/CSP issues entirely
+  const html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>${fname}</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing:border-box; margin:0; padding:0; }
-    html, body {
-      background:${bg};
-      font-family:'Raleway',sans-serif;
-      -webkit-print-color-adjust:exact;
-      print-color-adjust:exact;
-    }
-    body {
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:flex-start;
-      padding:20px;
-      min-height:100vh;
-    }
-    #card-wrap {
-      width:600px;
-      max-width:100%;
-    }
-    #card-wrap img {
-      width:100% !important;
-      height:370px !important;
-      object-fit:cover !important;
-      display:block !important;
-    }
-    .save-tip {
-      margin-top:14px;
-      font-family:'Raleway',sans-serif;
-      font-size:11px;
-      color:rgba(255,255,255,0.4);
-      text-align:center;
-      line-height:1.7;
-    }
-    @page { size:640px auto; margin:0; }
-    @media print {
-      .save-tip { display:none; }
-      body { padding:0; justify-content:center; }
-      #card-wrap { width:100%; }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:${bg};font-family:'Raleway',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{display:flex;flex-direction:column;align-items:center;padding:20px}
+    #wrap{width:600px;max-width:100%}
+    #wrap img{width:100%!important;height:370px!important;object-fit:cover!important;display:block!important}
+    .tip{margin-top:14px;font-size:11px;color:rgba(255,255,255,0.45);text-align:center;line-height:1.8}
+    @media print{.tip{display:none}body{padding:0}}
   </style>
 </head>
 <body>
-  <div id="card-wrap">${cardHTML}</div>
-  <div class="save-tip">
-    <strong style="color:rgba(255,255,255,0.7)">To save as a photo:</strong><br>
-    Right-click the graphic above → <em>Save image as</em> (JPG/PNG)<br>
-    <span style="opacity:0.6">Or Ctrl+P / ⌘P → Save as PDF → then screenshot</span>
+  <div id="wrap">${cardHTML}</div>
+  <div class="tip">
+    <b style="color:rgba(255,255,255,0.75)">To save as a photo file:</b><br>
+    Right-click the graphic &rarr; <em>Save image as</em> &nbsp;&middot;&nbsp; iPhone: press &amp; hold &rarr; Save to Photos<br>
+    <span style="opacity:0.6">Ctrl+P / &amp;#8984;P to save as PDF</span>
   </div>
-  <script>
-    document.fonts.ready.then(() => {
-      // Resize window to fit card exactly
-      const wrap = document.getElementById('card-wrap');
-      const h = wrap.offsetHeight + 80;
-      try { window.resizeTo(640, Math.min(h, screen.availHeight * 0.9)); } catch(e){}
-    });
-  <\/script>
 </body>
-</html>`);
-  w.document.close();
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, '_blank');
+  if (!win) {
+    showToast('Please allow popups for this site, then try again.');
+    URL.revokeObjectURL(url);
+    return;
+  }
+  // Clean up the object URL after the window has loaded
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
