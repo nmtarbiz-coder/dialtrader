@@ -1269,7 +1269,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div><label class="form-label">Est. Current Value ($)</label><input class="form-input" id="coll-value" type="number" placeholder="0.00"></div>
           <div><label class="form-label">Condition</label>
             <select class="form-select" id="coll-condition">
-              <option value="">— Select —</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
+              <option value="">— Select —</option><option>Like New (10/10)</option><option>Brand New in Box</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
             </select>
           </div>
           <div><label class="form-label">Box & Papers</label>
@@ -1652,7 +1652,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="modal-tab-panel" id="tab-details">
         <div class="form-grid">
           <div class="form-group"><label class="form-label">Condition</label>
-            <select class="form-select" id="f-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
+            <select class="form-select" id="f-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Brand New in Box</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
           </div>
           <div class="form-group"><label class="form-label">Box & Papers</label>
             <select class="form-select" id="f-box-papers"><option value="">— Select —</option><option>Full Set (Box + Papers)</option><option>Box Only</option><option>Papers Only</option><option>No Box, No Papers</option></select>
@@ -2078,7 +2078,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           <div class="form-group"><label class="form-label">Serial</label><input class="form-input" id="se-serial"></div>
           <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="se-year"></div>
           <div class="form-group"><label class="form-label">Condition</label>
-            <select class="form-select" id="se-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
+            <select class="form-select" id="se-condition"><option value="">— Select —</option><option>Like New (10/10)</option><option>Brand New in Box</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option><option>Parts/Repair</option></select>
           </div>
           <div class="form-group"><label class="form-label">Box & Papers</label>
             <select class="form-select" id="se-box-papers"><option value="">— Select —</option><option>Full Set (Box + Papers)</option><option>Box Only</option><option>Papers Only</option><option>No Box, No Papers</option></select>
@@ -4472,7 +4472,7 @@ function renderAdGraphicCard() {
     </div>`).join('');
 
   const photoHTML = d.photoUrl
-    ? `<img src="${d.photoUrl}" style="width:100%;height:300px;object-fit:contain;display:block;background:#000" onerror="this.style.display='none'">`
+    ? `<img src="${d.photoUrl}" style="width:100%;height:320px;object-fit:cover;object-position:center;display:block;background:#111" onerror="this.style.display='none'">`
     : `<div style="width:100%;height:220px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.2);font-size:3rem;opacity:0.3">🕐</div>`;
 
   document.getElementById('ad-graphic-card').innerHTML = `
@@ -4503,7 +4503,7 @@ function renderAdGraphicCard() {
       <!-- Price / Available button -->
       <div style="padding:1.25rem 1.75rem 0.75rem;text-align:center">
         <div style="display:inline-block;border:2px solid ${borderGold};padding:0.6rem 2.5rem;font-size:1rem;font-weight:600;letter-spacing:0.08em;color:${textMain}">
-          ${priceStr || 'Available'}
+          Available
         </div>
       </div>
 
@@ -4541,13 +4541,19 @@ async function downloadAdGraphic() {
   if (typeof html2canvas !== 'undefined') {
     try {
       showToast('Generating image...');
+      // Force consistent 480px width for clean download
+      const origWidth = card.style.width;
+      card.style.width = '480px';
       const canvas = await html2canvas(card, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        logging: false
+        logging: false,
+        width: 480,
+        windowWidth: 480
       });
+      card.style.width = origWidth;
       const link = document.createElement('a');
       const d = window._agData || {};
       const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
@@ -5007,7 +5013,7 @@ async function deleteCalendarEvent(id) {
           <label class="form-label">Condition</label>
           <select class="form-input" id="trade-in-condition">
             <option value="">— Select —</option>
-            <option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
+            <option>Like New (10/10)</option><option>Brand New in Box</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
           </select>
         </div>
         <div>
