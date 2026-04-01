@@ -4444,7 +4444,7 @@ function renderAdGraphicCard() {
   const d = window._agData || {};
   const dark = _agTheme === 'dark';
 
-  const bg       = dark ? '#0d1b2a' : '#f5f0e8';
+  const bg       = dark ? '#0b2641' : '#f5f0e8';
   const textMain = dark ? '#ffffff' : '#0d1b2a';
   const textSub  = dark ? '#B8943A' : '#8a6a1a';
   const textMid  = dark ? '#cccccc' : '#444444';
@@ -4541,10 +4541,14 @@ async function downloadAdGraphic() {
   if (typeof html2canvas !== 'undefined') {
     try {
       showToast('Generating image...');
-      // Force consistent 480px width for clean download
-      const origWidth = card.style.width;
-      card.style.width = '480px';
-      const canvas = await html2canvas(card, {
+      // Clone into a fixed offscreen container so it renders exactly like it looks on screen
+      const clone = card.cloneNode(true);
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:480px;z-index:-1;font-family:Raleway,sans-serif;';
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+      await new Promise(r => setTimeout(r, 80)); // let fonts/images settle
+      const canvas = await html2canvas(wrapper, {
         scale: 3,
         useCORS: true,
         allowTaint: true,
@@ -4553,7 +4557,7 @@ async function downloadAdGraphic() {
         width: 480,
         windowWidth: 480
       });
-      card.style.width = origWidth;
+      document.body.removeChild(wrapper);
       const link = document.createElement('a');
       const d = window._agData || {};
       const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
