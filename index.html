@@ -3776,31 +3776,102 @@ function downloadAdGraphic() {
 
   setTimeout(async () => {
     try {
-      const rect = card.getBoundingClientRect();
-      const W = Math.round(rect.width);
-      const H = Math.round(rect.height);
-      const scrollTop = overlay ? overlay.scrollTop : 0;
+      // Find the img element inside the card so we can re-crop it properly
+      const imgEl = card.querySelector('img');
+      if (imgEl) {
+        // Lock image to its displayed dimensions before capture so html2canvas
+        // renders it at the same size it appears on screen (object-fit:cover)
+        const imgRect = imgEl.getBoundingClientRect();
+        const dispW = Math.round(imgRect.width);
+        const dispH = Math.round(imgRect.height);
 
-      const canvas = await html2canvas(card, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: _agTheme === 'dark' ? '#0b2641' : '#f5f0e8',
-        logging: false,
-        width: W,
-        height: H,
-        scrollX: -rect.left,
-        scrollY: -(rect.top - scrollTop)
-      });
+        // Load the image at native resolution, then draw a cropped version
+        // onto a temp canvas matching the displayed crop
+        const natImg = new Image();
+        natImg.crossOrigin = 'anonymous';
+        await new Promise((res, rej) => {
+          natImg.onload = res;
+          natImg.onerror = res; // continue even if cross-origin fails
+          natImg.src = imgEl.src;
+        });
 
-      const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
-      const a = document.createElement('a');
-      a.download = fname + '.jpg';
-      a.href = canvas.toDataURL('image/jpeg', 0.95);
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      showToast('Saved! Check your Downloads folder ✓');
+        // Calculate the cover crop (same math as object-fit:cover center)
+        const natW = natImg.naturalWidth  || dispW;
+        const natH = natImg.naturalHeight || dispH;
+        const scale = Math.max(dispW / natW, dispH / natH);
+        const drawW = natW * scale;
+        const drawH = natH * scale;
+        const offsetX = (dispW - drawW) / 2;
+        const offsetY = (dispH - drawH) / 2;
+
+        // Replace the img src with a pre-cropped data URL
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width  = dispW;
+        cropCanvas.height = dispH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(natImg, offsetX, offsetY, drawW, drawH);
+        const croppedSrc = cropCanvas.toDataURL('image/jpeg', 0.95);
+
+        // Temporarily swap img src to cropped version and remove object-fit
+        const origSrc   = imgEl.src;
+        const origStyle = imgEl.style.cssText;
+        imgEl.src = croppedSrc;
+        imgEl.style.objectFit = 'fill';
+        imgEl.style.width  = dispW + 'px';
+        imgEl.style.height = dispH + 'px';
+
+        // Wait for repaint
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise(r => setTimeout(r, 80));
+
+        const rect = card.getBoundingClientRect();
+        const scrollTop = overlay ? overlay.scrollTop : 0;
+
+        const canvas = await html2canvas(card, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: _agTheme === 'dark' ? '#0b2641' : '#f5f0e8',
+          logging: false,
+          width:  Math.round(rect.width),
+          height: Math.round(rect.height),
+          scrollX: -rect.left,
+          scrollY: -(rect.top - scrollTop)
+        });
+
+        // Restore original image
+        imgEl.src = origSrc;
+        imgEl.style.cssText = origStyle;
+
+        const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
+        const a = document.createElement('a');
+        a.download = fname + '.jpg';
+        a.href = canvas.toDataURL('image/jpeg', 0.95);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Saved! Check your Downloads folder ✓');
+
+      } else {
+        // No image — just capture card as-is
+        const rect = card.getBoundingClientRect();
+        const scrollTop = overlay ? overlay.scrollTop : 0;
+        const canvas = await html2canvas(card, {
+          scale: 2, useCORS: true, allowTaint: true,
+          backgroundColor: _agTheme === 'dark' ? '#0b2641' : '#f5f0e8',
+          logging: false,
+          width: Math.round(rect.width), height: Math.round(rect.height),
+          scrollX: -rect.left, scrollY: -(rect.top - scrollTop)
+        });
+        const fname = [d.brand, d.model, d.ref].filter(Boolean).join('_').replace(/\s+/g,'_') || 'ad_graphic';
+        const a = document.createElement('a');
+        a.download = fname + '.jpg';
+        a.href = canvas.toDataURL('image/jpeg', 0.95);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Saved! Check your Downloads folder ✓');
+      }
     } catch(e) {
       console.error(e);
       showToast('Could not download — try screenshotting the graphic');
