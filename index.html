@@ -5502,6 +5502,12 @@ async function moveToCollection() {
   showToast(`${w.brand} ${w.model} moved to your Collection ✓`);
 }
 
+async function loadWishlist() {
+  const { data } = await db.from('want_list').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  wishlist = data || [];
+  renderWishlist();
+}
+
 function exportTaxCSV(){
   const filterYear=document.getElementById('tax-year-filter').value;
   const f=filterYear==='all'?soldWatches:soldWatches.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()==filterYear);
