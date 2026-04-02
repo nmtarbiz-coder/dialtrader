@@ -1988,7 +1988,7 @@ async function showApp(){
   const profileComplete=await loadUserProfile();
   await loadAllData();
   renderDashboard();renderInventory();renderSold();renderContacts();renderInvoices();renderTaxReport();loadTasks();renderTasksPage();
-  loadExpenses();loadMileage();loadGoals();loadCollection();loadWishlist();loadConsignments();
+  loadExpenses();loadMileage();loadGoals();loadCollection();loadWishlist();loadConsignment();
   document.getElementById('loading-screen').classList.remove('visible');
   document.getElementById('app-screen').classList.add('visible');
   showPage('dashboard');
