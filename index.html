@@ -1418,6 +1418,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
               <div class="platform-check" data-val="FB — Audemars Piguet" onclick="togglePlatform(this)">FB — Audemars Piguet</div>
               <div class="platform-check" data-val="FB — Vintage &amp; Pre-Owned Rolex" onclick="togglePlatform(this)">FB — Vintage &amp; Pre-Owned Rolex</div>
               <div class="platform-check" data-val="FB — Moda Watch Club" onclick="togglePlatform(this)">FB — Moda Watch Club</div>
+              <div class="platform-check" data-val="Local Sale" onclick="togglePlatform(this)">Local Sale</div>
               <div class="platform-check" data-val="Other" onclick="togglePlatform(this)">Other</div>
             </div>
           </div>
@@ -1522,6 +1523,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
               <div class="platform-check" data-val="FB — Audemars Piguet" onclick="togglePlatform(this)">FB — Audemars Piguet</div>
               <div class="platform-check" data-val="FB — Vintage &amp; Pre-Owned Rolex" onclick="togglePlatform(this)">FB — Vintage &amp; Pre-Owned Rolex</div>
               <div class="platform-check" data-val="FB — Moda Watch Club" onclick="togglePlatform(this)">FB — Moda Watch Club</div>
+              <div class="platform-check" data-val="Local Sale" onclick="togglePlatform(this)">Local Sale</div>
               <div class="platform-check" data-val="Other" onclick="togglePlatform(this)">Other</div>
             </div>
           </div>
@@ -1535,6 +1537,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
     </div>
     <div class="modal-footer">
       <button class="btn-danger" id="btn-delete" onclick="deleteWatch()" style="display:none">Delete</button>
+      <button class="btn-outline" id="btn-move-collection" onclick="moveToCollection()" style="display:none;color:var(--gold2);border-color:var(--gold2)" title="Move to your personal collection">👑 To Collection</button>
       <div class="modal-actions">
         <button class="btn-outline" onclick="closeModal()">Cancel</button>
         <button class="btn-gold" id="btn-save" onclick="saveWatch()">Save Watch</button>
@@ -1836,6 +1839,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
               <div class="platform-check" data-val="FB — Audemars Piguet" onclick="togglePlatform(this)">FB — Audemars Piguet</div>
               <div class="platform-check" data-val="FB — Vintage &amp; Pre-Owned Rolex" onclick="togglePlatform(this)">FB — Vintage &amp; Pre-Owned Rolex</div>
               <div class="platform-check" data-val="FB — Moda Watch Club" onclick="togglePlatform(this)">FB — Moda Watch Club</div>
+              <div class="platform-check" data-val="Local Sale" onclick="togglePlatform(this)">Local Sale</div>
               <div class="platform-check" data-val="Other" onclick="togglePlatform(this)">Other</div>
             </div>
           </div>
@@ -2773,6 +2777,7 @@ function openModal(){
   editingId=null;
   document.getElementById('modal-title').textContent='Add Watch to Inventory';
   document.getElementById('btn-delete').style.display='none';
+  document.getElementById('btn-move-collection').style.display='none';
   document.getElementById('tab-sell-btn').style.display='none';
   clearWatchForm();pendingPhotos=[];renderPhotoGrid();
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
@@ -2789,6 +2794,7 @@ function editWatch(id){
   editingId=id;
   document.getElementById('modal-title').textContent='Edit: ' + [w.brand, w.model].filter(Boolean).join(' ');
   document.getElementById('btn-delete').style.display='inline-block';
+  document.getElementById('btn-move-collection').style.display='inline-block';
   document.getElementById('tab-sell-btn').style.display='block';
   buildSwatches('dial-colors',DIAL_COLORS,'f-dial-color');
   buildSwatches('bezel-colors',BEZEL_COLORS,'f-bezel-color');
@@ -4772,91 +4778,89 @@ async function loadCollection() {
 }
 
 function renderCollection() {
-  const grid  = document.getElementById('coll-grid');
+  const grid = document.getElementById('coll-grid');
   const empty = document.getElementById('coll-empty');
   if (!grid) return;
-  if (!personalCollection.length) { grid.innerHTML=''; empty.style.display='flex'; return; }
-  empty.style.display = 'none';
-  grid.innerHTML = personalCollection.map(w => `
-    <div class="inv-row" onclick="openCollectionModal('${w.id}')" style="cursor:pointer">
+  if (!collection.length) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  grid.innerHTML = collection.map(w => `
+    <div class="inv-row">
       <div class="inv-row-main">
-        <div class="inv-row-photo" style="background:var(--surface2);width:56px;height:56px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem;overflow:hidden">
-          ${w.photo_url ? '<img src="'+escHtml(w.photo_url)+'" style="width:100%;height:100%;object-fit:cover">' : '🕐'}
+        <div class="inv-watch-info">
+          <div style="font-size:0.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">${escHtml(w.brand||'')}${w.year?' · '+w.year:''}</div>
+          <div style="font-size:1.25rem;font-weight:600;line-height:1.2">${escHtml(w.model||'')}</div>
+          <div style="font-size:0.82rem;color:var(--text2)">${[w.ref,w.condition,w.box_papers].filter(Boolean).join(' · ')}</div>
         </div>
-        <div>
-          <div style="font-size:0.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em">${escHtml(w.brand||'')}</div>
-          <div style="font-size:1.1rem;font-weight:600">${escHtml(w.model||'')}</div>
-          <div style="font-size:0.78rem;color:var(--text2)">${[w.ref,w.year,w.condition].filter(Boolean).join(' · ')}</div>
+        <div class="inv-row-values">
+          ${w.cost ? `<div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">Cost</div><div style="font-size:1rem;font-weight:600">${fmt(w.cost)}</div></div>` : ''}
+          ${w.est_value ? `<div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">Est Value</div><div style="font-size:1rem;font-weight:600;color:var(--green)">${fmt(w.est_value)}</div></div>` : ''}
+          <div style="display:flex;gap:0.5rem;align-items:center">
+            <button onclick="openCollectionModal(${JSON.stringify(w).replace(/"/g,'&quot;')})" class="btn-outline btn-sm">Edit</button>
+            <button onclick="deleteCollectionWatch('${w.id}')" class="btn-outline btn-sm" style="color:var(--red)">✕</button>
+          </div>
         </div>
       </div>
-      <div class="inv-row-values">
-        <div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em">Paid</div><div style="font-size:1rem;font-weight:600">${w.purchase_price ? fmt(+w.purchase_price) : '—'}</div></div>
-        ${w.estimated_value ? '<div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em">Est. Value</div><div style="font-size:1rem;font-weight:600;color:var(--gold)">'+fmt(+w.estimated_value)+'</div></div>' : ''}
-      </div>
-    </div>`).join('');
+    </div>
+  `).join('');
 }
 
-function openCollectionModal(id) {
-  editingCollId = id || null;
-  const w = id ? personalCollection.find(x => x.id === id) : null;
+function openCollectionModal(w) {
+  editingCollId = w ? w.id : null;
   document.getElementById('coll-modal-title').textContent = w ? 'Edit Watch' : 'Add to Collection';
-  document.getElementById('coll-brand').value           = w?.brand || '';
-  document.getElementById('coll-model').value           = w?.model || '';
-  document.getElementById('coll-ref').value             = w?.ref || '';
-  document.getElementById('coll-serial').value          = w?.serial || '';
-  document.getElementById('coll-year').value            = w?.year || '';
-  document.getElementById('coll-condition').value       = w?.condition || '';
-  document.getElementById('coll-purchase-price').value  = w?.purchase_price || '';
-  document.getElementById('coll-estimated-value').value = w?.estimated_value || '';
-  document.getElementById('coll-notes').value           = w?.notes || '';
-  const deleteBtn = document.getElementById('coll-delete-btn');
-  if (deleteBtn) deleteBtn.style.display = id ? 'block' : 'none';
+  document.getElementById('coll-brand').value     = w?.brand       || '';
+  document.getElementById('coll-model').value     = w?.model       || '';
+  document.getElementById('coll-ref').value       = w?.ref         || '';
+  document.getElementById('coll-serial').value    = w?.serial      || '';
+  document.getElementById('coll-year').value      = w?.year        || '';
+  document.getElementById('coll-cost').value      = w?.cost        || w?.purchase_price || '';
+  document.getElementById('coll-date').value      = w?.purchase_date || '';
+  document.getElementById('coll-value').value     = w?.est_value   || '';
+  document.getElementById('coll-condition').value = w?.condition   || '';
+  const papers = document.getElementById('coll-papers');
+  if (papers) papers.value = w?.box_papers || '';
+  const notes = document.getElementById('coll-notes');
+  if (notes) notes.value = w?.notes || '';
   document.getElementById('collection-modal').style.display = 'flex';
 }
+
 function closeCollectionModal() { document.getElementById('collection-modal').style.display = 'none'; }
 
 async function saveCollectionWatch() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (!g('coll-brand') || !g('coll-model')) {
+    const msg = document.getElementById('coll-modal-msg');
+    if (msg) msg.textContent = 'Brand and Model required.';
+    return;
+  }
+  const btn = document.getElementById('coll-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
   const row = {
-    user_id:         currentUser.id,
-    brand:           document.getElementById('coll-brand').value.trim(),
-    model:           document.getElementById('coll-model').value.trim(),
-    ref:             document.getElementById('coll-ref').value.trim() || null,
-    serial:          document.getElementById('coll-serial').value.trim() || null,
-    year:            document.getElementById('coll-year').value.trim() || null,
-    condition:       document.getElementById('coll-condition').value || null,
-    purchase_price:  parseFloat(document.getElementById('coll-purchase-price').value) || null,
-    estimated_value: parseFloat(document.getElementById('coll-estimated-value').value) || null,
-    notes:           document.getElementById('coll-notes').value.trim() || null,
+    user_id: currentUser.id,
+    brand: g('coll-brand'), model: g('coll-model'),
+    ref: g('coll-ref') || null, serial: g('coll-serial') || null,
+    year: g('coll-year') || null,
+    cost: parseFloat(g('coll-cost')) || null,
+    purchase_date: g('coll-date') || null,
+    est_value: parseFloat(g('coll-value')) || null,
+    condition: g('coll-condition') || null,
+    box_papers: g('coll-papers') || null,
+    notes: g('coll-notes') || null,
   };
-  if (!row.brand || !row.model) { showToast('Brand and model are required.'); return; }
   let error;
   if (editingCollId) {
     ({ error } = await db.from('personal_collection').update(row).eq('id', editingCollId));
-    if (!error) { const i = personalCollection.findIndex(w => w.id === editingCollId); personalCollection[i] = { ...personalCollection[i], ...row }; }
+    if (!error) { const i = collection.findIndex(c => c.id === editingCollId); if (i !== -1) collection[i] = { ...collection[i], ...row }; }
   } else {
-    const res = await db.from('personal_collection').insert(row).select().single();
-    error = res.error; if (!error) personalCollection.unshift(res.data);
+    const { data, error: e } = await db.from('personal_collection').insert(row).select().single();
+    error = e; if (!error) collection.unshift(data);
   }
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeCollectionModal(); renderCollection(); showToast('Saved ✓');
-}
-
-async function deleteCollectionWatch() {
-  if (!editingCollId || !confirm('Remove this watch from your collection?')) return;
-  const { error } = await db.from('personal_collection').delete().eq('id', editingCollId);
-  if (error) { showToast('Error: ' + error.message); return; }
-  personalCollection = personalCollection.filter(w => w.id !== editingCollId);
-  closeCollectionModal(); renderCollection(); showToast('Removed from collection.');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  WANT LIST
-// ══════════════════════════════════════════════════════════════════════════════
-let wishList = [], editingWishId = null;
-
-async function loadWishlist() {
-  const { data } = await db.from('want_list').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  wishList = data || [];
+  btn.disabled = false; btn.textContent = 'Save Watch';
+  if (error) { const msg = document.getElementById('coll-modal-msg'); if (msg) msg.textContent = 'Error: ' + error.message; return; }
+  closeCollectionModal(); renderCollection(); showToast('Collection updated.');
 }
 
 function renderWishlist() {
@@ -4965,43 +4969,55 @@ function renderConsignment() {
 
 function openConsModal(id) {
   editingConsId = id || null;
-  const c = id ? consignments.find(x => x.id === id) : null;
-  document.getElementById('cons-modal-title').textContent = c ? 'Edit Consignment' : 'Add Consignment';
-  document.getElementById('cons-type').value          = c?.type || consTab;
-  document.getElementById('cons-brand').value         = c?.brand || '';
-  document.getElementById('cons-model').value         = c?.model || '';
-  document.getElementById('cons-ref').value           = c?.ref || '';
-  document.getElementById('cons-contact').value       = c?.contact_name || '';
-  document.getElementById('cons-listed-price').value  = c?.listed_price || '';
-  document.getElementById('cons-commission').value    = c?.commission_rate || '';
-  document.getElementById('cons-notes').value         = c?.notes || '';
+  const rec = id ? consignments.find(x => x.id === id) : null;
+  document.getElementById('cons-modal-title').textContent = rec ? 'Edit Consignment' : 'Add Consignment';
+  document.getElementById('cons-type').value   = rec?.type         || consTab  || 'holding';
+  document.getElementById('cons-brand').value  = rec?.brand        || '';
+  document.getElementById('cons-model').value  = rec?.model        || '';
+  document.getElementById('cons-ref').value    = rec?.ref          || '';
+  document.getElementById('cons-party').value  = rec?.party_name   || rec?.contact_name || '';
+  document.getElementById('cons-price').value  = rec?.agreed_price || rec?.listed_price || '';
+  document.getElementById('cons-split').value  = rec?.split_pct    || rec?.commission_rate || '';
+  document.getElementById('cons-start').value  = rec?.start_date   || '';
+  document.getElementById('cons-status').value = rec?.status       || 'active';
+  const notesEl = document.getElementById('cons-notes');
+  if (notesEl) notesEl.value = rec?.notes || '';
   document.getElementById('cons-modal').style.display = 'flex';
 }
+
 function closeConsModal() { document.getElementById('cons-modal').style.display = 'none'; }
 
 async function saveConsignment() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (!g('cons-brand') || !g('cons-model')) {
+    const msg = document.getElementById('cons-modal-msg');
+    if (msg) msg.textContent = 'Brand and Model required.'; return;
+  }
+  const btn = document.getElementById('cons-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
   const row = {
-    user_id:         currentUser.id,
-    type:            document.getElementById('cons-type').value,
-    brand:           document.getElementById('cons-brand').value.trim(),
-    model:           document.getElementById('cons-model').value.trim(),
-    ref:             document.getElementById('cons-ref').value.trim() || null,
-    contact_name:    document.getElementById('cons-contact').value.trim() || null,
-    listed_price:    parseFloat(document.getElementById('cons-listed-price').value) || null,
-    commission_rate: parseFloat(document.getElementById('cons-commission').value) || null,
-    notes:           document.getElementById('cons-notes').value.trim() || null,
+    user_id: currentUser.id,
+    type: g('cons-type') || 'holding',
+    brand: g('cons-brand'), model: g('cons-model'),
+    ref: g('cons-ref') || null,
+    party_name: g('cons-party') || null,
+    agreed_price: parseFloat(g('cons-price')) || null,
+    split_pct: g('cons-split') || null,
+    start_date: g('cons-start') || null,
+    status: g('cons-status') || 'active',
+    notes: g('cons-notes') || null,
   };
-  if (!row.brand || !row.model) { showToast('Brand and model are required.'); return; }
   let error;
   if (editingConsId) {
     ({ error } = await db.from('consignments').update(row).eq('id', editingConsId));
-    if (!error) { const i = consignments.findIndex(c => c.id === editingConsId); consignments[i] = { ...consignments[i], ...row }; }
+    if (!error) { const i = consignments.findIndex(c => c.id === editingConsId); if (i !== -1) consignments[i] = { ...consignments[i], ...row }; }
   } else {
-    const res = await db.from('consignments').insert(row).select().single();
-    error = res.error; if (!error) consignments.unshift(res.data);
+    const { data, error: e } = await db.from('consignments').insert(row).select().single();
+    error = e; if (!error) consignments.unshift(data);
   }
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeConsModal(); renderConsignment(); showToast('Saved ✓');
+  btn.disabled = false; btn.textContent = 'Save';
+  if (error) { const msg = document.getElementById('cons-modal-msg'); if (msg) msg.textContent = 'Error: ' + error.message; return; }
+  closeConsModal(); renderConsignment(); showToast('Consignment saved.');
 }
 
 async function deleteCons(id) {
@@ -5456,6 +5472,35 @@ async function executeTrade(){
   }
 }
 
+
+async function moveToCollection() {
+  if (!editingId) return;
+  const w = inventory.find(x => x.id === editingId);
+  if (!w) return;
+  if (!confirm(`Move ${w.brand} ${w.model} to your Personal Collection? It will be removed from inventory.`)) return;
+  
+  // Insert into personal_collection
+  const row = {
+    user_id: currentUser.id,
+    brand: w.brand, model: w.model, ref: w.ref || null,
+    serial: w.serial || null, year: w.year || null,
+    cost: w.purchase_price || null,
+    purchase_date: w.purchase_date || null,
+    condition: w.condition || null,
+    box_papers: w.box_papers || null,
+    notes: w.notes || null,
+  };
+  const { data, error } = await db.from('personal_collection').insert(row).select().single();
+  if (error) { showToast('Error: ' + error.message); return; }
+  
+  // Remove from inventory
+  await db.from('inventory').delete().eq('id', editingId);
+  collection.unshift(data);
+  inventory = inventory.filter(x => x.id !== editingId);
+  closeModal();
+  refreshAll();
+  showToast(`${w.brand} ${w.model} moved to your Collection ✓`);
+}
 
 function exportTaxCSV(){
   const filterYear=document.getElementById('tax-year-filter').value;
