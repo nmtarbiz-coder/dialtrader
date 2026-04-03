@@ -1233,6 +1233,23 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
           </div>
         </div>
         <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-title">Invoice Logo</div>
+          <div class="card-sub">Upload your business logo — it replaces the DialTrader icon on invoices</div>
+          <div style="margin-top:1.25rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+            <div id="logo-preview" style="width:120px;height:80px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:4px;overflow:hidden">
+              <span style="font-size:0.65rem;color:var(--text2);text-align:center;padding:0.5rem">No logo<br>uploaded</span>
+            </div>
+            <div>
+              <input type="file" id="logo-file-input" accept="image/*" style="display:none" onchange="uploadInvoiceLogo(this)">
+              <button class="btn-gold" onclick="document.getElementById('logo-file-input').click()">⬆ Upload Logo</button>
+              <button class="btn-outline" id="logo-remove-btn" onclick="removeInvoiceLogo()" style="margin-left:0.5rem;display:none">✕ Remove</button>
+              <div style="font-size:0.68rem;color:var(--text2);margin-top:0.5rem">PNG, JPG, or SVG · Max 1MB · Will appear on all invoices</div>
+              <div id="logo-upload-msg" style="font-size:0.72rem;color:var(--green);margin-top:0.35rem;display:none">✓ Logo saved</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1.5rem">
           <div class="card-title">Payment Information</div>
           <div class="card-sub">Shown on invoices when you enable payment options</div>
           <div class="form-grid" style="margin-top:1.25rem">
@@ -2754,7 +2771,12 @@ function printInvoice(){window.print();}
 function buildInvoiceHTML(inv){
   const items=inv.line_items||[];
   const showPay = !!(userProfile.wire_info||userProfile.zelle||userProfile.payment_info);
-  const logoHtml=`<div style="width:80px;height:94px;display:flex;align-items:center;justify-content:center">${LOGO_SVG.replace(/width="600"/, 'width="80"').replace(/height="700"/, 'height="94"')}</div>`;
+  let logoHtml;
+  if (userProfile.logo_url) {
+    logoHtml = `<div style="width:120px;height:80px;display:flex;align-items:center;justify-content:center;overflow:hidden"><img src="${userProfile.logo_url}" style="max-width:120px;max-height:80px;object-fit:contain" alt="Logo"></div>`;
+  } else {
+    logoHtml = `<div style="width:80px;height:94px;display:flex;align-items:center;justify-content:center">${LOGO_SVG.replace(/width="600"/, 'width="80"').replace(/height="700"/, 'height="94"')}</div>`;
+  }
   return`<div class="invoice-preview">
     <div class="inv-hdr">
       <div>
@@ -5270,6 +5292,71 @@ async function moveToCollection() {
 }
 
 
+// ── INVOICE LOGO ──────────────────────────────────────────────────────────────
+async function uploadInvoiceLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 1048576) { showToast('Logo must be under 1MB.'); return; }
+
+  const msg = document.getElementById('logo-upload-msg');
+  if (msg) { msg.style.display='none'; }
+  showToast('Uploading logo...');
+
+  try {
+    // Try Supabase Storage first
+    const ext = file.name.split('.').pop();
+    const path = currentUser.id + '/logo.' + ext;
+    const { data: storageData, error: storageError } = await db.storage
+      .from('user-assets')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (!storageError) {
+      const { data: urlData } = db.storage.from('user-assets').getPublicUrl(path);
+      const logo_url = urlData.publicUrl;
+      await db.from('user_profiles').upsert({ user_id: currentUser.id, logo_url }, { onConflict: 'user_id' });
+      userProfile.logo_url = logo_url;
+      updateLogoPreview(logo_url);
+      showToast('Logo uploaded ✓');
+      if (msg) { msg.textContent = '✓ Logo saved'; msg.style.display = ''; }
+      return;
+    }
+  } catch(e) {}
+
+  // Fallback: store as base64 in DB
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const base64 = ev.target.result;
+    await db.from('user_profiles').upsert({ user_id: currentUser.id, logo_url: base64 }, { onConflict: 'user_id' });
+    userProfile.logo_url = base64;
+    updateLogoPreview(base64);
+    showToast('Logo saved ✓');
+    if (msg) { msg.textContent = '✓ Logo saved'; msg.style.display = ''; }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function removeInvoiceLogo() {
+  if (!confirm('Remove your invoice logo?')) return;
+  await db.from('user_profiles').update({ logo_url: null }).eq('user_id', currentUser.id);
+  userProfile.logo_url = null;
+  updateLogoPreview(null);
+  showToast('Logo removed.');
+}
+
+function updateLogoPreview(url) {
+  const preview = document.getElementById('logo-preview');
+  const removeBtn = document.getElementById('logo-remove-btn');
+  if (!preview) return;
+  if (url) {
+    preview.innerHTML = '<img src="'+url+'" style="max-width:120px;max-height:80px;object-fit:contain">';
+    if (removeBtn) removeBtn.style.display = '';
+  } else {
+    preview.innerHTML = '<span style="font-size:0.65rem;color:var(--text2);text-align:center;padding:0.5rem">No logo<br>uploaded</span>';
+    if (removeBtn) removeBtn.style.display = 'none';
+  }
+}
+// ── END INVOICE LOGO ──────────────────────────────────────────────────────────
+
 function exportTaxCSV(){
   const filterYear=document.getElementById('tax-year-filter').value;
   const f=filterYear==='all'?soldWatches:soldWatches.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()==filterYear);
@@ -5559,6 +5646,7 @@ async function loadUserProfile(){
   if(data){
     userProfile={...userProfile,...data};
     updateSidebarProfile();
+    if(data.logo_url) setTimeout(()=>updateLogoPreview(data.logo_url), 500);
     return data.profile_complete;
   }
   return false;
