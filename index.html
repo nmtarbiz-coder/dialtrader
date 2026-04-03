@@ -2072,6 +2072,41 @@ async function syncSoldContacts(){
   showToast(`Sync complete — ${created} new contact${created!==1?'s':''} created, ${linked} watch${linked!==1?'es':''} linked.`);
 }
 
+async function loadMileage() {
+  const { data } = await db.from('mileage_log').select('*').eq('user_id', currentUser.id).order('trip_date', { ascending: false });
+  mileageLog = data || [];
+}
+
+
+
+async function loadExpenses() {
+  const { data } = await db.from('business_expenses').select('*').eq('user_id', currentUser.id).order('exp_date', { ascending: false });
+  expenses = data || [];
+}
+
+async function loadGoals() {
+  const { data } = await db.from('profit_goals').select('*').eq('user_id', currentUser.id);
+  profitGoals = data || [];
+  goals = profitGoals;
+}
+
+async function loadCollection() {
+  const { data } = await db.from('personal_collection').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  personalCollection = data || [];
+  collection = personalCollection;
+}
+
+async function loadWishlist() {
+  const { data } = await db.from('want_list').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  wishlist = data || [];
+}
+
+async function loadConsignment() {
+  const { data } = await db.from('consignments').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  consignments = data || [];
+}
+
+
 async function loadAllData(){
   const[invRes,soldRes,contactRes,invoiceRes,receivedRes]=await Promise.all([
     db.from('inventory').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false}),
@@ -2718,6 +2753,7 @@ function printInvoice(){window.print();}
 
 function buildInvoiceHTML(inv){
   const items=inv.line_items||[];
+  const showPay = !!(userProfile.wire_info||userProfile.zelle||userProfile.payment_info);
   const logoHtml=`<div style="width:80px;height:94px;display:flex;align-items:center;justify-content:center">${LOGO_SVG.replace(/width="600"/, 'width="80"').replace(/height="700"/, 'height="94"')}</div>`;
   return`<div class="invoice-preview">
     <div class="inv-hdr">
@@ -4212,10 +4248,6 @@ function getAdDraftsForSave() {
 // ══════════════════════════════════════════════════════════════════════════════
 let expenses = [], editingExpenseId = null;
 
-async function loadExpenses() {
-  const { data } = await db.from('business_expenses').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
-  expenses = data || [];
-}
 
 function renderExpenses() {
   const yearFilter = document.getElementById('exp-year-filter')?.value || 'all';
@@ -4271,6 +4303,7 @@ function renderExpenses() {
       </td></tr>`
     ).join('') + '</tbody></table>';
 }
+
 
 
 function renderMileage() {
@@ -4403,12 +4436,6 @@ function printMileage() { window.print(); }
 // ══════════════════════════════════════════════════════════════════════════════
 let profitGoals = [], editingGoalId = null;
 
-async function loadGoals() {
-  const { data } = await db.from('profit_goals').select('*').eq('user_id', currentUser.id);
-  profitGoals = data || [];
-  goals = profitGoals;
-  renderGoals();
-}
 
 
 function renderGoals() {
@@ -4494,12 +4521,6 @@ async function saveGoal() {
 // ══════════════════════════════════════════════════════════════════════════════
 let personalCollection = [], editingCollId = null;
 
-async function loadCollection() {
-  const { data } = await db.from('personal_collection').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  personalCollection = data || [];
-  collection = personalCollection; // keep alias in sync
-  renderCollection();
-}
 
 function renderCollection() {
   const grid = document.getElementById('coll-grid');
@@ -4662,10 +4683,6 @@ async function deleteWish(id) {
 // ══════════════════════════════════════════════════════════════════════════════
 let consignments = [], editingConsId = null, consTab = 'holding';
 
-async function loadConsignment() {
-  const { data } = await db.from('consignments').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  consignments = data || [];
-}
 
 function setConsTab(tab) {
   consTab = tab;
@@ -5252,11 +5269,6 @@ async function moveToCollection() {
   showToast(`${w.brand} ${w.model} moved to your Collection ✓`);
 }
 
-async function loadWishlist() {
-  const { data } = await db.from('want_list').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-  wishlist = data || [];
-  renderWishlist();
-}
 
 function exportTaxCSV(){
   const filterYear=document.getElementById('tax-year-filter').value;
