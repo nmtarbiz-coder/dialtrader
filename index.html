@@ -1893,6 +1893,11 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
 <div class="toast" id="toast"></div>
 <script>
 const{createClient}=supabase;
+
+// Variables for extended features
+let collection = [];    // synced with personalCollection
+let wishlist   = [], editingWishId = null;    // want_list data
+let goals      = [];    // synced with profitGoals
 const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700" width="600" height="700">
 
   <defs>
@@ -4529,31 +4534,38 @@ function openExpenseModal(id) {
   document.getElementById('exp-modal-title').textContent = e ? 'Edit Expense' : 'Add Expense';
   document.getElementById('exp-date').value        = e?.date || new Date().toISOString().split('T')[0];
   document.getElementById('exp-category').value    = e?.category || '';
-  document.getElementById('exp-description').value = e?.description || '';
+  document.getElementById('exp-desc').value = e?.description || '';
   document.getElementById('exp-amount').value      = e?.amount || '';
   document.getElementById('expense-modal').style.display = 'flex';
 }
 function closeExpenseModal() { document.getElementById('expense-modal').style.display = 'none'; }
 
 async function saveExpense() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (!g('exp-desc'))   { showToast('Description is required.'); return; }
+  if (!g('exp-amount')) { showToast('Amount is required.'); return; }
+  const btn = document.getElementById('exp-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   const row = {
-    user_id: currentUser.id,
-    date:        document.getElementById('exp-date').value,
-    category:    document.getElementById('exp-category').value,
-    description: document.getElementById('exp-description').value.trim(),
-    amount:      parseFloat(document.getElementById('exp-amount').value) || 0,
+    user_id:     currentUser.id,
+    description: g('exp-desc'),
+    amount:      parseFloat(g('exp-amount')) || 0,
+    exp_date:    g('exp-date') || new Date().toISOString().split('T')[0],
+    category:    g('exp-category') || 'Other',
+    vendor:      g('exp-vendor')   || null,
+    notes:       g('exp-notes')    || null,
   };
-  if (!row.date || !row.amount) { showToast('Date and amount are required.'); return; }
   let error;
   if (editingExpenseId) {
     ({ error } = await db.from('business_expenses').update(row).eq('id', editingExpenseId));
-    if (!error) { const i = expenses.findIndex(e => e.id === editingExpenseId); expenses[i] = { ...expenses[i], ...row }; }
+    if (!error) { const i = expenses.findIndex(e => e.id === editingExpenseId); if (i !== -1) expenses[i] = { ...expenses[i], ...row }; }
   } else {
-    const res = await db.from('business_expenses').insert(row).select().single();
-    error = res.error; if (!error) expenses.unshift(res.data);
+    const { data, error: e } = await db.from('business_expenses').insert(row).select().single();
+    error = e; if (!error) expenses.unshift(data);
   }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save Expense'; }
   if (error) { showToast('Error: ' + error.message); return; }
-  closeExpenseModal(); renderExpenses(); showToast('Expense saved ✓');
+  closeExpenseModal(); renderExpenses(); showToast('Expense saved.');
 }
 
 async function deleteExpense(id) {
@@ -4631,35 +4643,43 @@ function openMileageModal(id) {
   editingMileageId = id || null;
   const m = id ? mileageLog.find(x => x.id === id) : null;
   document.getElementById('mil-modal-title').textContent = m ? 'Edit Trip' : 'Add Trip';
-  document.getElementById('mil-date').value          = m?.date || new Date().toISOString().split('T')[0];
-  document.getElementById('mil-from').value          = m?.from_location || '';
-  document.getElementById('mil-to').value            = m?.to_location || '';
-  document.getElementById('mil-miles').value         = m?.miles || '';
-  document.getElementById('mil-purpose').value       = m?.purpose || '';
+  document.getElementById('mil-purpose').value  = m?.purpose  || '';
+  document.getElementById('mil-date').value     = m?.trip_date || m?.date || new Date().toISOString().split('T')[0];
+  document.getElementById('mil-miles').value    = m?.miles    || '';
+  document.getElementById('mil-category').value = m?.category || '';
+  document.getElementById('mil-from').value     = m?.from_to  || m?.from_location || '';
+  const notes = document.getElementById('mil-notes');
+  if (notes) notes.value = m?.notes || '';
   document.getElementById('mileage-modal').style.display = 'flex';
 }
 function closeMileageModal() { document.getElementById('mileage-modal').style.display = 'none'; }
 
 async function saveMileage() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (!g('mil-purpose')) { showToast('Purpose is required.'); return; }
+  if (!parseFloat(g('mil-miles'))) { showToast('Miles are required.'); return; }
+  const btn = document.getElementById('mil-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
   const row = {
-    user_id: currentUser.id,
-    date:          document.getElementById('mil-date').value,
-    from_location: document.getElementById('mil-from').value.trim(),
-    to_location:   document.getElementById('mil-to').value.trim(),
-    miles:         parseFloat(document.getElementById('mil-miles').value) || 0,
-    purpose:       document.getElementById('mil-purpose').value.trim(),
+    user_id:   currentUser.id,
+    purpose:   g('mil-purpose'),
+    trip_date: g('mil-date') || new Date().toISOString().split('T')[0],
+    miles:     parseFloat(g('mil-miles')) || 0,
+    category:  g('mil-category') || null,
+    from_to:   g('mil-from') || null,
+    notes:     g('mil-notes') || null,
   };
-  if (!row.date || !row.miles) { showToast('Date and miles are required.'); return; }
   let error;
   if (editingMileageId) {
     ({ error } = await db.from('mileage_log').update(row).eq('id', editingMileageId));
-    if (!error) { const i = mileageLog.findIndex(m => m.id === editingMileageId); mileageLog[i] = { ...mileageLog[i], ...row }; }
+    if (!error) { const i = mileageLog.findIndex(m => m.id === editingMileageId); if (i !== -1) mileageLog[i] = { ...mileageLog[i], ...row }; }
   } else {
-    const res = await db.from('mileage_log').insert(row).select().single();
-    error = res.error; if (!error) mileageLog.unshift(res.data);
+    const { data, error: e } = await db.from('mileage_log').insert(row).select().single();
+    error = e; if (!error) mileageLog.unshift(data);
   }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save Trip'; }
   if (error) { showToast('Error: ' + error.message); return; }
-  closeMileageModal(); renderMileage(); showToast('Trip saved ✓');
+  closeMileageModal(); renderMileage(); showToast('Trip saved.');
 }
 
 async function deleteMileage(id) {
@@ -4687,7 +4707,10 @@ let profitGoals = [], editingGoalId = null;
 async function loadGoals() {
   const { data } = await db.from('profit_goals').select('*').eq('user_id', currentUser.id);
   profitGoals = data || [];
+  goals = profitGoals;
+  renderGoals();
 }
+
 
 function renderGoals() {
   const yr = document.getElementById('goal-year-select')?.value || new Date().getFullYear().toString();
@@ -4775,6 +4798,8 @@ let personalCollection = [], editingCollId = null;
 async function loadCollection() {
   const { data } = await db.from('personal_collection').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   personalCollection = data || [];
+  collection = personalCollection; // keep alias in sync
+  renderCollection();
 }
 
 function renderCollection() {
@@ -4867,11 +4892,11 @@ function renderWishlist() {
   const list  = document.getElementById('wish-list');
   const empty = document.getElementById('wish-empty');
   if (!list) return;
-  if (!wishList.length) { list.innerHTML=''; empty.style.display='flex'; return; }
+  if (!wishlist.length) { list.innerHTML=''; empty.style.display='flex'; return; }
   empty.style.display='none';
   list.innerHTML = `<table style="width:100%;border-collapse:collapse">
     <thead><tr style="background:var(--surface2)">${['Brand','Model','Ref','Max Price','Notes',''].map(h=>`<th style="padding:0.6rem 0.8rem;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);text-align:left">${h}</th>`).join('')}</tr></thead>
-    <tbody>${wishList.map(w=>`<tr style="border-bottom:1px solid var(--border)">
+    <tbody>${wishlist.map(w=>`<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:0.6rem 0.8rem;font-size:0.82rem;font-weight:600">${escHtml(w.brand||'')}</td>
       <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(w.model||'')}</td>
       <td style="padding:0.6rem 0.8rem;font-size:0.78rem;color:var(--text2)">${escHtml(w.ref||'—')}</td>
@@ -4885,44 +4910,51 @@ function renderWishlist() {
 
 function openWishModal(id) {
   editingWishId = id || null;
-  const w = id ? wishList.find(x => x.id === id) : null;
+  const w = id ? wishlist.find(x => x.id === id) : null;
   document.getElementById('wish-modal-title').textContent = w ? 'Edit Want' : 'Add to Want List';
-  document.getElementById('wish-brand').value        = w?.brand || '';
-  document.getElementById('wish-model').value        = w?.model || '';
-  document.getElementById('wish-ref').value          = w?.ref || '';
-  document.getElementById('wish-target-price').value = w?.target_price || '';
-  document.getElementById('wish-notes').value        = w?.notes || '';
+  document.getElementById('wish-brand').value     = w?.brand || '';
+  document.getElementById('wish-model').value     = w?.model || '';
+  document.getElementById('wish-ref').value       = w?.ref || '';
+  document.getElementById('wish-priority').value  = w?.priority || 'Medium';
+  document.getElementById('wish-max-price').value = w?.max_price || w?.target_price || '';
+  document.getElementById('wish-sell-price').value= w?.target_sell_price || '';
+  document.getElementById('wish-notes').value     = w?.notes || '';
   document.getElementById('wish-modal').style.display = 'flex';
 }
 function closeWishModal() { document.getElementById('wish-modal').style.display = 'none'; }
 
 async function saveWish() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (!g('wish-brand') || !g('wish-model')) { showToast('Brand and Model required.'); return; }
+  const btn = document.getElementById('wish-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
   const row = {
-    user_id:      currentUser.id,
-    brand:        document.getElementById('wish-brand').value.trim(),
-    model:        document.getElementById('wish-model').value.trim(),
-    ref:          document.getElementById('wish-ref').value.trim() || null,
-    target_price: parseFloat(document.getElementById('wish-target-price').value) || null,
-    notes:        document.getElementById('wish-notes').value.trim() || null,
+    user_id: currentUser.id,
+    brand: g('wish-brand'), model: g('wish-model'),
+    ref: g('wish-ref') || null,
+    priority: g('wish-priority') || 'Medium',
+    max_price: parseFloat(g('wish-max-price')) || null,
+    target_sell_price: parseFloat(g('wish-sell-price')) || null,
+    notes: g('wish-notes') || null,
   };
-  if (!row.brand || !row.model) { showToast('Brand and model are required.'); return; }
   let error;
   if (editingWishId) {
     ({ error } = await db.from('want_list').update(row).eq('id', editingWishId));
-    if (!error) { const i = wishList.findIndex(w => w.id === editingWishId); wishList[i] = { ...wishList[i], ...row }; }
+    if (!error) { const i = wishlist.findIndex(w => w.id === editingWishId); if (i !== -1) wishlist[i] = { ...wishlist[i], ...row }; }
   } else {
-    const res = await db.from('want_list').insert(row).select().single();
-    error = res.error; if (!error) wishList.unshift(res.data);
+    const { data, error: e } = await db.from('want_list').insert(row).select().single();
+    error = e; if (!error) wishlist.unshift(data);
   }
+  btn.disabled = false; btn.textContent = 'Save';
   if (error) { showToast('Error: ' + error.message); return; }
-  closeWishModal(); renderWishlist(); showToast('Saved ✓');
+  closeWishModal(); renderWishlist(); showToast('Want list updated.');
 }
 
 async function deleteWish(id) {
   if (!confirm('Remove from want list?')) return;
   const { error } = await db.from('want_list').delete().eq('id', id);
   if (error) { showToast('Error: ' + error.message); return; }
-  wishList = wishList.filter(w => w.id !== id);
+  wishlist = wishlist.filter(w => w.id !== id);
   renderWishlist(); showToast('Removed.');
 }
 
