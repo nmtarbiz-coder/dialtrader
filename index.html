@@ -3522,274 +3522,6 @@ td{padding:5px 8px;border-bottom:1px solid #eee;font-size:0.78rem}
 <div class="meta">Tolliver Timepieces / NXT Enterprises LLC · Generated ${new Date().toLocaleDateString()}</div>
 ${inner}
 <script>window.onload=()=>window.print()<\/script>
-
-
-    <!-- EXTENDED FEATURE MODALS -->
-
-    <div class="modal-overlay" id="expense-modal" style="display:none" onclick="if(event.target===this)closeExpenseModal()">
-      <div class="modal-box" style="max-width:520px;width:95%">
-        <div class="modal-header">
-          <div class="modal-title" id="exp-modal-title">Add Expense</div>
-          <button class="modal-close" onclick="closeExpenseModal()">✕</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
-          <div style="grid-column:1/-1">
-            <label class="form-label">Description *</label>
-            <input class="form-input" id="exp-desc" placeholder="e.g. Shipping supplies from UPS Store">
-          </div>
-          <div>
-            <label class="form-label">Amount ($) *</label>
-            <input class="form-input" id="exp-amount" type="number" step="0.01" min="0" placeholder="0.00">
-          </div>
-          <div>
-            <label class="form-label">Date *</label>
-            <input class="form-input" id="exp-date" type="date">
-          </div>
-          <div>
-            <label class="form-label">Category *</label>
-            <select class="form-select" id="exp-category">
-              <option value="">— Select —</option>
-              <option>Shipping &amp; Packaging</option>
-              <option>Watch Accessories</option>
-              <option>Travel &amp; Shows</option>
-              <option>Marketing &amp; Advertising</option>
-              <option>Phone &amp; Internet</option>
-              <option>Storage &amp; Facilities</option>
-              <option>Insurance</option>
-              <option>Professional Services</option>
-              <option>Office &amp; Supplies</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Vendor / Paid To</label>
-            <input class="form-input" id="exp-vendor" placeholder="e.g. UPS, Amazon">
-          </div>
-          <div style="grid-column:1/-1">
-            <label class="form-label">Notes</label>
-            <textarea class="form-textarea" id="exp-notes" rows="2" placeholder="Optional details..."></textarea>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
-          <button class="btn-outline" onclick="closeExpenseModal()">Cancel</button>
-          <button class="btn-gold" onclick="saveExpense()" id="exp-save-btn">Save Expense</button>
-        </div>
-        <div id="exp-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="mileage-modal" style="display:none" onclick="if(event.target===this)closeMileageModal()">
-      <div class="modal-box" style="max-width:480px;width:95%">
-        <div class="modal-header"><div class="modal-title" id="mil-modal-title">Add Trip</div><button class="modal-close" onclick="closeMileageModal()">✕</button></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
-          <div style="grid-column:1/-1"><label class="form-label">Purpose *</label><input class="form-input" id="mil-purpose" placeholder="e.g. Dallas Watch Show, pickup from seller"></div>
-          <div><label class="form-label">Date *</label><input class="form-input" id="mil-date" type="date"></div>
-          <div><label class="form-label">Miles *</label><input class="form-input" id="mil-miles" type="number" step="0.1" min="0" placeholder="0.0"></div>
-          <div><label class="form-label">Category</label>
-            <select class="form-select" id="mil-category">
-              <option>Watch Show / Event</option><option>Buyer / Seller Meetup</option><option>Bank / Wire Transfer</option><option>Shipping / Post Office</option><option>Supply Run</option><option>Other Business</option>
-            </select>
-          </div>
-          <div><label class="form-label">From</label><input class="form-input" id="mil-from" placeholder="e.g. Conway, AR"></div>
-          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="mil-notes" rows="2" placeholder="Optional..."></textarea></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
-          <button class="btn-outline" onclick="closeMileageModal()">Cancel</button>
-          <button class="btn-gold" onclick="saveMileage()" id="mil-save-btn">Save Trip</button>
-        </div>
-        <div id="mil-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="goal-modal" style="display:none" onclick="if(event.target===this)closeGoalModal()">
-      <div class="modal-box" style="max-width:420px;width:95%">
-        <div class="modal-header"><div class="modal-title">Set Profit Goal</div><button class="modal-close" onclick="closeGoalModal()">✕</button></div>
-        <div style="padding:1.5rem;display:grid;gap:1rem">
-          <div><label class="form-label">Year *</label><select class="form-select" id="goal-year"><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option></select></div>
-          <div><label class="form-label">Period</label>
-            <select class="form-select" id="goal-period">
-              <option value="year">Full Year</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
-            </select>
-          </div>
-          <div><label class="form-label">Target Profit ($) *</label><input class="form-input" id="goal-amount" type="number" min="0" placeholder="e.g. 5000"></div>
-          <div><label class="form-label">Notes</label><input class="form-input" id="goal-notes" placeholder="Optional reminder..."></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
-          <button class="btn-outline" onclick="closeGoalModal()">Cancel</button>
-          <button class="btn-gold" onclick="saveGoal()">Save Goal</button>
-        </div>
-        <div id="goal-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="collection-modal" style="display:none" onclick="if(event.target===this)closeCollectionModal()">
-      <div class="modal-box" style="max-width:580px;width:95%">
-        <div class="modal-header"><div class="modal-title" id="coll-modal-title">Add to Collection</div><button class="modal-close" onclick="closeCollectionModal()">✕</button></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
-          <div><label class="form-label">Brand *</label><input class="form-input" id="coll-brand" placeholder="Rolex"></div>
-          <div><label class="form-label">Model *</label><input class="form-input" id="coll-model" placeholder="Submariner"></div>
-          <div><label class="form-label">Reference</label><input class="form-input" id="coll-ref" placeholder="126610LN"></div>
-          <div><label class="form-label">Serial Number</label><input class="form-input" id="coll-serial" placeholder=""></div>
-          <div><label class="form-label">Year</label><input class="form-input" id="coll-year" type="number" placeholder="2023"></div>
-          <div><label class="form-label">Purchase Price ($)</label><input class="form-input" id="coll-cost" type="number" placeholder="0.00"></div>
-          <div><label class="form-label">Purchase Date</label><input class="form-input" id="coll-date" type="date"></div>
-          <div><label class="form-label">Est. Current Value ($)</label><input class="form-input" id="coll-value" type="number" placeholder="0.00"></div>
-          <div><label class="form-label">Condition</label>
-            <select class="form-select" id="coll-condition">
-              <option value="">— Select —</option><option>Like New (10/10)</option><option>Brand New in Box</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
-            </select>
-          </div>
-          <div><label class="form-label">Box & Papers</label>
-            <select class="form-select" id="coll-papers">
-              <option value="">— Select —</option><option>Full Set</option><option>Box Only</option><option>Papers Only</option><option>None</option>
-            </select>
-          </div>
-          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="coll-notes" rows="2" placeholder="Service history, story, where you bought it..."></textarea></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
-          <button class="btn-outline" onclick="closeCollectionModal()">Cancel</button>
-          <button class="btn-gold" onclick="saveCollectionWatch()" id="coll-save-btn">Save Watch</button>
-        </div>
-        <div id="coll-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="wish-modal" style="display:none" onclick="if(event.target===this)closeWishModal()">
-      <div class="modal-box" style="max-width:500px;width:95%">
-        <div class="modal-header"><div class="modal-title" id="wish-modal-title">Add to Want List</div><button class="modal-close" onclick="closeWishModal()">✕</button></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
-          <div><label class="form-label">Brand *</label><input class="form-input" id="wish-brand" placeholder="Rolex"></div>
-          <div><label class="form-label">Model *</label><input class="form-input" id="wish-model" placeholder="Daytona"></div>
-          <div><label class="form-label">Reference</label><input class="form-input" id="wish-ref" placeholder="116500LN"></div>
-          <div><label class="form-label">Priority</label>
-            <select class="form-select" id="wish-priority">
-              <option value="high">🔴 High — Actively Looking</option><option value="medium">🟡 Medium — Would Buy Right</option><option value="low">🟢 Low — If Price is Right</option>
-            </select>
-          </div>
-          <div><label class="form-label">Max Buy Price ($)</label><input class="form-input" id="wish-max-price" type="number" placeholder="0"></div>
-          <div><label class="form-label">Target Sell Price ($)</label><input class="form-input" id="wish-sell-price" type="number" placeholder="0"></div>
-          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="wish-notes" rows="2" placeholder="Specific variants, condition requirements, where you've seen them..."></textarea></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
-          <button class="btn-outline" onclick="closeWishModal()">Cancel</button>
-          <button class="btn-gold" onclick="saveWish()" id="wish-save-btn">Save</button>
-        </div>
-        <div id="wish-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="cons-modal" style="display:none" onclick="if(event.target===this)closeConsModal()">
-      <div class="modal-box" style="max-width:560px;width:95%">
-        <div class="modal-header"><div class="modal-title" id="cons-modal-title">Add Consignment</div><button class="modal-close" onclick="closeConsModal()">✕</button></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
-          <div style="grid-column:1/-1"><label class="form-label">Type *</label>
-            <select class="form-select" id="cons-type">
-              <option value="holding">I'm holding for someone else</option><option value="out">My watch is with someone else</option>
-            </select>
-          </div>
-          <div><label class="form-label">Brand *</label><input class="form-input" id="cons-brand" placeholder="Rolex"></div>
-          <div><label class="form-label">Model *</label><input class="form-input" id="cons-model" placeholder="Submariner"></div>
-          <div><label class="form-label">Reference</label><input class="form-input" id="cons-ref" placeholder="126610LN"></div>
-          <div><label class="form-label">Other Party *</label><input class="form-input" id="cons-party" placeholder="Name of owner / holder"></div>
-          <div><label class="form-label">Agreed Price ($)</label><input class="form-input" id="cons-price" type="number" placeholder="0"></div>
-          <div><label class="form-label">My Cut / Split</label><input class="form-input" id="cons-split" placeholder="e.g. 50% or $500 flat"></div>
-          <div><label class="form-label">Start Date</label><input class="form-input" id="cons-start" type="date"></div>
-          <div><label class="form-label">Status</label>
-            <select class="form-select" id="cons-status">
-              <option value="active">Active</option><option value="sold">Sold / Settled</option><option value="returned">Returned</option>
-            </select>
-          </div>
-          <div style="grid-column:1/-1"><label class="form-label">Terms / Notes</label><textarea class="form-textarea" id="cons-notes" rows="2" placeholder="Agreed terms, contact info, any special conditions..."></textarea></div>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
-          <button class="btn-outline" onclick="closeConsModal()">Cancel</button>
-          <button class="btn-gold" onclick="saveConsignment()" id="cons-save-btn">Save</button>
-        </div>
-        <div id="cons-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
-      </div>
-    </div>
-
-<div class="modal-overlay" id="trade-modal" style="display:none" onclick="if(event.target===this)closeTradeModal()">
-  <div class="modal-box" style="max-width:600px;width:95%;max-height:90vh;overflow-y:auto">
-    <div class="modal-header">
-      <div class="modal-title">⇄ <span>Trade</span></div>
-      <button class="modal-close" onclick="closeTradeModal()">✕</button>
-    </div>
-    <div style="padding:1.25rem">
-
-      <div id="trade-error" style="display:none;background:rgba(176,58,58,0.1);border:1px solid rgba(176,58,58,0.3);padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.78rem;color:var(--red)"></div>
-
-      <!-- Step 1: Your watch going out -->
-      <div style="margin-bottom:1.25rem">
-        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">① Your Watch Going Out</div>
-        <select class="form-select" id="trade-out-watch" onchange="onTradeOutSelect()">
-          <option value="">— Pick your watch —</option>
-        </select>
-        <div id="trade-out-summary" style="display:none;background:var(--bg);padding:0.85rem 1rem;border-left:3px solid var(--gold);font-size:0.8rem;color:var(--text2);line-height:1.8;margin-top:0.5rem"></div>
-      </div>
-
-      <!-- Step 2: Watch coming in -->
-      <div style="margin-bottom:1.25rem">
-        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">② Watch Coming In</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
-          <div class="form-group"><label class="form-label">Brand *</label><input class="form-input" id="trade-in-brand" placeholder="e.g. Omega"></div>
-          <div class="form-group"><label class="form-label">Model *</label><input class="form-input" id="trade-in-model" placeholder="e.g. Seamaster"></div>
-          <div class="form-group"><label class="form-label">Ref</label><input class="form-input" id="trade-in-ref" placeholder="Reference #"></div>
-          <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="trade-in-year" type="number" placeholder="e.g. 2020"></div>
-          <div class="form-group"><label class="form-label">Serial</label><input class="form-input" id="trade-in-serial" placeholder="Serial #"></div>
-          <div class="form-group"><label class="form-label">Condition</label>
-            <select class="form-select" id="trade-in-condition">
-              <option value="">— Select —</option>
-              <option>Like New (10/10)</option><option>Brand New in Box</option>
-              <option>Mint (9.5/10)</option><option>Excellent (9/10)</option>
-              <option>Very Good (8.5/10)</option><option>Good (8/10)</option>
-              <option>Fair (7.5/10)</option>
-            </select>
-          </div>
-          <div class="form-group" style="grid-column:span 2">
-            <label class="form-label">Agreed Trade Value of Incoming Watch ($) *</label>
-            <input class="form-input" id="trade-in-value" type="number" placeholder="0.00" oninput="updateTradeSummary()">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3: Cash difference -->
-      <div style="margin-bottom:1.25rem">
-        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">③ Cash Difference (Boot)</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
-          <div class="form-group"><label class="form-label">Direction</label>
-            <select class="form-select" id="trade-cash-dir" onchange="updateTradeSummary()">
-              <option value="none">No cash changes hands</option>
-              <option value="receive">I receive cash (boot)</option>
-              <option value="pay">I pay cash (boot)</option>
-            </select>
-          </div>
-          <div class="form-group"><label class="form-label">Amount ($)</label>
-            <input class="form-input" id="trade-cash-amount" type="number" placeholder="0.00" oninput="updateTradeSummary()">
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 4: Who -->
-      <div style="margin-bottom:1.25rem">
-        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">④ Who You're Trading With</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
-          <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="trade-who-name" placeholder="Contact name"></div>
-          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="trade-who-phone" placeholder="Phone number"></div>
-          <div class="form-group" style="grid-column:span 2"><label class="form-label">Email</label><input class="form-input" id="trade-who-email" type="email" placeholder="Email address"></div>
-        </div>
-      </div>
-
-      <!-- Live P&L Summary -->
-      <div id="trade-summary" style="display:none;background:var(--gold-dim);border:1px solid var(--gold2);padding:1rem;margin-bottom:1.25rem;font-size:0.82rem;line-height:1.9"></div>
-
-      <div class="modal-footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding-top:1rem;border-top:1px solid var(--border)">
-        <button class="btn-outline" onclick="closeTradeModal()">Cancel</button>
-        <button class="btn-gold" id="trade-execute-btn" onclick="executeTrade()">⇄ Execute Trade</button>
-      </div>
-    </div>
-  </div>
-</div>
 </body></html>`);
   w.document.close();
 }
@@ -7407,6 +7139,274 @@ async function saveTask(btn, editId) {
 }
 
 </script>
+
+
+<!-- EXTENDED FEATURE MODALS -->
+
+    <div class="modal-overlay" id="expense-modal" style="display:none" onclick="if(event.target===this)closeExpenseModal()">
+      <div class="modal-box" style="max-width:520px;width:95%">
+        <div class="modal-header">
+          <div class="modal-title" id="exp-modal-title">Add Expense</div>
+          <button class="modal-close" onclick="closeExpenseModal()">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div style="grid-column:1/-1">
+            <label class="form-label">Description *</label>
+            <input class="form-input" id="exp-desc" placeholder="e.g. Shipping supplies from UPS Store">
+          </div>
+          <div>
+            <label class="form-label">Amount ($) *</label>
+            <input class="form-input" id="exp-amount" type="number" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div>
+            <label class="form-label">Date *</label>
+            <input class="form-input" id="exp-date" type="date">
+          </div>
+          <div>
+            <label class="form-label">Category *</label>
+            <select class="form-select" id="exp-category">
+              <option value="">— Select —</option>
+              <option>Shipping &amp; Packaging</option>
+              <option>Watch Accessories</option>
+              <option>Travel &amp; Shows</option>
+              <option>Marketing &amp; Advertising</option>
+              <option>Phone &amp; Internet</option>
+              <option>Storage &amp; Facilities</option>
+              <option>Insurance</option>
+              <option>Professional Services</option>
+              <option>Office &amp; Supplies</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Vendor / Paid To</label>
+            <input class="form-input" id="exp-vendor" placeholder="e.g. UPS, Amazon">
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="form-label">Notes</label>
+            <textarea class="form-textarea" id="exp-notes" rows="2" placeholder="Optional details..."></textarea>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeExpenseModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveExpense()" id="exp-save-btn">Save Expense</button>
+        </div>
+        <div id="exp-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="mileage-modal" style="display:none" onclick="if(event.target===this)closeMileageModal()">
+      <div class="modal-box" style="max-width:480px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="mil-modal-title">Add Trip</div><button class="modal-close" onclick="closeMileageModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div style="grid-column:1/-1"><label class="form-label">Purpose *</label><input class="form-input" id="mil-purpose" placeholder="e.g. Dallas Watch Show, pickup from seller"></div>
+          <div><label class="form-label">Date *</label><input class="form-input" id="mil-date" type="date"></div>
+          <div><label class="form-label">Miles *</label><input class="form-input" id="mil-miles" type="number" step="0.1" min="0" placeholder="0.0"></div>
+          <div><label class="form-label">Category</label>
+            <select class="form-select" id="mil-category">
+              <option>Watch Show / Event</option><option>Buyer / Seller Meetup</option><option>Bank / Wire Transfer</option><option>Shipping / Post Office</option><option>Supply Run</option><option>Other Business</option>
+            </select>
+          </div>
+          <div><label class="form-label">From</label><input class="form-input" id="mil-from" placeholder="e.g. Conway, AR"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="mil-notes" rows="2" placeholder="Optional..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeMileageModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveMileage()" id="mil-save-btn">Save Trip</button>
+        </div>
+        <div id="mil-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="goal-modal" style="display:none" onclick="if(event.target===this)closeGoalModal()">
+      <div class="modal-box" style="max-width:420px;width:95%">
+        <div class="modal-header"><div class="modal-title">Set Profit Goal</div><button class="modal-close" onclick="closeGoalModal()">✕</button></div>
+        <div style="padding:1.5rem;display:grid;gap:1rem">
+          <div><label class="form-label">Year *</label><select class="form-select" id="goal-year"><option value="2025">2025</option><option value="2026">2026</option><option value="2027">2027</option></select></div>
+          <div><label class="form-label">Period</label>
+            <select class="form-select" id="goal-period">
+              <option value="year">Full Year</option><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <div><label class="form-label">Target Profit ($) *</label><input class="form-input" id="goal-amount" type="number" min="0" placeholder="e.g. 5000"></div>
+          <div><label class="form-label">Notes</label><input class="form-input" id="goal-notes" placeholder="Optional reminder..."></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeGoalModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveGoal()">Save Goal</button>
+        </div>
+        <div id="goal-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="collection-modal" style="display:none" onclick="if(event.target===this)closeCollectionModal()">
+      <div class="modal-box" style="max-width:580px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="coll-modal-title">Add to Collection</div><button class="modal-close" onclick="closeCollectionModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div><label class="form-label">Brand *</label><input class="form-input" id="coll-brand" placeholder="Rolex"></div>
+          <div><label class="form-label">Model *</label><input class="form-input" id="coll-model" placeholder="Submariner"></div>
+          <div><label class="form-label">Reference</label><input class="form-input" id="coll-ref" placeholder="126610LN"></div>
+          <div><label class="form-label">Serial Number</label><input class="form-input" id="coll-serial" placeholder=""></div>
+          <div><label class="form-label">Year</label><input class="form-input" id="coll-year" type="number" placeholder="2023"></div>
+          <div><label class="form-label">Purchase Price ($)</label><input class="form-input" id="coll-cost" type="number" placeholder="0.00"></div>
+          <div><label class="form-label">Purchase Date</label><input class="form-input" id="coll-date" type="date"></div>
+          <div><label class="form-label">Est. Current Value ($)</label><input class="form-input" id="coll-value" type="number" placeholder="0.00"></div>
+          <div><label class="form-label">Condition</label>
+            <select class="form-select" id="coll-condition">
+              <option value="">— Select —</option><option>Like New (10/10)</option><option>Brand New in Box</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
+            </select>
+          </div>
+          <div><label class="form-label">Box & Papers</label>
+            <select class="form-select" id="coll-papers">
+              <option value="">— Select —</option><option>Full Set</option><option>Box Only</option><option>Papers Only</option><option>None</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="coll-notes" rows="2" placeholder="Service history, story, where you bought it..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeCollectionModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveCollectionWatch()" id="coll-save-btn">Save Watch</button>
+        </div>
+        <div id="coll-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="wish-modal" style="display:none" onclick="if(event.target===this)closeWishModal()">
+      <div class="modal-box" style="max-width:500px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="wish-modal-title">Add to Want List</div><button class="modal-close" onclick="closeWishModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div><label class="form-label">Brand *</label><input class="form-input" id="wish-brand" placeholder="Rolex"></div>
+          <div><label class="form-label">Model *</label><input class="form-input" id="wish-model" placeholder="Daytona"></div>
+          <div><label class="form-label">Reference</label><input class="form-input" id="wish-ref" placeholder="116500LN"></div>
+          <div><label class="form-label">Priority</label>
+            <select class="form-select" id="wish-priority">
+              <option value="high">🔴 High — Actively Looking</option><option value="medium">🟡 Medium — Would Buy Right</option><option value="low">🟢 Low — If Price is Right</option>
+            </select>
+          </div>
+          <div><label class="form-label">Max Buy Price ($)</label><input class="form-input" id="wish-max-price" type="number" placeholder="0"></div>
+          <div><label class="form-label">Target Sell Price ($)</label><input class="form-input" id="wish-sell-price" type="number" placeholder="0"></div>
+          <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="wish-notes" rows="2" placeholder="Specific variants, condition requirements, where you've seen them..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeWishModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveWish()" id="wish-save-btn">Save</button>
+        </div>
+        <div id="wish-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="cons-modal" style="display:none" onclick="if(event.target===this)closeConsModal()">
+      <div class="modal-box" style="max-width:560px;width:95%">
+        <div class="modal-header"><div class="modal-title" id="cons-modal-title">Add Consignment</div><button class="modal-close" onclick="closeConsModal()">✕</button></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem">
+          <div style="grid-column:1/-1"><label class="form-label">Type *</label>
+            <select class="form-select" id="cons-type">
+              <option value="holding">I'm holding for someone else</option><option value="out">My watch is with someone else</option>
+            </select>
+          </div>
+          <div><label class="form-label">Brand *</label><input class="form-input" id="cons-brand" placeholder="Rolex"></div>
+          <div><label class="form-label">Model *</label><input class="form-input" id="cons-model" placeholder="Submariner"></div>
+          <div><label class="form-label">Reference</label><input class="form-input" id="cons-ref" placeholder="126610LN"></div>
+          <div><label class="form-label">Other Party *</label><input class="form-input" id="cons-party" placeholder="Name of owner / holder"></div>
+          <div><label class="form-label">Agreed Price ($)</label><input class="form-input" id="cons-price" type="number" placeholder="0"></div>
+          <div><label class="form-label">My Cut / Split</label><input class="form-input" id="cons-split" placeholder="e.g. 50% or $500 flat"></div>
+          <div><label class="form-label">Start Date</label><input class="form-input" id="cons-start" type="date"></div>
+          <div><label class="form-label">Status</label>
+            <select class="form-select" id="cons-status">
+              <option value="active">Active</option><option value="sold">Sold / Settled</option><option value="returned">Returned</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1"><label class="form-label">Terms / Notes</label><textarea class="form-textarea" id="cons-notes" rows="2" placeholder="Agreed terms, contact info, any special conditions..."></textarea></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
+          <button class="btn-outline" onclick="closeConsModal()">Cancel</button>
+          <button class="btn-gold" onclick="saveConsignment()" id="cons-save-btn">Save</button>
+        </div>
+        <div id="cons-modal-msg" style="text-align:center;font-size:0.72rem;padding:0 1.5rem 1rem;min-height:1.2rem"></div>
+      </div>
+    </div>
+
+<div class="modal-overlay" id="trade-modal" style="display:none" onclick="if(event.target===this)closeTradeModal()">
+  <div class="modal-box" style="max-width:600px;width:95%;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <div class="modal-title">⇄ <span>Trade</span></div>
+      <button class="modal-close" onclick="closeTradeModal()">✕</button>
+    </div>
+    <div style="padding:1.25rem">
+
+      <div id="trade-error" style="display:none;background:rgba(176,58,58,0.1);border:1px solid rgba(176,58,58,0.3);padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.78rem;color:var(--red)"></div>
+
+      <!-- Step 1: Your watch going out -->
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">① Your Watch Going Out</div>
+        <select class="form-select" id="trade-out-watch" onchange="onTradeOutSelect()">
+          <option value="">— Pick your watch —</option>
+        </select>
+        <div id="trade-out-summary" style="display:none;background:var(--bg);padding:0.85rem 1rem;border-left:3px solid var(--gold);font-size:0.8rem;color:var(--text2);line-height:1.8;margin-top:0.5rem"></div>
+      </div>
+
+      <!-- Step 2: Watch coming in -->
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">② Watch Coming In</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group"><label class="form-label">Brand *</label><input class="form-input" id="trade-in-brand" placeholder="e.g. Omega"></div>
+          <div class="form-group"><label class="form-label">Model *</label><input class="form-input" id="trade-in-model" placeholder="e.g. Seamaster"></div>
+          <div class="form-group"><label class="form-label">Ref</label><input class="form-input" id="trade-in-ref" placeholder="Reference #"></div>
+          <div class="form-group"><label class="form-label">Year</label><input class="form-input" id="trade-in-year" type="number" placeholder="e.g. 2020"></div>
+          <div class="form-group"><label class="form-label">Serial</label><input class="form-input" id="trade-in-serial" placeholder="Serial #"></div>
+          <div class="form-group"><label class="form-label">Condition</label>
+            <select class="form-select" id="trade-in-condition">
+              <option value="">— Select —</option>
+              <option>Like New (10/10)</option><option>Brand New in Box</option>
+              <option>Mint (9.5/10)</option><option>Excellent (9/10)</option>
+              <option>Very Good (8.5/10)</option><option>Good (8/10)</option>
+              <option>Fair (7.5/10)</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Agreed Trade Value of Incoming Watch ($) *</label>
+            <input class="form-input" id="trade-in-value" type="number" placeholder="0.00" oninput="updateTradeSummary()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Cash difference -->
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">③ Cash Difference (Boot)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group"><label class="form-label">Direction</label>
+            <select class="form-select" id="trade-cash-dir" onchange="updateTradeSummary()">
+              <option value="none">No cash changes hands</option>
+              <option value="receive">I receive cash (boot)</option>
+              <option value="pay">I pay cash (boot)</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Amount ($)</label>
+            <input class="form-input" id="trade-cash-amount" type="number" placeholder="0.00" oninput="updateTradeSummary()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Who -->
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.5rem">④ Who You're Trading With</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+          <div class="form-group"><label class="form-label">Name</label><input class="form-input" id="trade-who-name" placeholder="Contact name"></div>
+          <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="trade-who-phone" placeholder="Phone number"></div>
+          <div class="form-group" style="grid-column:span 2"><label class="form-label">Email</label><input class="form-input" id="trade-who-email" type="email" placeholder="Email address"></div>
+        </div>
+      </div>
+
+      <!-- Live P&L Summary -->
+      <div id="trade-summary" style="display:none;background:var(--gold-dim);border:1px solid var(--gold2);padding:1rem;margin-bottom:1.25rem;font-size:0.82rem;line-height:1.9"></div>
+
+      <div class="modal-footer" style="display:flex;gap:0.75rem;justify-content:flex-end;padding-top:1rem;border-top:1px solid var(--border)">
+        <button class="btn-outline" onclick="closeTradeModal()">Cancel</button>
+        <button class="btn-gold" id="trade-execute-btn" onclick="executeTrade()">⇄ Execute Trade</button>
+      </div>
+    </div>
+  </div>
+
 
 <!-- MORE MENU OVERLAY -->
 <div id="more-overlay" onclick="toggleMore()"></div>
