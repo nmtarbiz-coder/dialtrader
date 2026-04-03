@@ -4220,110 +4220,58 @@ async function loadExpenses() {
 function renderExpenses() {
   const yearFilter = document.getElementById('exp-year-filter')?.value || 'all';
   const catFilter  = document.getElementById('exp-cat-filter')?.value  || 'all';
-  const list = document.getElementById('exp-list');
-  const empty = document.getElementById('exp-empty');
-  const summary = document.getElementById('exp-summary') || document.getElementById('exp-summary-cards');
+  const list    = document.getElementById('exp-list');
+  const empty   = document.getElementById('exp-empty');
+  const summary = document.getElementById('exp-summary-cards');
   if (!list) return;
 
-  // Populate year filter
-  const years = [...new Set(expenses.map(e => e.exp_date?.substring(0,4) || e.date?.substring(0,4)).filter(Boolean))].sort((a,b) => b-a);
+  // Update year filter options
+  const years = [...new Set(expenses.map(e => (e.exp_date||e.date||'').substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
   const yrEl = document.getElementById('exp-year-filter');
   if (yrEl) {
     const cur = yrEl.value;
-    yrEl.innerHTML = '<option value="all">All Years</option>' + years.map(y => '<option value="'+y+'">'+y+'</option>').join('');
+    yrEl.innerHTML = '<option value="all">All Years</option>' + years.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
     if (cur) yrEl.value = cur;
   }
 
-  let filtered = expenses;
-  if (yearFilter !== 'all') filtered = filtered.filter(e => e.date?.startsWith(yearFilter));
-  if (catFilter  !== 'all') filtered = filtered.filter(e => e.category === catFilter);
+  let filtered = expenses.filter(e => {
+    const d = e.exp_date || e.date || '';
+    if (yearFilter !== 'all' && !d.startsWith(yearFilter)) return false;
+    if (catFilter  !== 'all' && e.category !== catFilter) return false;
+    return true;
+  });
 
-  const total = filtered.reduce((s, e) => s + (+e.amount || 0), 0);
-  if (summary) summary.innerHTML = `<div style="background:var(--surface);padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center"><span style="font-size:0.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em">Total Expenses</span><span style="font-size:1.4rem;font-weight:700;color:var(--red)">${fmt(total)}</span></div>`;
+  const total = filtered.reduce((s,e) => s + (+e.amount||0), 0);
 
-  if (!filtered.length) { list.innerHTML=''; empty.style.display='flex'; return; }
-  empty.style.display = 'none';
-  list.innerHTML = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:var(--surface2)">${['Date','Category','Description','Amount',''].map(h => `<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2)">${h}</th>`).join('')}</tr></thead>
-    <tbody>${filtered.map(e => `<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${e.date||'—'}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(e.category||'')}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(e.description||'')}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;font-weight:600;color:var(--red)">${fmt(+e.amount||0)}</td>
-      <td style="padding:0.6rem 0.8rem;text-align:right">
-        <button onclick="openExpenseModal('${e.id}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:transparent;border:1px solid var(--border);cursor:pointer;color:var(--text2)">Edit</button>
-        <button onclick="deleteExpense('${e.id}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:transparent;border:1px solid var(--red);cursor:pointer;color:var(--red);margin-left:0.3rem">Del</button>
-      </td></tr>`).join('')}</tbody></table>`;
+  if (summary) summary.innerHTML = `
+    <div style="background:var(--surface);padding:0.85rem 1.25rem;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);margin-bottom:1rem">
+      <span style="font-size:0.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.1em">${filtered.length} Expense${filtered.length!==1?'s':''}</span>
+      <span style="font-size:1.3rem;font-weight:700;color:var(--red)">${fmt(total)}</span>
+    </div>`;
+
+  if (!filtered.length) { list.innerHTML=''; if(empty) empty.style.display='flex'; return; }
+  if (empty) empty.style.display='none';
+
+  list.innerHTML = '<table style="width:100%;border-collapse:collapse">' +
+    '<thead><tr style="background:var(--surface2)">' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2)">Date</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2)">Category</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2)">Description</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:right;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2)">Amount</th>' +
+    '<th style="padding:0.6rem 0.8rem;width:70px"></th>' +
+    '</tr></thead><tbody>' +
+    filtered.map(e => `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:0.6rem 0.8rem;font-size:0.78rem;color:var(--text2)">${e.exp_date||e.date||'—'}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.78rem"><span style="background:var(--gold-dim);color:var(--gold);padding:0.15rem 0.4rem;border-radius:2px;font-size:0.68rem">${escHtml(e.category||'Other')}</span></td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;font-weight:500">${escHtml(e.description||'')}${e.vendor?`<br><span style="font-size:0.72rem;color:var(--text2)">${escHtml(e.vendor)}</span>`:''}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.95rem;font-weight:700;text-align:right;color:var(--red)">${fmt(e.amount||0)}</td>
+      <td style="padding:0.6rem 0.8rem;text-align:center;white-space:nowrap">
+        <button onclick="openExpenseModal('${e.id}')" style="background:none;border:none;cursor:pointer;color:var(--text2);font-size:0.8rem;padding:0.2rem 0.3rem">✏️</button>
+        <button onclick="deleteExpense('${e.id}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.8rem;padding:0.2rem 0.3rem">✕</button>
+      </td></tr>`
+    ).join('') + '</tbody></table>';
 }
 
-function openExpenseModal(id) {
-  editingExpenseId = id || null;
-  const e = id ? expenses.find(x => x.id === id) : null;
-  document.getElementById('exp-modal-title').textContent = e ? 'Edit Expense' : 'Add Expense';
-  document.getElementById('exp-date').value        = e?.date || new Date().toISOString().split('T')[0];
-  document.getElementById('exp-category').value    = e?.category || '';
-  document.getElementById('exp-desc').value = e?.description || '';
-  document.getElementById('exp-amount').value      = e?.amount || '';
-  document.getElementById('expense-modal').style.display = 'flex';
-}
-function closeExpenseModal() { document.getElementById('expense-modal').style.display = 'none'; }
-
-async function saveExpense() {
-  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  if (!g('exp-desc'))   { showToast('Description is required.'); return; }
-  if (!g('exp-amount')) { showToast('Amount is required.'); return; }
-  const btn = document.getElementById('exp-save-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-  const row = {
-    user_id:     currentUser.id,
-    description: g('exp-desc'),
-    amount:      parseFloat(g('exp-amount')) || 0,
-    exp_date:    g('exp-date') || new Date().toISOString().split('T')[0],
-    category:    g('exp-category') || 'Other',
-    vendor:      g('exp-vendor')   || null,
-    notes:       g('exp-notes')    || null,
-  };
-  let error;
-  if (editingExpenseId) {
-    ({ error } = await db.from('business_expenses').update(row).eq('id', editingExpenseId));
-    if (!error) { const i = expenses.findIndex(e => e.id === editingExpenseId); if (i !== -1) expenses[i] = { ...expenses[i], ...row }; }
-  } else {
-    const { data, error: e } = await db.from('business_expenses').insert(row).select().single();
-    error = e; if (!error) expenses.unshift(data);
-  }
-  if (btn) { btn.disabled = false; btn.textContent = 'Save Expense'; }
-  if (error) { showToast('Error: ' + error.message); return; }
-  closeExpenseModal(); renderExpenses(); showToast('Expense saved.');
-}
-
-async function deleteExpense(id) {
-  if (!confirm('Delete this expense?')) return;
-  const { error } = await db.from('business_expenses').delete().eq('id', id);
-  if (error) { showToast('Error: ' + error.message); return; }
-  expenses = expenses.filter(e => e.id !== id);
-  renderExpenses(); showToast('Deleted.');
-}
-
-function exportExpensesCSV() {
-  const rows = [['Date','Category','Description','Amount']];
-  expenses.forEach(e => rows.push([e.date, e.category, e.description, e.amount]));
-  const csv = rows.map(r => r.map(v => '"'+(v||'')+'"').join(',')).join('\n');
-  const a = document.createElement('a'); a.download = 'expenses.csv';
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.click();
-}
-function printExpenses() { window.print(); }
-
-// ══════════════════════════════════════════════════════════════════════════════
-//  MILEAGE
-// ══════════════════════════════════════════════════════════════════════════════
-let mileageLog = [], editingMileageId = null;
-const IRS_RATE = 0.70;
-
-async function loadMileage() {
-  const { data } = await db.from('mileage_log').select('*').eq('user_id', currentUser.id).order('date', { ascending: false });
-  mileageLog = data || [];
-}
 
 function renderMileage() {
   const yearFilter = document.getElementById('mil-year-filter')?.value || 'all';
@@ -4332,40 +4280,63 @@ function renderMileage() {
   const summary = document.getElementById('mil-summary');
   if (!list) return;
 
-  const years = [...new Set(mileageLog.map(m => m.date?.substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
   const yrEl = document.getElementById('mil-year-filter');
   if (yrEl) {
+    const years = [...new Set(mileageLog.map(m=>(m.trip_date||m.date||'').substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
     const cur = yrEl.value;
     yrEl.innerHTML = '<option value="all">All Years</option>' + years.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
     if (cur) yrEl.value = cur;
   }
 
-  let filtered = yearFilter === 'all' ? mileageLog : mileageLog.filter(m => m.date?.startsWith(yearFilter));
-  const totalMiles = filtered.reduce((s,m) => s + (+m.miles||0), 0);
-  const totalDeduction = totalMiles * IRS_RATE;
+  const filtered = mileageLog.filter(m => {
+    const d = m.trip_date || m.date || '';
+    return yearFilter === 'all' || d.startsWith(yearFilter);
+  });
 
-  if (summary) summary.innerHTML = [
-    { label:'Total Miles', val: totalMiles.toLocaleString() + ' mi' },
-    { label:'IRS Rate',    val: '$'+IRS_RATE.toFixed(2)+'/mi' },
-    { label:'Deduction',   val: fmt(totalDeduction) },
-  ].map(k => `<div style="background:var(--surface);padding:1rem 1.25rem"><div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text2);margin-bottom:0.25rem">${k.label}</div><div style="font-size:1.2rem;font-weight:700;color:var(--gold)">${k.val}</div></div>`).join('');
+  const totalMiles = filtered.reduce((s,m)=>s+(+m.miles||0),0);
+  const IRS = 0.70;
 
-  if (!filtered.length) { list.innerHTML=''; empty.style.display='flex'; return; }
-  empty.style.display = 'none';
-  list.innerHTML = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:var(--surface2)">${['Date','From','To','Miles','Purpose','Deduction',''].map(h=>`<th style="padding:0.6rem 0.8rem;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);text-align:left">${h}</th>`).join('')}</tr></thead>
-    <tbody>${filtered.map(m=>`<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${m.date||'—'}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(m.from_location||'')}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(m.to_location||'')}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;font-weight:600">${(+m.miles||0).toFixed(1)}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(m.purpose||'')}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;color:var(--green)">${fmt((+m.miles||0)*IRS_RATE)}</td>
-      <td style="padding:0.6rem 0.8rem;text-align:right">
-        <button onclick="openMileageModal('${m.id}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:transparent;border:1px solid var(--border);cursor:pointer;color:var(--text2)">Edit</button>
-        <button onclick="deleteMileage('${m.id}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:transparent;border:1px solid var(--red);cursor:pointer;color:var(--red);margin-left:0.3rem">Del</button>
-      </td></tr>`).join('')}</tbody></table>`;
+  if (summary) summary.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:1rem">
+      <div style="background:var(--surface);padding:1rem;text-align:center">
+        <div style="font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);margin-bottom:0.25rem">Total Miles</div>
+        <div style="font-size:1.4rem;font-weight:700">${totalMiles.toFixed(1)}</div>
+      </div>
+      <div style="background:var(--surface);padding:1rem;text-align:center">
+        <div style="font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);margin-bottom:0.25rem">IRS Rate</div>
+        <div style="font-size:1.4rem;font-weight:700">$${IRS.toFixed(2)}/mi</div>
+      </div>
+      <div style="background:var(--surface);padding:1rem;text-align:center">
+        <div style="font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--text2);margin-bottom:0.25rem">Est. Deduction</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--green)">${fmt(totalMiles*IRS)}</div>
+      </div>
+    </div>`;
+
+  if (!filtered.length) { list.innerHTML=''; if(empty) empty.style.display='flex'; return; }
+  if (empty) empty.style.display='none';
+
+  list.innerHTML = '<div class="card" style="padding:0;overflow:hidden"><table style="width:100%;border-collapse:collapse">' +
+    '<thead><tr style="background:var(--surface2)">' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Date</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Purpose</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Route / Notes</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:right;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Miles</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:right;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Deduction</th>' +
+    '<th style="width:60px"></th>' +
+    '</tr></thead><tbody>' +
+    filtered.map(m => `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:0.6rem 0.8rem;font-size:0.78rem;color:var(--text2)">${m.trip_date||m.date||'—'}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;font-weight:500">${escHtml(m.purpose||'')}${m.category?`<br><span style="font-size:0.7rem;color:var(--text2)">${escHtml(m.category)}</span>`:''}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.78rem;color:var(--text2)">${escHtml(m.from_to||m.from_location||'')}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.95rem;font-weight:700;text-align:right">${(+m.miles||0).toFixed(1)}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;text-align:right;color:var(--green)">${fmt((+m.miles||0)*IRS)}</td>
+      <td style="padding:0.6rem 0.8rem;text-align:center;white-space:nowrap">
+        <button onclick="openMileageModal('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--text2)">✏️</button>
+        <button onclick="deleteMileage('${m.id}')" style="background:none;border:none;cursor:pointer;color:var(--red)">✕</button>
+      </td></tr>`
+    ).join('') + '</tbody></table></div>';
 }
+
 
 function openMileageModal(id) {
   editingMileageId = id || null;
@@ -4702,30 +4673,49 @@ function setConsTab(tab) {
 }
 
 function renderConsignment() {
-  const holding = consignments.filter(c => c.type === 'holding');
-  const out     = consignments.filter(c => c.type === 'out');
+  const holding = consignments.filter(c=>c.type==='holding'||c.type==='Holding');
+  const out     = consignments.filter(c=>c.type==='out'||c.type==='Out'||c.type==='with-others');
   const el = id => document.getElementById(id);
   if (el('cons-holding-count')) el('cons-holding-count').textContent = holding.length;
   if (el('cons-out-count'))     el('cons-out-count').textContent     = out.length;
+
   const list  = el('cons-list');
   const empty = el('cons-empty');
   if (!list) return;
+
   const items = consTab === 'holding' ? holding : out;
-  if (!items.length) { list.innerHTML=''; empty.style.display='flex'; return; }
-  empty.style.display='none';
-  list.innerHTML = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:var(--surface2)">${['Watch','Owner/Consignee','Listed Price','Rate','Notes',''].map(h=>`<th style="padding:0.6rem 0.8rem;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);text-align:left">${h}</th>`).join('')}</tr></thead>
-    <tbody>${items.map(c=>`<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:0.6rem 0.8rem"><div style="font-weight:600;font-size:0.88rem">${escHtml(c.brand||'')} ${escHtml(c.model||'')}</div><div style="font-size:0.75rem;color:var(--text2)">${escHtml(c.ref||'')}</div></td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(c.contact_name||'')}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;color:var(--gold)">${c.listed_price ? fmt(+c.listed_price) : '—'}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${c.commission_rate ? c.commission_rate+'%' : '—'}</td>
-      <td style="padding:0.6rem 0.8rem;font-size:0.78rem;color:var(--text2)">${escHtml(c.notes||'')}</td>
-      <td style="padding:0.6rem 0.8rem;text-align:right">
-        <button onclick="openConsModal('${c.id}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:transparent;border:1px solid var(--border);cursor:pointer;color:var(--text2)">Edit</button>
-        <button onclick="deleteCons('${c.id}')" style="font-size:0.7rem;padding:0.2rem 0.5rem;background:transparent;border:1px solid var(--red);cursor:pointer;color:var(--red);margin-left:0.3rem">Del</button>
-      </td></tr>`).join('')}</tbody></table>`;
+  if (!items.length) {
+    list.innerHTML='';
+    if (empty) { empty.style.display='flex'; empty.innerHTML='<h3>No consignments</h3><p>Click <strong>+ Add Consignment</strong> to start tracking.</p>'; }
+    return;
+  }
+  if (empty) empty.style.display='none';
+
+  list.innerHTML = '<div class="card" style="padding:0;overflow:hidden"><table style="width:100%;border-collapse:collapse">' +
+    '<thead><tr style="background:var(--surface2)">' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Watch</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:left;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">' + (consTab==='holding'?'Owner':'Holder') + '</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:right;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Price</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:center;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Split</th>' +
+    '<th style="padding:0.6rem 0.8rem;text-align:center;font-size:0.65rem;text-transform:uppercase;color:var(--text2)">Status</th>' +
+    '<th style="width:70px"></th>' +
+    '</tr></thead><tbody>' +
+    items.map(r => `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:0.6rem 0.8rem">
+        <div style="font-size:0.88rem;font-weight:600">${escHtml(r.brand||'')} ${escHtml(r.model||'')}</div>
+        ${r.ref?`<div style="font-size:0.72rem;color:var(--text2)">Ref. ${escHtml(r.ref)}</div>`:''}
+      </td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.82rem">${escHtml(r.party_name||r.contact_name||'—')}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.88rem;font-weight:600;text-align:right">${(r.agreed_price||r.listed_price)?fmt(r.agreed_price||r.listed_price):'—'}</td>
+      <td style="padding:0.6rem 0.8rem;font-size:0.82rem;text-align:center">${(r.split_pct||r.commission_rate)?escHtml(String(r.split_pct||r.commission_rate))+'%':'—'}</td>
+      <td style="padding:0.6rem 0.8rem;text-align:center"><span style="font-size:0.68rem;padding:0.2rem 0.5rem;border-radius:2px;background:var(--surface2);text-transform:capitalize">${escHtml(r.status||'active')}</span></td>
+      <td style="padding:0.6rem 0.8rem;text-align:center;white-space:nowrap">
+        <button onclick="openConsModal('${r.id}')" style="background:none;border:none;cursor:pointer;color:var(--text2)">✏️</button>
+        <button onclick="deleteConsignment('${r.id}')" style="background:none;border:none;cursor:pointer;color:var(--red)">✕</button>
+      </td></tr>`
+    ).join('') + '</tbody></table></div>';
 }
+
 
 function openConsModal(id) {
   editingConsId = id || null;
