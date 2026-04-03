@@ -670,8 +670,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
       <div class="page-header">
         <div><div class="page-title">Dashboard</div></div>
         <button class="btn-outline" onclick="openTradeModal()" style="border-color:var(--gold2);color:var(--gold2)">⇄ Trade</button>
-          <button class="btn-outline" onclick="printStrategySheet()" style="margin-right:0.5rem" title="Print a one-page summary of all inventory watches with notes space">📋 Strategy Sheet</button>
-        <button class="btn-gold" onclick="openModal()">+ Add Watch</button>
+          <button class="btn-gold" onclick="openModal()">+ Add Watch</button>
       </div>
       <div class="dash-hero">
         <div class="hero-stat"><div class="hero-label">Capital Deployed</div><div class="hero-value gold" id="stat-capital-val">—</div><div class="hero-sub" id="stat-capital-sub"></div></div>
@@ -705,6 +704,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="page" id="page-inventory">
       <div class="page-header">
         <div><div class="page-title">Inventory</div><div class="page-subtitle" id="inv-subtitle"></div></div>
+        <button class="btn-outline" onclick="printStrategySheet()" style="margin-right:0.5rem" title="Print a one-page strategy sheet">📋 Strategy Sheet</button>
         <button class="btn-gold" onclick="openModal()">+ Add Watch</button>
       </div>
       <div class="filter-bar">
