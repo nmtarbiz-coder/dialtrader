@@ -2109,14 +2109,14 @@ async function syncSoldContacts(){
 }
 
 async function loadMileage() {
-  const { data } = await db.from('mileage_log').select('*').eq('user_id', currentUser.id).order('trip_date', { ascending: false });
+  const { data } = await db.from('mileage_log').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   mileageLog = data || [];
 }
 
 
 
 async function loadExpenses() {
-  const { data } = await db.from('business_expenses').select('*').eq('user_id', currentUser.id).order('exp_date', { ascending: false });
+  const { data } = await db.from('business_expenses').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
   expenses = data || [];
 }
 
@@ -4299,7 +4299,7 @@ function renderExpenses() {
   if (!list) return;
 
   // Update year filter options
-  const years = [...new Set(expenses.map(e => (e.exp_date||e.date||'').substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
+  const years = [...new Set(expenses.map(e => (e.date||e.exp_date||'').substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
   const yrEl = document.getElementById('exp-year-filter');
   if (yrEl) {
     const cur = yrEl.value;
@@ -4356,7 +4356,7 @@ function renderMileage() {
 
   const yrEl = document.getElementById('mil-year-filter');
   if (yrEl) {
-    const years = [...new Set(mileageLog.map(m=>(m.trip_date||m.date||'').substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
+    const years = [...new Set(mileageLog.map(m=>(m.date||m.trip_date||'').substring(0,4)).filter(Boolean))].sort((a,b)=>b-a);
     const cur = yrEl.value;
     yrEl.innerHTML = '<option value="all">All Years</option>' + years.map(y=>'<option value="'+y+'">'+y+'</option>').join('');
     if (cur) yrEl.value = cur;
@@ -4436,7 +4436,7 @@ async function saveMileage() {
   const row = {
     user_id:   currentUser.id,
     purpose:   g('mil-purpose'),
-    trip_date: g('mil-date') || new Date().toISOString().split('T')[0],
+    date: g('mil-date') || new Date().toISOString().split('T')[0],
     miles:     parseFloat(g('mil-miles')) || 0,
     category:  g('mil-category') || null,
     from_to:   g('mil-from') || null,
@@ -5476,6 +5476,41 @@ function printStrategySheet() {
   if (!w) { showToast('Allow popups to print the strategy sheet.'); return; }
   w.document.write(html);
   w.document.close();
+}
+
+async function saveExpense() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  if (!g('exp-desc'))   { showToast('Description is required.'); return; }
+  if (!g('exp-amount')) { showToast('Amount is required.'); return; }
+  const btn = document.getElementById('exp-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+  const row = {
+    user_id:     currentUser.id,
+    description: g('exp-desc'),
+    amount:      parseFloat(g('exp-amount')) || 0,
+    date:        g('exp-date') || new Date().toISOString().split('T')[0],
+    category:    g('exp-category') || 'Other',
+    vendor:      g('exp-vendor')   || null,
+    notes:       g('exp-notes')    || null,
+  };
+  let error;
+  if (editingExpenseId) {
+    ({ error } = await db.from('business_expenses').update(row).eq('id', editingExpenseId));
+    if (!error) { const i = expenses.findIndex(e => e.id === editingExpenseId); if (i !== -1) expenses[i] = { ...expenses[i], ...row }; }
+  } else {
+    const { data, error: e } = await db.from('business_expenses').insert(row).select().single();
+    error = e; if (!error) expenses.unshift(data);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save Expense'; }
+  if (error) { showToast('Error: ' + error.message); return; }
+  closeExpenseModal(); renderExpenses(); showToast('Expense saved.');
+}
+
+async function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  const { error } = await db.from('business_expenses').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  expenses = expenses.filter(e => e.id !== id); renderExpenses(); showToast('Deleted.');
 }
 
 function exportTaxCSV(){
