@@ -514,7 +514,7 @@ body{font-family:'Raleway',sans-serif;background:var(--bg);color:var(--text);ove
 .bnav-svg{width:22px;height:22px;display:block;}
 #more-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99998;}
 #more-overlay.open{display:block;}
-#more-menu{display:none;position:fixed;bottom:62px;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:100000;padding-bottom:env(safe-area-inset-bottom);}
+#more-menu{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);border-top:1px solid var(--gold);z-index:100000;padding-bottom:calc(62px + env(safe-area-inset-bottom));}
 #more-menu.open{display:block;}
 .more-item{display:flex;align-items:center;gap:0.75rem;padding:1rem 1.5rem;color:#ccc;font-family:'Raleway',sans-serif;font-size:0.8rem;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);-webkit-tap-highlight-color:transparent;}
 .more-item:active{background:rgba(201,168,76,0.1);color:var(--gold);}
@@ -1413,6 +1413,21 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
 
 
 </div><!-- end main-content -->
+
+<!-- MORE MENU OVERLAY -->
+<div id="more-overlay" onclick="toggleMore()"></div>
+<div id="more-menu">
+  <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
+  <div class="more-item" onclick="closeMore();showPage('calendar')"><span class="more-icon">📅</span>Calendar</div>
+  <div class="more-item" onclick="closeMore();showPage('tasks')"><span class="more-icon">✅</span>Tasks</div>
+  <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
+  <div class="more-item" onclick="closeMore();showPage('import')"><span class="more-icon">📥</span>Import / Export</div>
+  <div class="more-item" onclick="closeMore();showPage('storefront')"><span class="more-icon">🌐</span>My Storefront</div>
+  <div class="more-item" onclick="closeMore();showPage('help')"><span class="more-icon">❓</span>Help &amp; Setup</div>
+  <div class="more-item" onclick="closeMore();showPage('settings')"><span class="more-icon">⚙️</span>Settings</div>
+  <div class="more-item" id="more-admin" style="display:none" onclick="closeMore();showPage('admin')"><span class="more-icon">🔑</span>Admin</div>
+  <div class="more-item" style="color:#888;border-top:1px solid rgba(255,255,255,0.1);margin-top:0.25rem" onclick="closeMore();doSignOut()"><span class="more-icon">↩</span>Sign Out</div>
+</div>
 
 <!-- BOTTOM NAV -->
 <nav id="bottom-nav">
@@ -7707,19 +7722,5 @@ async function saveTask(btn, editId) {
   </div>
 
 
-<!-- MORE MENU OVERLAY -->
-<div id="more-overlay" onclick="toggleMore()"></div>
-<div id="more-menu">
-  <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
-  <div class="more-item" onclick="closeMore();showPage('calendar')"><span class="more-icon">📅</span>Calendar</div>
-  <div class="more-item" onclick="closeMore();showPage('tasks')"><span class="more-icon">✅</span>Tasks</div>
-  <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
-  <div class="more-item" onclick="closeMore();showPage('import')"><span class="more-icon">📥</span>Import / Export</div>
-  <div class="more-item" onclick="closeMore();showPage('storefront')"><span class="more-icon">🌐</span>My Storefront</div>
-  <div class="more-item" onclick="closeMore();showPage('help')"><span class="more-icon">❓</span>Help &amp; Setup</div>
-  <div class="more-item" onclick="closeMore();showPage('settings')"><span class="more-icon">⚙️</span>Settings</div>
-  <div class="more-item" id="more-admin" style="display:none" onclick="closeMore();showPage('admin')"><span class="more-icon">🔑</span>Admin</div>
-  <div class="more-item" style="color:#888;border-top:1px solid rgba(255,255,255,0.1);margin-top:0.25rem" onclick="closeMore();doSignOut()"><span class="more-icon">↩</span>Sign Out</div>
-</div>
 </body>
 </html>
