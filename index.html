@@ -7385,29 +7385,27 @@ async function saveTask(btn, editId) {
 }
 
 
-// MOBILE NAV FORCE — diagnose display issue
+// MOBILE NAV FORCE
 (function() {
   function forceMobileNav() {
-    if (window.innerWidth <= 900) {
-      var nav = document.getElementById('bottom-nav');
-      if (nav) {
-        nav.style.setProperty('display', 'flex', 'important');
-        nav.style.setProperty('position', 'fixed', 'important');
-        nav.style.setProperty('bottom', '0', 'important');
-        nav.style.setProperty('left', '0', 'important');
-        nav.style.setProperty('right', '0', 'important');
-        nav.style.setProperty('height', '62px', 'important');
-        nav.style.setProperty('background', '#2A2A2A', 'important');
-        nav.style.setProperty('z-index', '9999', 'important');
-        nav.style.setProperty('visibility', 'visible', 'important');
-        nav.style.setProperty('opacity', '1', 'important');
-      }
-    }
+    var nav = document.getElementById('bottom-nav');
+    if (!nav) return;
+    nav.style.setProperty('display', 'flex', 'important');
+    nav.style.setProperty('position', 'fixed', 'important');
+    nav.style.setProperty('bottom', '0', 'important');
+    nav.style.setProperty('left', '0', 'important');
+    nav.style.setProperty('right', '0', 'important');
+    nav.style.setProperty('height', '62px', 'important');
+    nav.style.setProperty('background', '#2A2A2A', 'important');
+    nav.style.setProperty('z-index', '9999', 'important');
+    nav.style.setProperty('visibility', 'visible', 'important');
+    nav.style.setProperty('opacity', '1', 'important');
+    nav.style.setProperty('pointer-events', 'all', 'important');
   }
   document.addEventListener('DOMContentLoaded', forceMobileNav);
-  window.addEventListener('resize', forceMobileNav);
+  setTimeout(forceMobileNav, 100);
   setTimeout(forceMobileNav, 500);
-  setTimeout(forceMobileNav, 1500);
+  setTimeout(forceMobileNav, 2000);
 })();
 </script>
 
