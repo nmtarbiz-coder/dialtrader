@@ -4610,11 +4610,11 @@ function renderCollection() {
         <div class="inv-watch-info">
           <div style="font-size:0.72rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">${escHtml(w.brand||'')}${w.year?' · '+w.year:''}</div>
           <div style="font-size:1.25rem;font-weight:600;line-height:1.2">${escHtml(w.model||'')}</div>
-          <div style="font-size:0.82rem;color:var(--text2)">${[w.ref,w.condition,w.box_papers].filter(Boolean).join(' · ')}</div>
+          <div style="font-size:0.82rem;color:var(--text2)">${[w.reference,w.condition,w.box_papers].filter(Boolean).join(' · ')}</div>
         </div>
         <div class="inv-row-values">
-          ${w.cost ? `<div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">Cost</div><div style="font-size:1rem;font-weight:600">${fmt(w.cost)}</div></div>` : ''}
-          ${w.est_value ? `<div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">Est Value</div><div style="font-size:1rem;font-weight:600;color:var(--green)">${fmt(w.est_value)}</div></div>` : ''}
+          ${w.purchase_price ? `<div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">Cost</div><div style="font-size:1rem;font-weight:600">${fmt(w.purchase_price)}</div></div>` : ''}
+          ${w.estimated_value ? `<div><div style="font-size:0.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em">Est Value</div><div style="font-size:1rem;font-weight:600;color:var(--green)">${fmt(w.estimated_value)}</div></div>` : ''}
           <div style="display:flex;gap:0.5rem;align-items:center">
             <button onclick="openCollectionModal(${JSON.stringify(w).replace(/"/g,'&quot;')})" class="btn-outline btn-sm">Edit</button>
             <button onclick="deleteCollectionWatch('${w.id}')" class="btn-outline btn-sm" style="color:var(--red)">✕</button>
@@ -4630,10 +4630,10 @@ function openCollectionModal(w) {
   document.getElementById('coll-modal-title').textContent = w ? 'Edit Watch' : 'Add to Collection';
   document.getElementById('coll-brand').value     = w?.brand       || '';
   document.getElementById('coll-model').value     = w?.model       || '';
-  document.getElementById('coll-ref').value       = w?.ref         || '';
-  document.getElementById('coll-serial').value    = w?.serial      || '';
+  document.getElementById('coll-ref').value       = w?.reference         || '';
+  document.getElementById('coll-serial').value    = w?.serial_number      || '';
   document.getElementById('coll-year').value      = w?.year        || '';
-  document.getElementById('coll-cost').value      = w?.cost        || w?.purchase_price || '';
+  document.getElementById('coll-cost').value      = w?.purchase_price        || w?.purchase_price || '';
   document.getElementById('coll-date').value      = w?.purchase_date || '';
   document.getElementById('coll-value').value     = w?.est_value   || '';
   document.getElementById('coll-condition').value = w?.condition   || '';
@@ -4658,11 +4658,11 @@ async function saveCollectionWatch() {
   const row = {
     user_id: currentUser.id,
     brand: g('coll-brand'), model: g('coll-model'),
-    ref: g('coll-ref') || null, serial: g('coll-serial') || null,
+    reference: g('coll-ref') || null, serial_number: g('coll-serial') || null,
     year: g('coll-year') || null,
-    cost: parseFloat(g('coll-cost')) || null,
+    purchase_price: parseFloat(g('coll-cost')) || null,
     purchase_date: g('coll-date') || null,
-    est_value: parseFloat(g('coll-value')) || null,
+    estimated_value: parseFloat(g('coll-value')) || null,
     condition: g('coll-condition') || null,
     box_papers: g('coll-papers') || null,
     notes: g('coll-notes') || null,
@@ -5321,10 +5321,14 @@ async function moveToCollection() {
   // Insert into personal_collection
   const row = {
     user_id: currentUser.id,
-    brand: w.brand, model: w.model, ref: w.ref || null,
-    serial: w.serial || null, year: w.year || null,
+    brand: w.brand,
+    model: w.model,
+    reference: w.ref || null,
+    serial_number: w.serial || null,
+    year: w.year || null,
     purchase_price: w.purchase_price || null,
     purchase_date: w.purchase_date || null,
+    estimated_value: w.listed_price || w.msrp || w.purchase_price || null,
     condition: w.condition || null,
     box_papers: w.box_papers || null,
     notes: w.notes || null,
@@ -7421,23 +7425,17 @@ async function saveTask(btn, editId) {
   function forceMobileNav() {
     var nav = document.getElementById('bottom-nav');
     if (!nav) return;
-    if (window.innerWidth > 900) { nav.style.setProperty('display', 'none', 'important'); return; }
-    nav.style.setProperty('display', 'flex', 'important');
-    nav.style.setProperty('position', 'fixed', 'important');
-    nav.style.setProperty('bottom', '0', 'important');
-    nav.style.setProperty('left', '0', 'important');
-    nav.style.setProperty('right', '0', 'important');
-    nav.style.setProperty('height', '62px', 'important');
-    nav.style.setProperty('background', '#2A2A2A', 'important');
-    nav.style.setProperty('z-index', '9999', 'important');
-    nav.style.setProperty('visibility', 'visible', 'important');
-    nav.style.setProperty('opacity', '1', 'important');
-    nav.style.setProperty('pointer-events', 'all', 'important');
+    if (window.innerWidth > 900) {
+      nav.style.setProperty('display', 'none', 'important');
+    } else {
+      nav.style.setProperty('display', 'flex', 'important');
+      nav.style.removeProperty('position');
+    }
   }
   document.addEventListener('DOMContentLoaded', forceMobileNav);
+  window.addEventListener('resize', forceMobileNav);
   setTimeout(forceMobileNav, 100);
   setTimeout(forceMobileNav, 500);
-  setTimeout(forceMobileNav, 2000);
 })();
 </script>
 
