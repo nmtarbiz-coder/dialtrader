@@ -4653,14 +4653,21 @@ function openCollectionModal(w) {
   document.getElementById('coll-brand').value     = w?.brand       || '';
   document.getElementById('coll-model').value     = w?.model       || '';
   document.getElementById('coll-ref').value       = w?.reference         || '';
-  document.getElementById('coll-serial').value    = w?.serial_number      || '';
-  document.getElementById('coll-year').value      = w?.year        || '';
-  document.getElementById('coll-cost').value      = w?.purchase_price        || w?.purchase_price || '';
-  document.getElementById('coll-date').value      = w?.purchase_date || '';
-  document.getElementById('coll-value').value     = w?.est_value   || '';
-  document.getElementById('coll-condition').value = w?.condition   || '';
+  document.getElementById('coll-serial').value         = w?.serial_number  || '';
+  document.getElementById('coll-year').value           = w?.year           || '';
+  document.getElementById('coll-cost').value           = w?.purchase_price || '';
+  document.getElementById('coll-date').value           = w?.purchase_date  || '';
+  document.getElementById('coll-value').value          = w?.estimated_value|| '';
+  document.getElementById('coll-condition').value      = w?.condition      || '';
   const papers = document.getElementById('coll-papers');
   if (papers) papers.value = w?.box_papers || '';
+  const cs = document.getElementById('coll-case-size'); if(cs) cs.value = w?.case_size || '';
+  const cm = document.getElementById('coll-case-material'); if(cm) cm.value = w?.case_material || '';
+  const mv = document.getElementById('coll-movement'); if(mv) mv.value = w?.movement || '';
+  const dc = document.getElementById('coll-dial-color'); if(dc) dc.value = w?.dial_color || '';
+  const bz = document.getElementById('coll-bezel'); if(bz) bz.value = w?.bezel_color || '';
+  const bt = document.getElementById('coll-bracelet-type'); if(bt) bt.value = w?.bracelet_type || '';
+  const bc = document.getElementById('coll-bracelet-color'); if(bc) bc.value = w?.bracelet_color || '';
   const notes = document.getElementById('coll-notes');
   if (notes) notes.value = w?.notes || '';
   document.getElementById('collection-modal').style.display = 'flex';
@@ -4683,10 +4690,16 @@ async function moveCollToInventory(id) {
     listed_price: w.estimated_value || null,
     condition: w.condition || null,
     box_papers: w.box_papers || null,
+    case_size: w.case_size || null,
+    case_material: w.case_material || null,
+    movement: w.movement || null,
+    dial_color: w.dial_color || null,
+    bezel_color: w.bezel_color || null,
+    bracelet_type: w.bracelet_type || null,
+    bracelet_color: w.bracelet_color || null,
     notes: (w.notes ? w.notes + '\n' : '') + '[Returned from Collection on ' + new Date().toLocaleDateString() + ']',
-    stage: 1,
-    platform: [],
-    photo_urls: [],
+    stage_index: 0,
+    photo_urls: w.photo_urls || [],
   };
   const { data, error } = await db.from('inventory').insert(row).select().single();
   if (error) { showToast('Error: ' + error.message); return; }
@@ -4729,6 +4742,13 @@ async function saveCollectionWatch() {
     estimated_value: parseFloat(g('coll-value')) || null,
     condition: g('coll-condition') || null,
     box_papers: g('coll-papers') || null,
+    case_size: g('coll-case-size') || null,
+    case_material: g('coll-case-material') || null,
+    movement: g('coll-movement') || null,
+    dial_color: g('coll-dial-color') || null,
+    bezel_color: g('coll-bezel') || null,
+    bracelet_type: g('coll-bracelet-type') || null,
+    bracelet_color: g('coll-bracelet-color') || null,
     notes: g('coll-notes') || null,
   };
   let error;
@@ -5395,6 +5415,14 @@ async function moveToCollection() {
     estimated_value: w.listed_price || w.msrp || w.purchase_price || null,
     condition: w.condition || null,
     box_papers: w.box_papers || null,
+    case_size: w.case_size || null,
+    case_material: w.case_material || null,
+    movement: w.movement || null,
+    dial_color: w.dial_color || null,
+    bezel_color: w.bezel_color || null,
+    bracelet_type: w.bracelet_type || null,
+    bracelet_color: w.bracelet_color || null,
+    photo_urls: w.photo_urls || [],
     notes: w.notes || null,
   };
   const { data, error } = await db.from('personal_collection').insert(row).select().single();
@@ -7616,14 +7644,33 @@ async function saveTask(btn, editId) {
           <div><label class="form-label">Est. Current Value ($)</label><input class="form-input" id="coll-value" type="number" placeholder="0.00"></div>
           <div><label class="form-label">Condition</label>
             <select class="form-select" id="coll-condition">
-              <option value="">— Select —</option><option>Like New (10/10)</option><option>Brand New in Box</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
+              <option value="">— Select —</option><option>Brand New in Box</option><option>Like New (10/10)</option><option>Mint (9.5/10)</option><option>Excellent (9/10)</option><option>Very Good (8.5/10)</option><option>Good (8/10)</option><option>Fair (7.5/10)</option>
             </select>
           </div>
           <div><label class="form-label">Box & Papers</label>
             <select class="form-select" id="coll-papers">
-              <option value="">— Select —</option><option>Full Set</option><option>Box Only</option><option>Papers Only</option><option>None</option>
+              <option value="">— Select —</option><option>Full Set (Box + Papers)</option><option>Box Only</option><option>Papers Only</option><option>No Box, No Papers</option>
             </select>
           </div>
+          <div><label class="form-label">Case Size (mm)</label><input class="form-input" id="coll-case-size" placeholder="40"></div>
+          <div><label class="form-label">Case Material</label>
+            <select class="form-select" id="coll-case-material">
+              <option value="">— Select —</option><option>Stainless Steel</option><option>Yellow Gold</option><option>White Gold</option><option>Rose Gold</option><option>Two-Tone</option><option>Titanium</option><option>Platinum</option><option>Ceramic</option><option>Carbon</option>
+            </select>
+          </div>
+          <div><label class="form-label">Movement</label>
+            <select class="form-select" id="coll-movement">
+              <option value="">— Select —</option><option>Automatic</option><option>Manual Wind</option><option>Quartz</option><option>Solar</option><option>Spring Drive</option>
+            </select>
+          </div>
+          <div><label class="form-label">Dial Color</label><input class="form-input" id="coll-dial-color" placeholder="Black, Blue, Green..."></div>
+          <div><label class="form-label">Bezel</label><input class="form-input" id="coll-bezel" placeholder="Ceramic, Fluted..."></div>
+          <div><label class="form-label">Bracelet Type</label>
+            <select class="form-select" id="coll-bracelet-type">
+              <option value="">— Select —</option><option>Oyster</option><option>Jubilee</option><option>President</option><option>Rubber</option><option>Leather</option><option>NATO</option><option>Integrated</option><option>Bracelet</option><option>Other</option>
+            </select>
+          </div>
+          <div><label class="form-label">Bracelet Color</label><input class="form-input" id="coll-bracelet-color" placeholder="Silver, Gold, Black..."></div>
           <div style="grid-column:1/-1"><label class="form-label">Notes</label><textarea class="form-textarea" id="coll-notes" rows="2" placeholder="Service history, story, where you bought it..."></textarea></div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:0.75rem;padding:0 1.5rem 1.5rem">
