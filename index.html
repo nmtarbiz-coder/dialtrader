@@ -3592,7 +3592,7 @@ function renderTaxReport(){
       </div>
       <div class="tax-transactions">
         <table>
-          <thead><tr><th>Sale Date</th><th>Watch</th><th>Ref / Serial</th><th>Cost Basis</th><th>Sold Price</th><th>Fees</th><th>Net Profit</th><th>ROI</th><th>Platform</th></tr></thead>
+          <thead><tr><th>Sale Date</th><th>Purchased</th><th>Watch</th><th>Ref / Serial</th><th>Cost Basis</th><th>Sold Price</th><th>Fees</th><th>Net Profit</th><th>ROI</th><th>Platform</th></tr></thead>
           <tbody>
             ${yw.map(s=>{
               const p=soldNetProfit(s),r=soldROI(s);
@@ -3600,6 +3600,7 @@ function renderTaxReport(){
               const plat=Array.isArray(s.platform)?s.platform.join(', '):(s.platform||'—');
               return`<tr>
                 <td style="white-space:nowrap">${s.sale_date||'—'}</td>
+                <td style="white-space:nowrap;color:${s.purchase_date&&s.sale_date&&new Date(s.purchase_date).getFullYear()<new Date(s.sale_date).getFullYear()?'var(--gold)':'inherit'}">${s.purchase_date||'—'}</td>
                 <td><strong>${s.brand}</strong> ${s.model}</td>
                 <td style="color:var(--text2)">${[s.ref,s.serial?'SN:'+s.serial:''].filter(Boolean).join(' · ')||'—'}</td>
                 <td>${fmt(soldCostBasis(s))}</td>
