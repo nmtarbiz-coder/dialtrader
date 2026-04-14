@@ -1479,12 +1479,17 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
 <!-- MORE MENU OVERLAY -->
 <div id="more-overlay" onclick="toggleMore()"></div>
 <div id="more-menu">
+  <div onclick="closeMore()" style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1.25rem;border-bottom:1px solid rgba(255,255,255,0.08);cursor:pointer;user-select:none">
+    <span style="font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text2);font-family:'Raleway',sans-serif;font-weight:700">More</span>
+    <span style="color:var(--text2);font-size:1.1rem;line-height:1">&#10005;</span>
+  </div>
   <div class="more-item" onclick="closeMore();showPage('sold')"><span class="more-icon">✅</span>Sold History</div>
   <div class="more-item" onclick="closeMore();showPage('profit-analysis')"><span class="more-icon">📈</span>Profit Analysis</div>
   <div class="more-item" onclick="closeMore();showPage('calendar')"><span class="more-icon">📅</span>Calendar</div>
   <div class="more-item" onclick="closeMore();showPage('tasks')"><span class="more-icon">✅</span>Tasks</div>
   <div class="more-item" onclick="closeMore();showPage('tax')"><span class="more-icon">📋</span>Tax Report</div>
   <div class="more-item" onclick="closeMore();showPage('collection')"><span class="more-icon">⌚</span>My Collection</div>
+  <div class="more-item" onclick="closeMore();showPage('locker')"><span class="more-icon">📸</span>Photo Locker</div>
   <div class="more-item" onclick="closeMore();showPage('help')"><span class="more-icon">❓</span>Help &amp; Setup</div>
   <div class="more-item" onclick="closeMore();showPage('settings')"><span class="more-icon">⚙️</span>Settings</div>
   <div class="more-item" id="more-admin" style="display:none" onclick="closeMore();showPage('admin')"><span class="more-icon">🔑</span>Admin</div>
