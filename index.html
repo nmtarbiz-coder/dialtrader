@@ -18,6 +18,7 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <!-- FullCalendar styles bundled in JS -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 .fc {
   font-family: inherit;
@@ -7386,21 +7387,70 @@ async function handleLockerUpload(event) {
   showToast(done + ' photo' + (done!==1?'s':'') + ' uploaded');
 }
 
-async function lockerDownloadSelected() {
-  const photos = lockerCurrentFolder ? lockerCurrentFolder.photos.filter(function(p){ return lockerSelectedPhotos.has(p.name); }) : [];
-  if (!photos.length) return;
-  showToast('Downloading ' + photos.length + ' photo' + (photos.length!==1?'s':'') + '...');
-  for (var i=0; i<photos.length; i++) {
-    await new Promise(function(res){ setTimeout(res, 400); });
+// Force-download a single file via blob (bypasses CORS open-in-tab issue)
+async function lockerForceDl(url, filename) {
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = photos[i].url;
-    a.download = photos[i].name;
-    a.target = '_blank';
+    a.href = blobUrl;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(blobUrl); }, 2000);
+  } catch(e) {
+    // Fallback: open in new tab
+    window.open(url, '_blank');
   }
-  showToast(photos.length + ' photos downloaded');
+}
+
+async function lockerDownloadSelected() {
+  const photos = lockerCurrentFolder ? lockerCurrentFolder.photos.filter(function(p){ return lockerSelectedPhotos.has(p.name); }) : [];
+  if (!photos.length) return;
+
+  if (photos.length === 1) {
+    showToast('Downloading...');
+    await lockerForceDl(photos[0].url, photos[0].name);
+    showToast('Downloaded!');
+    return;
+  }
+
+  // Multiple photos — ZIP them
+  if (typeof JSZip === 'undefined') {
+    showToast('ZIP library loading, try again in a moment.');
+    return;
+  }
+  const folderName = lockerCurrentFolder ? lockerCurrentFolder.name : 'photos';
+  showToast('Building ZIP for ' + photos.length + ' photos...');
+  const dlBtn = document.getElementById('locker-dl-btn');
+  if (dlBtn) { dlBtn.disabled = true; dlBtn.textContent = 'Zipping...'; }
+
+  try {
+    const zip = new JSZip();
+    for (var i=0; i<photos.length; i++) {
+      if (dlBtn) dlBtn.textContent = 'Fetching ' + (i+1) + '/' + photos.length + '...';
+      const resp = await fetch(photos[i].url);
+      const blob = await resp.blob();
+      zip.file(photos[i].name, blob);
+    }
+    if (dlBtn) dlBtn.textContent = 'Building ZIP...';
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } });
+    const safeFolder = folderName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(zipBlob);
+    a.download = safeFolder + '_photos.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 5000);
+    showToast(photos.length + ' photos downloaded as ' + safeFolder + '_photos.zip');
+  } catch(e) {
+    showToast('ZIP error: ' + e.message);
+  } finally {
+    if (dlBtn) { dlBtn.disabled = false; updateLockerSelectionButtons(); }
+  }
 }
 
 async function lockerDeleteSelected() {
@@ -7528,15 +7578,11 @@ function closeLockerLightbox() {
   document.getElementById('locker-lb').style.display = 'none';
   document.body.style.overflow = '';
 }
-function lockerDownloadSingle() {
+async function lockerDownloadSingle() {
   const photos = lockerCurrentFolder ? lockerCurrentFolder.photos : [];
   const photo = photos[lockerLbIdx];
   if (!photo) return;
-  const a = document.createElement('a');
-  a.href = photo.url;
-  a.download = photo.name;
-  a.target = '_blank';
-  a.click();
+  await lockerForceDl(photo.url, photo.name);
 }
 document.addEventListener('keydown', function(e) {
   const lb = document.getElementById('locker-lb');
