@@ -1619,7 +1619,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
       <div class="modal-tab-panel" id="tab-wtcontacts">
         <div class="contact-card-form"><div class="contact-card-form-title">▸ Purchased From</div>
           <div class="form-grid">
-            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="f-buy-name" placeholder="Full name or business"></div>
+            <div class="form-group full" style="position:relative"><label class="form-label">Name</label><input class="form-input" id="f-buy-name" placeholder="Full name or business" oninput="acContact(this,'buy')" onblur="acBlur('buy')" autocomplete="off"><div id="ac-buy" class="contact-ac-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--gold);z-index:500;max-height:200px;overflow-y:auto"></div></div>
             <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="f-buy-phone" type="tel"></div>
             <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-buy-email" type="email"></div>
             <div class="form-group full"><label class="form-label">Location</label><input class="form-input" id="f-buy-location"></div>
@@ -1627,7 +1627,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
         </div>
         <div class="contact-card-form"><div class="contact-card-form-title">▸ Sold To (pre-fill or complete at sale)</div>
           <div class="form-grid">
-            <div class="form-group full"><label class="form-label">Name</label><input class="form-input" id="f-sell-name" placeholder="Buyer name"></div>
+            <div class="form-group full" style="position:relative"><label class="form-label">Name</label><input class="form-input" id="f-sell-name" placeholder="Buyer name" oninput="acContact(this,'sell')" onblur="acBlur('sell')" autocomplete="off"><div id="ac-sell" class="contact-ac-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--gold);z-index:500;max-height:200px;overflow-y:auto"></div></div>
             <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="f-sell-phone" type="tel"></div>
             <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="f-sell-email" type="email"></div>
             <div class="form-group full"><label class="form-label">Location</label><input class="form-input" id="f-sell-location"></div>
@@ -1681,7 +1681,7 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
               <div class="platform-check" data-val="Other" onclick="togglePlatform(this)">Other</div>
             </div>
           </div>
-          <div class="form-group full"><label class="form-label">Sold To (Name)</label><input class="form-input" id="f-sell-name-sell" placeholder="Buyer name"></div>
+          <div class="form-group full" style="position:relative"><label class="form-label">Sold To (Name)</label><input class="form-input" id="f-sell-name-sell" placeholder="Buyer name" oninput="acContact(this,'sell-sell')" onblur="acBlur('sell-sell')" autocomplete="off"><div id="ac-sell-sell" class="contact-ac-list" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--gold);z-index:500;max-height:200px;overflow-y:auto"></div></div>
           <div class="form-group"><label class="form-label">Buyer Phone</label><input class="form-input" id="f-sell-phone-sell" type="tel"></div>
           <div class="form-group"><label class="form-label">Buyer Email</label><input class="form-input" id="f-sell-email-sell" type="email"></div>
         </div>
@@ -3011,7 +3011,7 @@ function editWatch(id){
     'f-listed-price':w.listed_price,'f-msrp':w.msrp,'f-notes':w.notes,'f-case-size':w.case_size,
     'f-dial-color':w.dial_color,'f-bezel-color':w.bezel_color,'f-bracelet-color':w.bracelet_color,
     'f-buy-name':w.buy_name,'f-buy-phone':w.buy_phone,'f-buy-email':w.buy_email,'f-buy-location':w.buy_location,
-    'f-sell-name':w.sell_name,'f-sell-phone':w.sell_phone,'f-sell-email':w.sell_email,'f-sell-location':w.sell_location,
+    'f-sell-name':(w.stage_index>=5?w.sell_name:null),'f-sell-phone':(w.stage_index>=5?w.sell_phone:null),'f-sell-email':(w.stage_index>=5?w.sell_email:null),'f-sell-location':(w.stage_index>=5?w.sell_location:null),
   };
   const selects={'f-platform':w.platform,'f-condition':w.condition,'f-box-papers':w.box_papers,'f-case-material':w.case_material,'f-movement':w.movement,'f-bracelet-type':w.bracelet_type,'f-contact-link':w.contact_id||''};
   Object.entries(fields).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
@@ -3131,7 +3131,8 @@ function localToDb(d){
     dial_color:d.dialColor||null,bezel_color:d.bezelColor||null,
     bracelet_type:d.braceletType||null,bracelet_color:d.braceletColor||null,
     buy_name:d.buyName||null,buy_phone:d.buyPhone||null,buy_email:d.buyEmail||null,buy_location:d.buyLocation||null,
-    sell_name:d.sellName||null,sell_phone:d.sellPhone||null,sell_email:d.sellEmail||null,sell_location:d.sellLocation||null,
+    // sell_name only written if explicitly set (not cleared by normal edits)
+    ...(d.sellName ? {sell_name:d.sellName,sell_phone:d.sellPhone||null,sell_email:d.sellEmail||null,sell_location:d.sellLocation||null} : {}),
     ad_drafts:d.adDrafts||null,
   };
 }
@@ -3157,6 +3158,24 @@ async function saveWatch(){
   await db.from('inventory').update({photo_urls:photoUrls}).eq('id',savedId);
   const idx=inventory.findIndex(w=>w.id===savedId);if(idx!==-1)inventory[idx].photo_urls=photoUrls;
   btn.disabled=false;btn.textContent='Save Watch';
+  // Upsert buy-name as contact (source/seller contact)
+  if(data.buyName){
+    const existingBuyer=contacts.find(function(cx){return (cx.name||'').toLowerCase()===data.buyName.toLowerCase();});
+    if(existingBuyer){
+      // Update phone/email if missing
+      const upd={};
+      if(data.buyPhone&&!existingBuyer.phone)upd.phone=data.buyPhone;
+      if(data.buyEmail&&!existingBuyer.email)upd.email=data.buyEmail;
+      if(Object.keys(upd).length){
+        db.from('contacts').update(upd).eq('id',existingBuyer.id);
+        contacts=contacts.map(function(cx){return cx.id===existingBuyer.id?Object.assign({},cx,upd):cx;});
+      }
+    } else {
+      db.from('contacts').insert({user_id:currentUser.id,name:data.buyName,
+        phone:data.buyPhone||null,email:data.buyEmail||null}).select().single()
+        .then(function(res){if(res.data){contacts.unshift(res.data);updateNavBadges();populateContactDropdowns();}});
+    }
+  }
   // If stage 9 (Paid & Done) — auto-complete sale and move to Sold History
   if(data.stageIndex===9&&editingId){
     closeModal();
@@ -7594,6 +7613,60 @@ document.addEventListener('keydown', function(e) {
 // ══════════════════════════════════════════════════════════════════════
 //  END PHOTO LOCKER
 // ══════════════════════════════════════════════════════════════════════
+
+
+// ── CONTACT AUTOCOMPLETE ─────────────────────────────────────────────
+function acContact(input, prefix) {
+  const q = (input.value || '').trim().toLowerCase();
+  const list = document.getElementById('ac-' + prefix);
+  if (!list) return;
+  if (!q || q.length < 1) { list.style.display = 'none'; return; }
+  const matches = contacts.filter(c =>
+    (c.name  || '').toLowerCase().includes(q) ||
+    (c.phone || '').includes(q) ||
+    (c.email || '').toLowerCase().includes(q)
+  ).slice(0, 8);
+  if (!matches.length) { list.style.display = 'none'; return; }
+  list.innerHTML = matches.map(c => {
+    const sub = [c.phone, c.email, c.city].filter(Boolean).join(' · ');
+    return '<div class="contact-ac-item" onmousedown="acPick(\''+prefix+'\',\''+c.id+'\')">'
+      + '<div class="contact-ac-name">'+escHtml(c.name||'')+'</div>'
+      + (sub ? '<div class="contact-ac-sub">'+escHtml(sub)+'</div>' : '')
+      + '</div>';
+  }).join('');
+  list.style.display = 'block';
+}
+
+function acBlur(prefix) {
+  setTimeout(function() {
+    const list = document.getElementById('ac-' + prefix);
+    if (list) list.style.display = 'none';
+  }, 180);
+}
+
+function acPick(prefix, contactId) {
+  const contact = contacts.find(function(c){ return c.id === contactId; });
+  if (!contact) return;
+  const list = document.getElementById('ac-' + prefix);
+  if (list) list.style.display = 'none';
+  const fieldMap = {
+    'buy':       { name:'f-buy-name',       phone:'f-buy-phone',       email:'f-buy-email',       loc:'f-buy-location' },
+    'sell':      { name:'f-sell-name',      phone:'f-sell-phone',      email:'f-sell-email',      loc:'f-sell-location' },
+    'sell-sell': { name:'f-sell-name-sell', phone:'f-sell-phone-sell', email:'f-sell-email-sell', loc:null },
+    'se-buy':    { name:'se-buy-name',      phone:'se-buy-phone',      email:'se-buy-email',      loc:null },
+    'se-sell':   { name:'se-sell-name',     phone:'se-sell-phone',     email:'se-sell-email',     loc:null },
+    'inv-bill':  { name:'inv-bill-name',    phone:'inv-bill-phone',    email:'inv-bill-email',    loc:null },
+  };
+  const fields = fieldMap[prefix];
+  if (!fields) return;
+  const loc = [contact.city, contact.state].filter(Boolean).join(', ') || contact.address || '';
+  const set = function(id, val) { const el = document.getElementById(id); if (el && val) el.value = val; };
+  set(fields.name,  contact.name);
+  set(fields.phone, contact.phone);
+  set(fields.email, contact.email);
+  if (fields.loc) set(fields.loc, loc);
+}
+// ── END CONTACT AUTOCOMPLETE ─────────────────────────────────────────
 
 // ── BOOT ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
