@@ -3178,15 +3178,26 @@ async function saveWatch(){
   }
   // If stage 9 (Paid & Done) — auto-complete sale and move to Sold History
   if(data.stageIndex===9&&editingId){
+    // Grab sold_price from sell tab — save to DB+memory before completeSale checks
+    const spv=parseFloat(document.getElementById('f-sold-price').value)||0;
+    const sdv=document.getElementById('f-sale-date').value||new Date().toISOString().split('T')[0];
+    if(spv){
+      await db.from('inventory').update({sold_price:spv,sale_date:sdv,
+        platform_fee:parseFloat(document.getElementById('f-platform-fee').value)||0,
+        payment_fee:parseFloat(document.getElementById('f-payment-fee').value)||0,
+        shipping_out:parseFloat(document.getElementById('f-shipping-out').value)||0,
+      }).eq('id',editingId);
+      const si=inventory.findIndex(function(w){return w.id===editingId;});
+      if(si!==-1){inventory[si].sold_price=spv;inventory[si].sale_date=sdv;}
+    }
     closeModal();
-    if(confirm('Stage is “Paid & Done”. Move this watch to Sold History now?')){
+    if(confirm('Stage is "Paid & Done". Move this watch to Sold History now?')){
       await completeSale(savedId);
     }else{
       refreshAll();showToast('Watch updated.');
     }
     return;
   }
-  closeModal();refreshAll();showToast(editingId?'Watch updated.':'Watch added.');
 }
 
 async function deleteWatch(){
