@@ -3198,6 +3198,7 @@ async function saveWatch(){
     }
     return;
   }
+  closeModal();refreshAll();showToast(editingId?'Watch updated.':'Watch added.');
 }
 
 async function deleteWatch(){
