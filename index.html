@@ -1580,6 +1580,29 @@ Rules: dates YYYY-MM-DD, numbers no symbols, empty cell = empty comma, first row
             <div class="stage-selector" id="f-stage-selector"></div>
           </div>
           <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="f-notes" placeholder="Additional notes..."></textarea></div>
+          <!-- CONSIGNMENT SECTION -->
+          <div class="form-group full" id="consign-toggle-wrap" style="border-top:1px solid var(--border);padding-top:1rem;margin-top:0.25rem">
+            <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-weight:600">
+              <input type="checkbox" id="f-is-consignment" onchange="toggleConsignFields(this.checked)" style="width:16px;height:16px;accent-color:var(--gold)">
+              This is a Consignment Watch
+            </label>
+          </div>
+          <div id="consign-fields" style="display:none;grid-column:1/-1">
+            <div style="background:rgba(184,148,58,0.08);border:1px solid rgba(184,148,58,0.3);padding:1rem 1.25rem;margin-bottom:1rem">
+              <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:0.75rem">&#128274; Consignment Details</div>
+              <div class="form-grid">
+                <div class="form-group"><label class="form-label">Owner Name *</label><input class="form-input" id="f-consign-owner" placeholder="e.g. John Smith"></div>
+                <div class="form-group"><label class="form-label">Owner Phone</label><input class="form-input" id="f-consign-phone" placeholder="(555) 000-0000"></div>
+                <div class="form-group"><label class="form-label">Your Cut (%)</label><input class="form-input" id="f-consign-pct" type="number" min="0" max="100" placeholder="e.g. 20" oninput="calcConsignPayout()"></div>
+                <div class="form-group"><label class="form-label">Flat Fee ($)</label><input class="form-input" id="f-consign-fee" type="number" min="0" placeholder="0.00" oninput="calcConsignPayout()"></div>
+                <div class="form-group"><label class="form-label">Agreed Sale Price ($)</label><input class="form-input" id="f-consign-agreed" type="number" min="0" placeholder="0.00" oninput="calcConsignPayout()"></div>
+                <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end">
+                  <div id="consign-payout-preview" style="font-size:0.72rem;color:var(--text2);padding:0.6rem;background:var(--surface2);border:1px solid var(--border);line-height:1.6">Enter price + % to see split</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- END CONSIGNMENT SECTION -->
         </div>
       </div>
       <div class="modal-tab-panel" id="tab-details">
@@ -2365,7 +2388,7 @@ function renderInventory(){
     const saleBanner=inPostSale?`<div style="display:inline-block;font-size:0.48rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:#000;background:var(--gold);padding:0.1rem 0.4rem;margin-top:0.3rem;margin-right:0.3rem;">SALE IN PROGRESS</div>`:'';
     const stageBadge=si!=null?`<div style="margin-top:0.4rem">${saleBanner}<span class="stage-badge stage-${si}"><span class="stage-dot"></span>${STAGES[si]}</span></div>`:'';
     return`<div class="inv-row" onclick="editWatch('${w.id}')">
-      <div><div class="inv-row-brand">${w.brand||''}${w.year?' · '+w.year:''}</div><div class="inv-row-model">${w.model||''}</div><div class="inv-row-sub">${sub||'—'}</div>${stageBadge}</div>
+      <div><div class="inv-row-brand">${w.brand||''}${w.year?' · '+w.year:''}</div><div class="inv-row-model">${w.model||''}</div><div class="inv-row-sub">${sub||'—'}</div>${w.is_consignment?'<span style="display:inline-block;font-size:0.48rem;letter-spacing:0.12em;text-transform:uppercase;font-weight:700;color:#fff;background:#8B5E3C;padding:0.1rem 0.4rem;margin-top:0.3rem;margin-right:0.3rem;">CONSIGNMENT</span>':''}${stageBadge}</div>
       <div class="inv-row-val gold">${fmt(b)}</div>
       <div class="inv-row-val muted">${w.msrp?fmt(w.msrp):'—'}</div>
       <div class="inv-row-val">${w.listed_price?fmt(w.listed_price):'—'}</div>
@@ -3025,6 +3048,7 @@ function editWatch(id){
   document.getElementById('modal').classList.add('open');
 
   loadNotesForWatch(id);
+  fillConsignFields(w);
   initAdDrafts(w);
 }
 function clearWatchForm(){
@@ -3034,6 +3058,11 @@ function clearWatchForm(){
   document.querySelectorAll('.color-chip').forEach(c=>c.classList.remove('selected'));
   document.getElementById('sell-pnl').textContent='Enter sold price above to see projected profit.';
   document.getElementById('sell-pnl').style.color='var(--text2)';
+  // Reset consignment fields
+  var cb=document.getElementById('f-is-consignment');if(cb){cb.checked=false;}
+  toggleConsignFields(false);
+  ['f-consign-owner','f-consign-phone','f-consign-pct','f-consign-fee','f-consign-agreed'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var prev=document.getElementById('consign-payout-preview');if(prev)prev.textContent='Enter price + % to see split';
 }
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 function closeModalOverlay(e){if(e.target===document.getElementById('modal'))closeModal();}
@@ -3114,6 +3143,12 @@ function getFormData(){
     buyEmail:g('f-buy-email').value.trim(),buyLocation:g('f-buy-location').value.trim(),
     sellName:g('f-sell-name').value.trim(),sellPhone:g('f-sell-phone').value.trim(),
     sellEmail:g('f-sell-email').value.trim(),sellLocation:g('f-sell-location').value.trim(),
+    isConsignment: !!(document.getElementById('f-is-consignment')&&document.getElementById('f-is-consignment').checked),
+    consignOwner:  g('f-consign-owner')?g('f-consign-owner').trim():'',
+    consignPhone:  g('f-consign-phone')?g('f-consign-phone').trim():'',
+    consignPct:    parseFloat((document.getElementById('f-consign-pct')||{}).value)||0,
+    consignFee:    parseFloat((document.getElementById('f-consign-fee')||{}).value)||0,
+    consignAgreed: parseFloat((document.getElementById('f-consign-agreed')||{}).value)||0,
     adDrafts:getAdDraftsForSave(),
   };
 }
@@ -3133,6 +3168,12 @@ function localToDb(d){
     buy_name:d.buyName||null,buy_phone:d.buyPhone||null,buy_email:d.buyEmail||null,buy_location:d.buyLocation||null,
     // sell_name only written if explicitly set (not cleared by normal edits)
     ...(d.sellName ? {sell_name:d.sellName,sell_phone:d.sellPhone||null,sell_email:d.sellEmail||null,sell_location:d.sellLocation||null} : {}),
+    is_consignment:  d.isConsignment||false,
+    consign_owner:   d.consignOwner||null,
+    consign_phone:   d.consignPhone||null,
+    consign_pct:     d.consignPct||null,
+    consign_fee:     d.consignFee||null,
+    consign_agreed:  d.consignAgreed||null,
     ad_drafts:d.adDrafts||null,
   };
 }
@@ -3269,6 +3310,12 @@ async function completeSale(watchId){
     buy_name:row.buy_name,buy_phone:row.buy_phone,buy_email:row.buy_email,buy_location:row.buy_location,
     sell_name:row.sell_name,sell_phone:row.sell_phone,sell_email:row.sell_email,sell_location:row.sell_location||'',
     photo_urls:row.photo_urls||[],
+    is_consignment:  row.is_consignment||false,
+    consign_owner:   row.consign_owner||null,
+    consign_phone:   row.consign_phone||null,
+    consign_pct:     row.consign_pct||null,
+    consign_fee:     row.consign_fee||null,
+    consign_agreed:  row.consign_agreed||null,
   };
   const[ins,del]=await Promise.all([
     db.from('sold_inventory').insert(soldRow).select().single(),
@@ -3277,9 +3324,17 @@ async function completeSale(watchId){
   if(ins.error){showToast('Error: '+ins.error.message);return;}
   soldWatches.unshift(ins.data);
   inventory=inventory.filter(w=>w.id!==watchId);
-  const p=soldNetProfit(ins.data);
+  var profitMsg;
+  if(row.is_consignment){
+    var yourCut=((row.sold_price||0)*(row.consign_pct||0)/100)+(row.consign_fee||0);
+    var ownerGets=(row.sold_price||0)-yourCut;
+    profitMsg=row.brand+' '+row.model+' sold! Your cut: '+fmt(yourCut)+' · Owner gets: '+fmt(ownerGets);
+  } else {
+    var p=soldNetProfit(ins.data);
+    profitMsg=row.brand+' '+row.model+' complete! Profit: '+fmt(p)+' — moved to Sold History.';
+  }
   refreshAll();populateContactDropdowns();
-  showToast(`${row.brand} ${row.model} complete! Profit: ${fmt(p)} — moved to Sold History.`);
+  showToast(profitMsg);
 }
 
 function refreshAll(){renderDashboard();renderInventory();renderSold();updateNavBadges();renderTasks();renderTasksPage();updateTaskBadge();if(document.getElementById('page-profit-analysis')&&document.getElementById('page-profit-analysis').style.display!=='none')renderProfitAnalysis();}
@@ -7679,6 +7734,62 @@ function acPick(prefix, contactId) {
   if (fields.loc) set(fields.loc, loc);
 }
 // ── END CONTACT AUTOCOMPLETE ─────────────────────────────────────────
+
+
+// ══════════════════════════════════════════════════════════════════════
+//  CONSIGNMENT HELPERS
+// ══════════════════════════════════════════════════════════════════════
+function toggleConsignFields(checked) {
+  document.getElementById('consign-fields').style.display = checked ? 'block' : 'none';
+  // If turning on, hide buy cost fields (we didn't buy it)
+  var purchasePrice = document.getElementById('f-purchase-price');
+  if (purchasePrice) purchasePrice.closest('.form-group').style.opacity = checked ? '0.4' : '1';
+}
+
+function calcConsignPayout() {
+  var price   = parseFloat(document.getElementById('f-consign-agreed').value) || 0;
+  var pct     = parseFloat(document.getElementById('f-consign-pct').value)    || 0;
+  var fee     = parseFloat(document.getElementById('f-consign-fee').value)    || 0;
+  var preview = document.getElementById('consign-payout-preview');
+  if (!preview) return;
+  if (!price) { preview.textContent = 'Enter price + % to see split'; return; }
+  var yourCut   = (price * pct / 100) + fee;
+  var ownerGets = price - yourCut;
+  preview.innerHTML =
+    '<span style="color:var(--gold);font-weight:700">Your cut: $' + yourCut.toFixed(2) + '</span><br>' +
+    '<span style="color:var(--text2)">Owner gets: $' + ownerGets.toFixed(2) + '</span>';
+}
+
+function getConsignData() {
+  var isConsign = document.getElementById('f-is-consignment');
+  if (!isConsign || !isConsign.checked) return null;
+  return {
+    is_consignment:   true,
+    consign_owner:    (document.getElementById('f-consign-owner').value  || '').trim(),
+    consign_phone:    (document.getElementById('f-consign-phone').value  || '').trim(),
+    consign_pct:      parseFloat(document.getElementById('f-consign-pct').value)     || 0,
+    consign_fee:      parseFloat(document.getElementById('f-consign-fee').value)     || 0,
+    consign_agreed:   parseFloat(document.getElementById('f-consign-agreed').value)  || 0,
+  };
+}
+
+function fillConsignFields(w) {
+  var cb = document.getElementById('f-is-consignment');
+  if (!cb) return;
+  cb.checked = !!w.is_consignment;
+  toggleConsignFields(!!w.is_consignment);
+  if (!w.is_consignment) return;
+  var set = function(id, val) { var el=document.getElementById(id); if(el&&val!=null) el.value=val; };
+  set('f-consign-owner',   w.consign_owner   || '');
+  set('f-consign-phone',   w.consign_phone   || '');
+  set('f-consign-pct',     w.consign_pct     || '');
+  set('f-consign-fee',     w.consign_fee     || '');
+  set('f-consign-agreed',  w.consign_agreed  || '');
+  calcConsignPayout();
+}
+// ══════════════════════════════════════════════════════════════════════
+//  END CONSIGNMENT HELPERS
+// ══════════════════════════════════════════════════════════════════════
 
 // ── BOOT ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
