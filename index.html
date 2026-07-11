@@ -3143,12 +3143,12 @@ function getFormData(){
     buyEmail:g('f-buy-email').value.trim(),buyLocation:g('f-buy-location').value.trim(),
     sellName:g('f-sell-name').value.trim(),sellPhone:g('f-sell-phone').value.trim(),
     sellEmail:g('f-sell-email').value.trim(),sellLocation:g('f-sell-location').value.trim(),
-    isConsignment: !!(document.getElementById('f-is-consignment')&&document.getElementById('f-is-consignment').checked),
-    consignOwner:  g('f-consign-owner')?g('f-consign-owner').trim():'',
-    consignPhone:  g('f-consign-phone')?g('f-consign-phone').trim():'',
-    consignPct:    parseFloat((document.getElementById('f-consign-pct')||{}).value)||0,
-    consignFee:    parseFloat((document.getElementById('f-consign-fee')||{}).value)||0,
-    consignAgreed: parseFloat((document.getElementById('f-consign-agreed')||{}).value)||0,
+    isConsignment: !!(g('f-is-consignment')&&g('f-is-consignment').checked),
+    consignOwner:  (g('f-consign-owner')||{value:''}).value.trim(),
+    consignPhone:  (g('f-consign-phone')||{value:''}).value.trim(),
+    consignPct:    parseFloat((g('f-consign-pct')||{value:'0'}).value)||0,
+    consignFee:    parseFloat((g('f-consign-fee')||{value:'0'}).value)||0,
+    consignAgreed: parseFloat((g('f-consign-agreed')||{value:'0'}).value)||0,
     adDrafts:getAdDraftsForSave(),
   };
 }
