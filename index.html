@@ -2336,8 +2336,18 @@ function fmt(n,d=0){if(n==null||isNaN(n))return'—';return new Intl.NumberForma
 function fmtPct(n){if(n==null||isNaN(n)||!isFinite(n))return'—';return(n>=0?'+':'')+n.toFixed(1)+'%';}
 function daysHeld(start,end){if(!start)return null;return Math.floor((new Date(end||Date.now())-new Date(start))/86400000);}
 function costBasis(w){return(+w.purchase_price||0)+(+w.tax||0)+(+w.shipping_in||0)+(+w.other_fees||0);}
-function soldCostBasis(s){return(+s.purchase_price||0)+(+s.tax||0)+(+s.shipping_in||0)+(+s.other_fees||0);}
-function soldNetProfit(s){return(+s.sold_price||0)-(+s.platform_fee||0)-(+s.payment_fee||0)-(+s.shipping_out||0)-soldCostBasis(s);}
+function soldCostBasis(s){
+  if(s.is_consignment) return 0; // consignment: no purchase cost — profit calculated separately
+  return(+s.purchase_price||0)+(+s.tax||0)+(+s.shipping_in||0)+(+s.other_fees||0);
+}
+function soldNetProfit(s){
+  if(s.is_consignment){
+    // Profit = your flat fee + your % cut, minus fees you paid out of pocket
+    var yourCut = ((+s.sold_price||0) * ((+s.consign_pct||0)/100)) + (+s.consign_fee||0);
+    return yourCut - (+s.platform_fee||0) - (+s.payment_fee||0) - (+s.shipping_out||0);
+  }
+  return(+s.sold_price||0)-(+s.platform_fee||0)-(+s.payment_fee||0)-(+s.shipping_out||0)-soldCostBasis(s);
+}
 function soldROI(s){const b=soldCostBasis(s);return b?soldNetProfit(s)/b*100:0;}
 function showToast(m,dur=3500){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
 
@@ -3849,8 +3859,14 @@ function renderProfitAnalysis(){
   const watches = yearFilter==='all' ? soldWatches : soldWatches.filter(s=>s.sale_date&&new Date(s.sale_date).getFullYear()==yearFilter);
 
   // ── KPI Cards ──
-  const totalGross = watches.reduce((s,w)=>s+(+w.sold_price||0),0);
-  const totalCOGS  = watches.reduce((s,w)=>s+soldCostBasis(w),0);
+  // For consignment: gross = your cut only (not full sale price)
+  const totalGross = watches.reduce((s,w)=>{
+    if(w.is_consignment){
+      return s + ((+w.sold_price||0)*((+w.consign_pct||0)/100)) + (+w.consign_fee||0);
+    }
+    return s + (+w.sold_price||0);
+  }, 0);
+  const totalCOGS = watches.reduce((s,w)=>s+soldCostBasis(w),0);
   const totalFees  = watches.reduce((s,w)=>s+(+w.platform_fee||0)+(+w.payment_fee||0)+(+w.shipping_out||0),0);
   const totalNet   = watches.reduce((s,w)=>s+soldNetProfit(w),0);
   const avgNet     = watches.length ? totalNet/watches.length : 0;
